@@ -8,7 +8,8 @@
 
 ## Authority and scope
 
-- PRD v1.1 is the approved product baseline. The original PDF is preserved at `docs/source/Preflight-PRD-v1.1.pdf` for provenance and transcription checks.
+- PRD v1.2 is the approved product baseline. The original v1.1 PDF is preserved at `docs/source/Preflight-PRD-v1.1.pdf` for provenance; subsequent approved decisions are in PRD.md and its §16 log.
+- Preflight is a standard browser-based web platform. Build the frontend, including the 3D experience, with the web stack in PRD §10. Do not create an iOS app, Swift/SwiftUI code, an Xcode project or another native client. Customer app screenshots and vertical video exports do not determine Preflight's platform.
 - Earlier chats, advisor briefs and files under `.context/` do not override the adopted PRD. The product generates videos from screenshots for launch-week founders; editing existing videos and a creator/e-commerce-first product are not the current MVP.
 - README is the onboarding/run guide. TEAM.md tracks execution. Neither is a second product specification. If a summary disagrees with PRD.md, fix the summary.
 - Implement P0 in requirement/dependency order. No P1 until all applicable P0 acceptance criteria pass. Apply the explicit TRIBE fallback in §8 and §14; record the go/no-go evidence instead of pretending unavailable conditional requirements passed.

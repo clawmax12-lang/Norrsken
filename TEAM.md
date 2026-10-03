@@ -1,6 +1,6 @@
 # Preflight — shared team board
 
-**Product baseline:** [PRD v1.1](PRD.md). **Repository:** https://github.com/clawmax12-lang/Norrsken. **Product owner:** William.
+**Product baseline:** [PRD v1.2](PRD.md). **Platform:** desktop-browser web product; no iOS/SwiftUI or native client. **Repository:** https://github.com/clawmax12-lang/Norrsken. **Product owner:** William.
 
 This document tracks coordination and implementation evidence. It does not redefine the product. Update it when claiming work, handing off a change, resolving a blocker or integrating a pull request. Blank ownership is intentional: technical names and progress were not supplied in the PRD.
 
@@ -15,7 +15,7 @@ This document tracks coordination and implementation evidence. It does not redef
 
 Suggested first message for any existing or new agent session:
 
-> Read AGENTS.md, then PRD.md §15, §8, §9, §10 and §12, then TEAM.md. PRD v1.1 supersedes earlier brainstorming. Work only on my assigned requirement IDs. Report the scope, dependencies and acceptance criteria before implementing, and keep shared contracts coordinated with their owners.
+> Read AGENTS.md, then PRD.md §15, §8, §9, §10 and §12, then TEAM.md. PRD v1.2 supersedes earlier brainstorming: Preflight is a web platform, not an iOS/SwiftUI app. Work only on my assigned requirement IDs. Report the scope, dependencies and acceptance criteria before implementing, and keep shared contracts coordinated with their owners.
 
 ## Ownership
 
@@ -60,6 +60,8 @@ Statuses: `unclaimed` → `in_progress` → `in_review` → `done`. Use `blocked
 P2 stays outside today's build. The broader validation programme also has the explicit prerequisite in PRD §13; do not silently start it as part of the MVP.
 
 ## Integration and acceptance handoff
+
+Documentation task **DOC-WEB** (clarifies FR-01, FR-07, FR-08, FR-09, FR-12 and FR-14): Codex owns the explicit web-platform decision and matching onboarding/agent guidance in [PR #1](https://github.com/clawmax12-lang/Norrsken/pull/1) on `docs/tribe-foundation`. Status: `in_review` (not yet integrated). Files: `PRD.md`, `README.md`, `AGENTS.md`, `TEAM.md`, `docs/source/README.md`. The editable PRD is v1.2; all 15 requirement IDs/AC remain, local links and version references pass checks, and the original v1.1 PDF checksum is unchanged. No application code was changed.
 
 Documentation task **DOC-TRIBE** (supports FR-04, FR-12 and FR-14): Codex owns the README explanation and upstream quickstart on branch `docs/tribe-foundation`. Status: `in_review` (not yet integrated). Files: `README.md` and this handoff entry. Verified against upstream commit `af58661791a351a448a489042a28f6c37e1c14b7`; local links, Python/shell example syntax and whitespace checks pass. GPU installation/inference was not run. This does not claim ownership or completion of the TRIBE worker or brain-viewer implementation.
 

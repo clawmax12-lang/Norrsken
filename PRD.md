@@ -1,6 +1,6 @@
 # Preflight · Product Requirements Document
 
-**Version:** 1.1 · **Date:** 3 Oct 2026, 12:00 · **Status:** Hackathon build ({Tech: Europe} Agentic AI Hack, Norrsken Stockholm)
+**Version:** 1.2 · **Date:** 3 Oct 2026 · **Status:** Hackathon build ({Tech: Europe} Agentic AI Hack, Norrsken Stockholm)
 
 **Owner:** William (product) · **Tech owners:** see §14.3 and [TEAM.md](TEAM.md)
 
@@ -8,7 +8,9 @@
 
 **Built with (PRD plan):** Claude Opus 5.5 as the coding agent · Gemini · Condense · TRIBE v2 (Meta FAIR, research use)
 
-> This is the team's canonical, editable product specification. It supersedes earlier brainstorming and advisor briefs. Imported from the complete, 20-page [Preflight PRD v1.1.pdf](docs/source/Preflight-PRD-v1.1.pdf). The original is preserved unchanged; see [source provenance](docs/source/README.md). Formatting and the repository URL have been normalized for Git. The claims, priorities, acceptance criteria, open questions and research caveats below are retained from the supplied PRD. Actual implementation progress lives in [TEAM.md](TEAM.md), not in these requirements.
+> This is the team's canonical, editable product specification. It supersedes earlier brainstorming and advisor briefs. The baseline was imported from the complete, 20-page [Preflight PRD v1.1.pdf](docs/source/Preflight-PRD-v1.1.pdf), which is preserved unchanged; see [source provenance](docs/source/README.md). Version 1.2 incorporates the product owner's explicit web-platform clarification, documented below and in §16. Actual implementation progress lives in [TEAM.md](TEAM.md), not in these requirements.
+
+**What changed in 1.2:** Preflight is explicitly a standard, browser-based web platform. The full product journey, including the 3D viewer, runs in a desktop browser. It is not an iOS app and must not be implemented in SwiftUI or as an Xcode/native-client project. The 1080x1920 videos are exported assets, not a mobile-app platform requirement. See §7.5, §10, §15 and §16.
 
 **What changed in 1.1:** new §12 UI with the analysis intro (the "Preflight sequence") and the interactive 3D brain viewer; brain viewer and intro moved to P0 (conditional on TRIBE running); A/B compare mode added; repo and build info added; timeline and owners updated.
 
@@ -20,6 +22,8 @@
 - **Priorities:** P0 = must exist for the demo · P1 = do if P0 is done · P2 = after the hackathon.
 
 ## 1. TL;DR
+
+**Preflight is a web platform accessed through a URL in a desktop browser.** Users do not install an iOS app or any other native client. The web platform is the product; customers' apps and screenshots are input material.
 
 Startups need a demo video for every launch, but agencies take weeks and nobody knows which version will actually work until after they have posted and paid for ads. Preflight's agent turns your product into several motion graphics demo videos, pretests them on simulated viewers (TRIBE v2 brain simulation plus a Gemini viewer panel), and hands you the winner, why it won, and the runner up for a live A/B test.
 
@@ -37,6 +41,7 @@ Preflight changes that. Upload a few screenshots of your product, say what you w
 
 ### 2.2 Customer FAQ
 
+- **Where do I use Preflight?** Open the web platform in your desktop browser. No iOS app, App Store installation or native client is required.
 - **What do I need?** 3 to 6 screenshots of your product, one sentence on what it does, your goal (for example sign ups), and who it is for.
 - **How long does it take?** Target under 10 minutes for three tested videos.
 - **Does it guarantee results?** No. It ranks versions by simulated viewer response so you only spend real money testing the strongest ones. Confirm with a live A/B test.
@@ -149,6 +154,17 @@ A simulated audience for all content: every launch video, ad, trailer and landin
 - Publishing to social platforms
 - More than one template family
 - Mobile layout, multi language UI
+- Native iOS, iPadOS, Android or desktop clients; SwiftUI and Xcode application targets
+
+### 7.5 Product platform (required)
+
+`[DECISION — v1.2]` Preflight is a conventional web product, delivered through a URL and used in a desktop browser. The brief form, agent activity, video previews, results, interactive 3D brain, Preflight sequence and exports are all part of that web experience.
+
+The frontend uses web technology as proposed in §10.1. Orchestration, video rendering and GPU inference run in backend services/workers; end users do not need a local Python environment, GPU or development tools to use the deployed product.
+
+**Platform acceptance:** the complete MVP journey from brief intake to downloading the winner and runner up can be used through the browser without installing a native client. iOS, SwiftUI, Xcode, the iOS SDK and Simulator are not part of the Preflight application build or demo workflow.
+
+**Input/output distinction:** tablehopp and other customer apps may be mobile apps. Their screenshots and the 1080x1920 vertical video outputs do not make Preflight a mobile app. Desktop web remains the hackathon target; mobile layout is still outside today's scope.
 
 ## 8. Functional requirements
 
@@ -192,9 +208,9 @@ For each variant, 2 to 4 reasons, each tied to a timestamp and to what is on scr
 
 #### FR-07 Results UI
 
-Leaderboard; video player with per second curves synced to playback; verdict card ("Launch C. A/B test it against A.").
+Browser-based results page: leaderboard; video player with per second curves synced to playback; verdict card ("Launch C. A/B test it against A.").
 
-**AC:** curves follow scrubbing; verdict visible without scrolling on a 1440 px wide screen.
+**AC:** the results page works in the desktop browser as part of the web platform; curves follow scrubbing; verdict visible without scrolling on a 1440 px wide screen. No native client is required.
 
 #### FR-08 Export
 
@@ -218,7 +234,7 @@ Gemini for planning, viewer panel and explanations. All LLM calls go through Con
 
 **P0 if TRIBE passes the 12:30 go/no-go, otherwise dropped.** Brain mesh (fsaverage5) inside a head silhouette, with predicted activity synced to video playback. Controls and behaviour as specified in §12.3.
 
-**AC:** activity comes from real TRIBE results only; with no data the viewer shows an empty "No brain data" state, never generated or random activity; orbit, zoom, region click and scrub all work; runs smoothly on a recent MacBook.
+**AC:** activity comes from real TRIBE results only; with no data the viewer shows an empty "No brain data" state, never generated or random activity; orbit, zoom, region click and scrub all work in the web viewer; runs smoothly in a desktop browser on a recent MacBook.
 
 #### FR-14 Analysis intro, the "Preflight sequence"
 
@@ -279,11 +295,13 @@ Voice narration of the verdict (Gemini text to speech), screen recording input, 
 
 ## 10. Architecture
 
+**Platform decision:** this is a standard web application with a browser frontend and backend services/workers. The following web stack is the implementation direction. Do not create an iOS/SwiftUI application or an Xcode project; the user-facing product and 3D experience belong in the browser.
+
 ### 10.1 Components
 
 | Component | Responsibility | Suggested tech |
 | --- | --- | --- |
-| Web app | Brief, live log, Preflight sequence, results, brain viewer, export | Next.js, TypeScript, Tailwind, three.js |
+| Web frontend (desktop browser) | Brief, live log, Preflight sequence, results, brain viewer, export | Next.js, TypeScript, Tailwind, three.js |
 | API and orchestrator | State machine, tools, storage | Python, FastAPI |
 | Renderer | Motion graphics template driven by concept JSON | Remotion (check its license for commercial use later) |
 | TRIBE worker | Runs TRIBE v2 on a GPU and returns `SimulationResult` | Python on a GPU with 40 GB+ VRAM |
@@ -565,10 +583,11 @@ Problem (40 s) → live demo (2 min 30) → how it works, the agent and the simu
 8. When unsure, choose the simpler option and write the choice in the decision log (§16).
 9. The brain viewer may be built before data exists, but must then show the "No brain data" empty state. Never fill it with random or generated activity.
 10. Primary coding agent for this repo: Claude Opus 5.5. Keep this PRD in the repo root as `PRD.md` and update the decision log when a requirement changes.
+11. Build Preflight as the browser-based web platform specified in §7.5 and §10. Do not scaffold Swift, SwiftUI, an Xcode project or a native client. References to a customer's mobile app, screenshots or vertical videos describe input/output, not Preflight's implementation platform.
 
 ## 16. Decision log
 
-Entries below are retained from the supplied PRD. Append new decisions with their date, rationale and affected requirement IDs. Requirement changes must also update the relevant section and version/change notes in this document.
+The original entries below are retained from the supplied v1.1 PRD; later decisions are appended with their version. Append new decisions with their date, rationale and affected requirement IDs. Requirement changes must also update the relevant section and version/change notes in this document.
 
 | Date | Decision | Why |
 | --- | --- | --- |
@@ -580,6 +599,7 @@ Entries below are retained from the supplied PRD. Append new decisions with thei
 | 3 Oct | Rejected: creator focus, AI editing of base videos, chief of staff agent | Weaker money metric, does not fix weak content, off track |
 | 3 Oct, 12:00 | The interactive 3D brain viewer and the analysis intro are part of the core demo (P0 if TRIBE runs) | Strongest creativity moment (30% of judging); makes the pretest visible |
 | 3 Oct, 12:00 | Variant toggle replaces "True / Predicted" from the reference viewer | We only have predicted data; our job is comparing variants |
+| 3 Oct, v1.2 | Preflight is a standard web platform accessed in a desktop browser, not an iOS/SwiftUI or other native app. The full user journey and 3D experience are web-based; vertical videos remain export assets. Applies to FR-01, FR-07, FR-08, FR-09, FR-12 and FR-14, and §7.5/§10/§15. | Explicit product-owner clarification; prevents agents and teammates from choosing a native-app architecture based on earlier workspace context or customer app screenshots. |
 
 ## 17. Open questions
 
