@@ -102,7 +102,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 .signal-bars i { background: linear-gradient(var(--lime), transparent); height: calc(7px + var(--signal) * (16px + (var(--bar) % 5) * 5px)); left: 50%; opacity: calc(.13 + var(--signal) * .75); position: absolute; top: 0; transform: translateX(-50%) rotate(calc(var(--bar) * 20deg)); transform-origin: 50% 122px; transition: height .08s linear; width: 1px; }
 
 .director-actions { align-items: center; display: flex; gap: 14px; margin: 24px 0 18px; position: relative; z-index: 2; }
-.primary-action, .secondary-action, .folder-button, .run-button { border: 0; border-radius: 999px; cursor: pointer; font-weight: 720; }
+.primary-action, .secondary-action, .asset-button, .run-button { border: 0; border-radius: 999px; cursor: pointer; font-weight: 720; }
 .primary-action { align-items: center; background: var(--lime); color: #0b0d08; display: flex; gap: 10px; padding: 13px 18px; }
 .secondary-action { background: #242824; border: 1px solid var(--line); padding: 12px 18px; }
 .mic-icon { border: 2px solid currentColor; border-radius: 8px; display: inline-block; height: 15px; position: relative; width: 10px; }
@@ -146,14 +146,14 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 .source-chip.empty { color: #696e66; }
 
 .asset-toolbar { display: grid; gap: 10px; grid-template-columns: auto 1fr; margin-bottom: 14px; }
-.folder-button { background: #292d28; border: 1px solid var(--line); padding: 0 15px; }
+.asset-button { background: #292d28; border: 1px solid var(--line); padding: 0 15px; }
 .asset-search { margin: 0; }
-.folder-drop { align-items: center; background: rgba(255,255,255,.015); border: 1px dashed rgba(255,255,255,.15); border-radius: 14px; color: var(--text); cursor: pointer; display: flex; flex-direction: column; height: 310px; justify-content: center; padding: 30px; text-align: center; width: 100%; }
-.folder-drop:hover { background: var(--lime-soft); border-color: var(--line-hot); }
-.folder-drop strong { font-size: 13px; margin: 12px 0 6px; }
-.folder-drop small { color: var(--muted); line-height: 1.45; max-width: 390px; }
-.folder-glyph { border: 1px solid var(--line-hot); border-radius: 8px; display: block; height: 39px; position: relative; width: 52px; }
-.folder-glyph::before { border: 1px solid var(--line-hot); border-bottom: 0; border-radius: 4px 4px 0 0; content: ""; height: 7px; left: 5px; position: absolute; top: -8px; width: 20px; }
+.asset-drop { align-items: center; background: rgba(255,255,255,.015); border: 1px dashed rgba(255,255,255,.15); border-radius: 14px; color: var(--text); cursor: pointer; display: flex; flex-direction: column; height: 310px; justify-content: center; padding: 30px; text-align: center; width: 100%; }
+.asset-drop:hover { background: var(--lime-soft); border-color: var(--line-hot); }
+.asset-drop strong { font-size: 13px; margin: 12px 0 6px; }
+.asset-drop small { color: var(--muted); line-height: 1.45; max-width: 390px; }
+.asset-glyph { border: 1px solid var(--line-hot); border-radius: 8px; display: block; height: 39px; position: relative; width: 52px; }
+.asset-glyph::before { border: 1px solid var(--line-hot); border-bottom: 0; border-radius: 4px 4px 0 0; content: ""; height: 7px; left: 5px; position: absolute; top: -8px; width: 20px; }
 .asset-grid { display: grid; gap: 9px; grid-template-columns: repeat(6, minmax(0, 1fr)); max-height: 320px; overflow: auto; padding-right: 3px; }
 .asset-card { background: #0d0f0d; border: 1px solid var(--line); border-radius: 10px; cursor: pointer; min-width: 0; overflow: hidden; padding: 0; position: relative; text-align: left; }
 .asset-card:hover, .asset-card.selected { border-color: var(--line-hot); }

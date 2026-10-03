@@ -1,6 +1,6 @@
 # Preflight · Product Requirements Document
 
-**Version:** 1.2 · **Date:** 3 Oct 2026 · **Status:** Hackathon build ({Tech: Europe} Agentic AI Hack, Norrsken Stockholm)
+**Version:** 1.3 · **Date:** 3 Oct 2026 · **Status:** Hackathon build ({Tech: Europe} Agentic AI Hack, Norrsken Stockholm)
 
 **Owner:** William (product) · **Tech owners:** see §14.3 and [TEAM.md](TEAM.md)
 
@@ -13,6 +13,8 @@
 **What changed in 1.1:** new §12 UI with the analysis intro (the "Preflight sequence") and the interactive 3D brain viewer; brain viewer and intro moved to P0 (conditional on TRIBE running); A/B compare mode added; repo and build info added; timeline and owners updated.
 
 **What changed in 1.2:** FR-01 intake is now led by an interruptible, voice-native Preflight Director powered by Gemini Live, with visible transcripts, explicit folder permission and a complete text fallback. The Director can retrieve approved screenshots and challenge creative choices, but all claims remain source-backed and all TRIBE evidence must come from a completed simulation. Direct Gemini Live transport is the only exception to the Condense routing rule because no compatible Live WebSocket proxy is available in the adopted architecture; planning, viewer-panel and explanation calls remain routed through Condense.
+
+**What changed in 1.3:** removed per-folder and per-screen approval from the Director workflow. Every screenshot attached to the current project is available to the Director for search and inspection immediately; the user can override its selections. Browser security still requires the user to attach local files, and the Director never receives access to arbitrary device files.
 
 ## 0. How to read this document
 
@@ -160,9 +162,9 @@ A simulated audience for all content: every launch video, ad, trailer and landin
 
 **Inputs:** product name; one line description (max 140 chars); 3 to 6 screenshots (PNG or JPG); goal (sign ups / downloads / understand the product / purchase, plus optional free text); audience (free text); optional brand color and logo.
 
-**Experience:** the default intake is an interruptible, voice-native conversation with the Preflight Director. The Director displays input and output transcripts, updates the visible brief as fields are confirmed, can search only files inside a folder the user explicitly grants, and gives concise creative pushback grounded in the brief or visible assets. A complete typed fallback remains available. Microphone and folder access always require explicit browser permission. Starting generation requires an explicit spoken or clicked confirmation.
+**Experience:** the default intake is an interruptible, voice-native conversation with the Preflight Director. The Director displays input and output transcripts, updates the visible brief as fields are confirmed, can search and inspect every screenshot attached to the project without further approval, and gives concise creative pushback grounded in the brief or visible assets. A complete typed fallback remains available. Starting generation requires an explicit spoken or clicked confirmation.
 
-**AC:** voice and typed paths validate the same required fields; interrupting the Director stops queued playback and continues the same session; every confirmed field shows its source; folder access is limited to the user-approved directory; brief saved as `brief.json` matching schema §10.3; a fixture brief for tablehopp exists in `/fixtures`.
+**AC:** voice and typed paths validate the same required fields; interrupting the Director stops queued playback and continues the same session; every confirmed field shows its source; every project screenshot is searchable and inspectable by the Director without a second permission step; arbitrary device files remain inaccessible; brief saved as `brief.json` matching schema §10.3; a fixture brief for tablehopp exists in `/fixtures`.
 
 #### FR-02 Creative plan
 
@@ -445,7 +447,7 @@ Bottom controls, as segmented pills like the reference:
 
 ### 12.4 Screens
 
-1. **Brief:** voice-native Director with live captions, a visible structured brief, an approved-folder asset shelf and a typed fallback. The user explicitly says or clicks "Run Preflight" after the required fields validate.
+1. **Brief:** voice-native Director with live captions, a visible structured brief, a project-wide asset shelf and a typed fallback. The user explicitly says or clicks "Run Preflight" after the required fields validate.
 2. **Agent at work:** live step log, three video cards filling in as they render, then simulation progress per variant.
 3. **Preflight sequence:** the intro above.
 4. **Results:** leaderboard left; center stage with video, brain viewer and synced curves; verdict card and timestamped reasons right; token savings from Condense in the footer.
@@ -586,6 +588,7 @@ Entries below are retained from the supplied PRD. Append new decisions with thei
 | 3 Oct, 12:00 | Variant toggle replaces "True / Predicted" from the reference viewer | We only have predicted data; our job is comparing variants |
 | 3 Oct, 2026 | Make the Preflight Director the default FR-01 intake, using Gemini Live for interruption-capable voice and typed input as a full fallback | The founder should ideate the launch video with an opinionated creative director that can pull approved product screens into view, rather than complete a static form |
 | 3 Oct, 2026 | Permit direct Gemini Live WebSocket calls authenticated by server-minted ephemeral tokens; keep all non-Live planning, panel and explanation calls through Condense | Full-duplex audio and barge-in require Gemini Live transport, while the permanent API key must remain server-side and Condense eligibility remains required for the existing LLM stages |
+| 3 Oct, 2026 | Give the Director immediate access to every screenshot attached to the project; remove per-folder and per-screen approval UI | The Director is the creative operator for the project and must be able to search, inspect and select screens fluidly; browser sandboxing still prevents undisclosed access to device files |
 
 ## 17. Open questions
 

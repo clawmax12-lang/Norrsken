@@ -10,7 +10,7 @@ describe("Preflight Director contract", () => {
   it("declares unique inspectable tools", () => {
     const names = directorTools.map((tool) => tool.name);
     expect(new Set(names).size).toBe(names.length);
-    expect(names).toEqual(["update_brief", "search_assets", "select_asset", "set_scene", "record_decision"]);
+    expect(names).toEqual(["update_brief", "search_assets", "inspect_asset", "select_asset", "set_scene", "record_decision"]);
   });
 
   it("forbids unsupported TRIBE claims during intake", () => {

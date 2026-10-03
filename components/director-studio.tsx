@@ -69,15 +69,11 @@ export function DirectorStudio() {
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [saveError, setSaveError] = useState<string | null>(null);
 
-  const folderInputRef = useRef<HTMLInputElement | null>(null);
+  const assetInputRef = useRef<HTMLInputElement | null>(null);
   const assetsRef = useRef(assets);
   const selectedRef = useRef(selectedIds);
   const shareAssetRef = useRef<((file: File, label: string, requestResponse?: boolean) => Promise<boolean>) | null>(null);
-
-  useEffect(() => {
-    folderInputRef.current?.setAttribute("webkitdirectory", "");
-    folderInputRef.current?.setAttribute("directory", "");
-  }, []);
+  const sentManifestRef = useRef("");
 
   useEffect(() => {
     assetsRef.current = assets;
@@ -121,13 +117,20 @@ export function DirectorStudio() {
             .slice(0, 12)
             .map(({ id, name, relativePath }) => ({ id, name, relativePath }));
           return matches.length
-            ? { matches, note: "Only filenames and approved relative paths were searched." }
-            : { matches: [], note: "No approved image filenames matched. Ask the user to choose a folder or another term." };
+            ? { matches, note: "All attached project-screen filenames were searched." }
+            : { matches: [], note: "No attached image filenames matched. Try another term or ask the user to add screens." };
+        }
+        case "inspect_asset": {
+          const assetId = asString(args.asset_id);
+          const asset = assetsRef.current.find((candidate) => candidate.id === assetId);
+          if (!asset) throw new Error("That screen is not attached to this project.");
+          queueMicrotask(() => void shareAssetRef.current?.(asset.file, asset.name, false));
+          return { inspected: { id: asset.id, name: asset.name, relativePath: asset.relativePath } };
         }
         case "select_asset": {
           const assetId = asString(args.asset_id);
           const asset = assetsRef.current.find((candidate) => candidate.id === assetId);
-          if (!asset) throw new Error("That asset is not in the approved folder.");
+          if (!asset) throw new Error("That screen is not attached to this project.");
           if (!selectedRef.current.includes(assetId)) {
             if (selectedRef.current.length >= 6) throw new Error("The brief already has six screenshots.");
             setSelectedIds((current) => [...current, assetId]);
@@ -194,7 +197,7 @@ export function DirectorStudio() {
   );
   const isReady = Object.values(readiness).every(Boolean);
 
-  const loadFolder = useCallback((files: FileList | null) => {
+  const loadAssets = useCallback((files: FileList | File[] | null) => {
     if (!files) return;
     for (const asset of assetsRef.current) URL.revokeObjectURL(asset.previewUrl);
     const images = Array.from(files)
@@ -226,13 +229,22 @@ export function DirectorStudio() {
       setScenes((current) => {
         const next = [...current];
         const emptyIndex = next.findIndex((scene) => !scene.assetId);
-        if (emptyIndex >= 0) next[emptyIndex] = { assetId: asset.id, rationale: "Chosen from approved product screens" };
+        if (emptyIndex >= 0) next[emptyIndex] = { assetId: asset.id, rationale: "Chosen from project screens" };
         return next;
       });
       void director.shareAsset(asset.file, asset.name);
     },
     [director],
   );
+
+  useEffect(() => {
+    if (director.state !== "listening" || assets.length === 0) return;
+    const manifest = assets.map((asset) => `${asset.id}: ${asset.name}`).join("\n");
+    if (manifest === sentManifestRef.current) return;
+    if (director.sendContext(`Current project asset index. You may search, inspect, and select any of these screens without requesting additional permission:\n${manifest}`)) {
+      sentManifestRef.current = manifest;
+    }
+  }, [assets, director]);
 
   const submitText = useCallback(
     (event: FormEvent) => {
@@ -303,7 +315,7 @@ export function DirectorStudio() {
             </div>
           </div>
           <h1>Build the story.<br /><span>Defend every frame.</span></h1>
-          <p className="hero-copy">Talk through the launch video with an opinionated Director that can inspect only the screens you approve.</p>
+          <p className="hero-copy">Talk through the launch video with an opinionated Director that can inspect every screen attached to the project.</p>
           <div className="director-actions">
             {director.state === "idle" || director.state === "error" ? (
               <button className="primary-action" onClick={() => void director.start()}>
@@ -360,17 +372,22 @@ export function DirectorStudio() {
           </section>
 
           <section className="glass-panel assets-panel">
-            <div className="panel-heading"><div><span className="step-number">02</span><div><h2>Approved screens</h2><p>{assets.length ? `${assets.length} images indexed locally` : "Choose a product folder"}</p></div></div><span className={`completion-count ${readiness.screens ? "complete" : ""}`}>{selectedIds.length}/3–6 selected</span></div>
+            <div className="panel-heading"><div><span className="step-number">02</span><div><h2>Project screens</h2><p>{assets.length ? `${assets.length} screens available to the Director` : "Add product screenshots"}</p></div></div><span className={`completion-count ${readiness.screens ? "complete" : ""}`}>{selectedIds.length}/3–6 selected</span></div>
             <div className="asset-toolbar">
-              <button className="folder-button" onClick={() => folderInputRef.current?.click()}>Choose folder</button>
-              <input ref={folderInputRef} type="file" accept="image/png,image/jpeg" multiple hidden onChange={(event) => loadFolder(event.target.files)} />
-              <input className="asset-search" value={assetQuery} onChange={(event) => setAssetQuery(event.target.value)} placeholder="Search approved filenames" />
+              <button className="asset-button" onClick={() => assetInputRef.current?.click()}>Add screens</button>
+              <input ref={assetInputRef} type="file" accept="image/png,image/jpeg" multiple hidden onChange={(event) => loadAssets(event.target.files)} />
+              <input className="asset-search" value={assetQuery} onChange={(event) => setAssetQuery(event.target.value)} placeholder="Search project screens" />
             </div>
             {assets.length === 0 ? (
-              <button className="folder-drop" onClick={() => folderInputRef.current?.click()}>
-                <span className="folder-glyph" aria-hidden="true" />
-                <strong>Grant access to one product folder</strong>
-                <small>Preflight indexes PNG and JPG filenames locally. Nothing uploads until you select Run Preflight.</small>
+              <button
+                className="asset-drop"
+                onClick={() => assetInputRef.current?.click()}
+                onDragOver={(event) => event.preventDefault()}
+                onDrop={(event) => { event.preventDefault(); loadAssets(Array.from(event.dataTransfer.files)); }}
+              >
+                <span className="asset-glyph" aria-hidden="true" />
+                <strong>Drop product screens here</strong>
+                <small>The Director can immediately search and inspect every PNG or JPG you add. Only the final 3–6 selections upload when you run Preflight.</small>
               </button>
             ) : (
               <div className="asset-grid">
