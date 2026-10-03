@@ -83,6 +83,16 @@ class ProjectPaths:
         """Rendered MP4 with narration, music and sound effects added after the pretest."""
         return self.root / "videos" / f"{variant_id}.final.mp4"
 
+    @property
+    def opus_dir(self) -> Path:
+        """Separate finalization artifacts; never replaces candidate evidence."""
+        return self.root / "finalization"
+
+    @property
+    def finalization(self) -> Path:
+        """Persisted selected-winner job and exact-video evidence."""
+        return self.opus_dir / "record.json"
+
     def sound(self, variant_id: str) -> Path:
         """What was added to a variant's final video (``SoundRecord``)."""
         return self.root / "sound" / f"{variant_id}.json"

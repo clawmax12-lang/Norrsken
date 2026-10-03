@@ -6,6 +6,7 @@ from typing import Annotated
 from fastapi import Depends, Request
 
 from preflight.errors import PreflightValidationError
+from preflight.finalization.service import FinalizationService
 from preflight.ports import Clock
 from preflight.storage import ProjectPaths, ProjectStore
 
@@ -26,6 +27,7 @@ class ApiContext:
     runs: RunTracker | None
     stream_timing: StreamTiming
     clock: Clock
+    finals: FinalizationService | None = None
 
 
 def get_context(request: Request) -> ApiContext:

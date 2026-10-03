@@ -29,5 +29,10 @@ def create_production_app() -> FastAPI:
     http = httpx.AsyncClient(timeout=_HTTP_TIMEOUT)
     service = ProductionRunService(settings, store, http, _utc_now)
     return create_app(
-        settings, store=store, run_service=service, clock=_utc_now, on_shutdown=http.aclose
+        settings,
+        store=store,
+        run_service=service,
+        clock=_utc_now,
+        on_shutdown=http.aclose,
+        finalization_service=service.finalization_service(),
     )

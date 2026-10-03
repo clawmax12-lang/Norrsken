@@ -22,6 +22,7 @@ async def test_health(client):
         "gemini": False,
         "condense": False,
         "brain_sim": False,
+        "opus": False,
     }
 
 
@@ -43,6 +44,7 @@ async def test_health_reports_configured_providers(tmp_path, store, run_service)
         "gemini": True,
         "condense": True,
         "brain_sim": True,
+        "opus": False,
     }
 
 

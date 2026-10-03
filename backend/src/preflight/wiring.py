@@ -11,10 +11,15 @@ import httpx
 from preflight.config import Settings
 from preflight.contracts import RunRecord
 from preflight.explain.gemini import GeminiExplainer
+from preflight.finalization.job import FinalizationJob
+from preflight.finalization.opus import OpusComposer
+from preflight.finalization.service import FinalizationService
+from preflight.finalization.source import FinalSource
 from preflight.generation.assets import TemplateBackdrops
 from preflight.generation.compose import TemplateComposer
 from preflight.llm import GenAIBackend, TokenLedger, build_gemini_client
 from preflight.orchestrator import Pipeline
+from preflight.orchestrator.retry import StepPolicy
 from preflight.planning.planner import GeminiPlanner
 from preflight.ports import Clock, Simulator
 from preflight.rendering import RemotionRenderer
@@ -77,6 +82,43 @@ class ProductionRunService:
             settings,
             self._clock,
             sound=_sound_studio(settings, self._store.paths(project_id)),
+        )
+
+    def finalization_service(self) -> FinalizationService:
+        """Separate, explicit last step; does not change the three-video Gemini pipeline."""
+        return FinalizationService(
+            self._settings, self._store, self.build_finalization, self._clock
+        )
+
+    def build_finalization(self, project_id: str, source: FinalSource) -> FinalizationJob:
+        """Use Opus only for motion composition; Gemini/TRIBE retest the final MP4."""
+        settings, http = self._settings, self._http
+        client = build_gemini_client(
+            settings, ledger=TokenLedger(), http_client=http, project_id=project_id
+        )
+        paths = self._store.paths(project_id)
+        simulators: list[Simulator] = [GeminiViewerPanel(client)]
+        if settings.tribe_endpoint:
+            simulators.insert(0, TribeSimulator(http, settings.tribe_endpoint, paths.root))
+        return FinalizationJob(
+            self._store,
+            project_id,
+            source,
+            OpusComposer(settings, http),
+            RemotionRenderer(
+                settings.renderer_dir,
+                paths.root,
+                node=settings.node_binary,
+                concurrency=settings.render_concurrency,
+            ),
+            simulators,
+            # Keep the existing audio team's stage intact. No new direct TTS routing
+            # exception: the Opus final has local music/SFX, not extra narration calls.
+            SoundStudio(Ffmpeg(settings.ffmpeg_binary, settings.ffprobe_binary), None)
+            if settings.sound_enabled
+            else None,
+            StepPolicy.from_settings(settings),
+            self._clock,
         )
 
 

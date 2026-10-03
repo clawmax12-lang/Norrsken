@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { FinalVideoFinish } from "@/components/final-video-finish";
 
 type VariantId = "A" | "B" | "C";
 export type RunState = "BRIEF_RECEIVED" | "PLANNED" | "RENDERED" | "SIMULATED" | "SCORED" | "EXPLAINED" | "ITERATED" | "DONE" | "FAILED";
 
 type Reason = { t: number; scene_index: number; text: string };
 export type PlannedScene = { t_start: number; t_end: number; screenshot: string; text: string; source_field: string };
-export type PlannedVariant = { variant_id: VariantId; concept: { hypothesis: string; hook: string; scenes: PlannedScene[] }; files: Record<string, string> };
+export type PlannedVariant = { variant_id: VariantId; concept: { hypothesis: string; hook: string; scenes: PlannedScene[] }; files: Record<string, string>; render?: { video_sha256: string | null } | null };
 type Results = {
   state: RunState;
   ranking: { order: VariantId[]; scores: Record<string, number>; confidence: "low" | "medium" | "high"; rule: string } | null;
@@ -124,6 +125,7 @@ export function RunResults({ apiBase, projectId, runNonce, onClose, onProgress, 
   const reached = results ? ORDER.indexOf(results.state === "FAILED" ? (failure?.failed_after ?? "BRIEF_RECEIVED") : results.state) : -1;
   const shown: VariantId | null = picked ?? report?.winner ?? null;
   const variant = results?.variants.find((item) => item.variant_id === shown);
+  const winnerSourceHash = results?.variants.find((item) => item.variant_id === report?.winner)?.render?.video_sha256;
   const elapsed = Math.max(0, Math.round((now - startedAt) / 1000));
 
   return (
@@ -174,6 +176,13 @@ export function RunResults({ apiBase, projectId, runNonce, onClose, onProgress, 
         <div className="results-exports">
           {EXPORTS.map((item) => <a key={item.name} href={url(apiBase, `/api/projects/${encodeURIComponent(projectId)}/export/${item.name}`)} download>{item.label}</a>)}
         </div>
+        {results?.state === "DONE" && winnerSourceHash && <FinalVideoFinish
+          key={`${projectId}-${report.winner}`}
+          apiBase={apiBase}
+          projectId={projectId}
+          variantId={report.winner}
+          sourceHash={winnerSourceHash}
+        />}
       </>}
     </aside>
   );

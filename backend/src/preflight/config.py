@@ -17,6 +17,10 @@ class Settings(BaseSettings):
 
     data_dir: Path = _REPO_ROOT / "data" / "projects"
 
+    anthropic_api_key: SecretStr | None = None
+    anthropic_model: str = Field(default="claude-opus-5-5", pattern=r"^claude-opus-[a-zA-Z0-9.-]+$")
+    opus_max_output_tokens: int = Field(default=4096, ge=1024, le=8192)
+
     gemini_api_key: SecretStr | None = None
     gemini_model: str = Field(
         default="gemini-3.8-flash",
