@@ -1,6 +1,6 @@
 # Preflight — shared team board
 
-**Product baseline:** [PRD v1.2](PRD.md). **Platform:** desktop-browser web product; no iOS/SwiftUI or native client. **Repository:** https://github.com/clawmax12-lang/Norrsken. **Product owner:** William.
+**Product baseline:** [PRD v1.3](PRD.md). **Platform:** desktop-browser web product; no iOS/SwiftUI or native client. **Repository:** https://github.com/clawmax12-lang/Norrsken. **Product owner:** William.
 
 This document tracks coordination and implementation evidence. It does not redefine the product. Update it when claiming work, handing off a change, resolving a blocker or integrating a pull request. Blank ownership is intentional: technical names and progress were not supplied in the PRD.
 
@@ -15,7 +15,7 @@ This document tracks coordination and implementation evidence. It does not redef
 
 Suggested first message for any existing or new agent session:
 
-> Read AGENTS.md, then PRD.md §15, §8, §9, §10 and §12, then TEAM.md. PRD v1.2 supersedes earlier brainstorming: Preflight is a web platform, not an iOS/SwiftUI app. Work only on my assigned requirement IDs. Report the scope, dependencies and acceptance criteria before implementing, and keep shared contracts coordinated with their owners.
+> Read AGENTS.md, then PRD.md §15, §8, §9, §10 and §12, then TEAM.md. PRD v1.3 supersedes earlier brainstorming: Preflight is a web platform, not an iOS/SwiftUI app; the interactive brain is built once and reused with genuine per-video data. For brain/design work also read docs/design/README.md and OPUS_BRAIN_BRIEF.md. Work only on my assigned requirement IDs. Report the scope, dependencies and acceptance criteria before implementing, and keep shared contracts coordinated with their owners.
 
 ## Ownership
 
@@ -29,7 +29,7 @@ Fill in real people rather than assigning all work to an unnamed agent. Record a
 | TRIBE worker | FR-04 (TRIBE) | Unassigned | — |
 | Agent, Gemini, Condense | FR-02, FR-04 (panel), FR-05, FR-06, FR-10 | Unassigned | — |
 | Web app, results, export and log | FR-07, FR-08, FR-09 | Unassigned | — |
-| Brain viewer and Preflight sequence | FR-12, FR-14, FR-15 | Unassigned | — |
+| Brain viewer and Preflight sequence | FR-12, FR-14, FR-15 | Claude Opus 5.5 (implementation); William (product review) | Dedicated workspace pending launch; see docs/design/OPUS_BRAIN_BRIEF.md. FR-15 remains gated P1. |
 | Integration and release | Shared contracts, clean-clone run, final demo path | Unassigned | — |
 | Demo video and pitch | PRD §14.4–§14.6 | William | — |
 
@@ -61,9 +61,11 @@ P2 stays outside today's build. The broader validation programme also has the ex
 
 ## Integration and acceptance handoff
 
-Documentation task **DOC-WEB** (clarifies FR-01, FR-07, FR-08, FR-09, FR-12 and FR-14): Codex owns the explicit web-platform decision and matching onboarding/agent guidance in [PR #1](https://github.com/clawmax12-lang/Norrsken/pull/1) on `docs/tribe-foundation`. Status: `in_review` (not yet integrated). Files: `PRD.md`, `README.md`, `AGENTS.md`, `TEAM.md`, `docs/source/README.md`. The editable PRD is v1.2; all 15 requirement IDs/AC remain, local links and version references pass checks, and the original v1.1 PDF checksum is unchanged. No application code was changed.
+Documentation task **DOC-WEB** (clarifies FR-01, FR-07, FR-08, FR-09, FR-12 and FR-14): Codex owns the explicit web-platform decision and matching onboarding/agent guidance in [PR #1](https://github.com/clawmax12-lang/Norrsken/pull/1) on `docs/tribe-foundation`. Status: `in_review` (not yet integrated). Files: `PRD.md`, `README.md`, `AGENTS.md`, `TEAM.md`, `docs/source/README.md`. The web clarification landed in v1.2 (the current editable PRD is v1.3); all 15 requirement IDs/AC remain, local links and version references pass checks, and the original v1.1 PDF checksum is unchanged. No application code was changed.
 
 Documentation task **DOC-TRIBE** (supports FR-04, FR-12 and FR-14): Codex owns the README explanation and upstream quickstart on branch `docs/tribe-foundation`. Status: `in_review` (not yet integrated). Files: `README.md` and this handoff entry. Verified against upstream commit `af58661791a351a448a489042a28f6c37e1c14b7`; local links, Python/shell example syntax and whitespace checks pass. GPU installation/inference was not run. This does not claim ownership or completion of the TRIBE worker or brain-viewer implementation.
+
+Documentation task **DOC-BRAIN** (supports FR-12/FR-14/FR-15 and model roles in §9.1): Codex owns the tracked visual-reference package and Opus implementation brief on `docs/tribe-foundation`, [PR #1](https://github.com/clawmax12-lang/Norrsken/pull/1). Status: `in_review` (not yet integrated). Files: `docs/design/`, `PRD.md`, `README.md`, `AGENTS.md`, `TEAM.md`, `docs/source/README.md`. All three original images and the MP4 are copied without modification; byte comparisons and SHA-256 checks pass. PRD v1.3 adopts the visual/reuse decisions; all 15 FR IDs and original sections remain, 42 local document/media links and anchors pass, whitespace checks pass, and the original v1.1 PDF checksum is unchanged. Dashboard's temporary Vercel preview is recorded and checked (HTTP 200 plus browser screenshot); it is not a completed brain feature. Opus's code implementation is a separate assignment, not completed by this documentation work. No application tests or GPU inference were run on this documentation branch.
 
 For each task, record:
 
@@ -97,6 +99,7 @@ If TRIBE fails its gate, record the result and apply the PRD's Gemini-only fallb
 | Exact submission time | PRD says verify 19:00 vs 19:19; planned submission is 18:45. | Confirm on the hackathon platform and record the source. |
 | GPU / TRIBE feasibility | GPU source and actual latency/VRAM are unverified; §11 itself asks for model-card verification. | Assign TRIBE owner; run the go/no-go and record evidence. |
 | Template style | Modern SaaS launch video reference in PRD; no selected template implementation. | Renderer owner + William to choose one family. |
+| Runtime model keys and finalization | Gemini key is to be supplied later. Coding-agent Opus is available in Conductor; runtime Opus API/Condense routing, credentials and budget remain unverified. | Keep explicit not-configured states; Gemini remains the P0 path. A changed final asset must be re-simulated, per PRD §9.1. |
 | Lunch time | Unclear in the opening talk per PRD. | Confirm only if needed for team scheduling. |
 | Technical ownership and registration | Names absent from §14.3; team/platform registration not verified here. | Fill ownership and confirm participant registration. |
 
