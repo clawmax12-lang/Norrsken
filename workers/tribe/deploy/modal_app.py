@@ -103,25 +103,6 @@ def analyse(video: bytes, variant_id: str = "A") -> dict[str, object]:
     }
 
 
-@app.function(volumes={str(CACHE): cache}, secrets=[modal.Secret.from_name(HF_SECRET)])
-def check_access() -> dict[str, object]:
-    """Cheap CPU preflight: is the Hugging Face token present and are the gated repos readable?"""
-    import os  # noqa: PLC0415
-
-    from huggingface_hub import HfApi  # noqa: PLC0415
-
-    api = HfApi()
-    report: dict[str, object] = {"hf_token_present": bool(os.environ.get("HF_TOKEN"))}
-    for repo in ("facebook/tribev2", "meta-llama/Llama-3.2-3B"):
-        try:
-            api.model_info(repo, files_metadata=False)
-            api.hf_hub_download(repo, "config.json", cache_dir=str(CACHE / "hf" / "probe"))
-            report[repo] = "ok"
-        except Exception as error:  # report every failure; never fall back to other weights
-            report[repo] = f"{type(error).__name__}: {str(error).splitlines()[0][:200]}"
-    return report
-
-
 @app.local_entrypoint()
 def main(
     video: str = "",
@@ -129,12 +110,8 @@ def main(
     license: str = "",  # noqa: A002 - CLI flag name
     out: str = "",
     variant_id: str = "A",
-    check: bool = False,
 ) -> None:
     """Run one genuine inference and write a ``preflight.demo-bundle.v1`` next to its video."""
-    if check:
-        print(json.dumps(check_access.remote(), indent=2))  # noqa: T201
-        return
     if not (video and title.strip() and license.strip()):
         raise SystemExit("--video, --title and --license (permission to show the video) are required")
     source = Path(video)

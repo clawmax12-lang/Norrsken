@@ -7,13 +7,13 @@
 One-time setup (no keys in chat, files or commits):
 
 1. Hugging Face: accept the licence for [meta-llama/Llama-3.2-3B](https://huggingface.co/meta-llama/Llama-3.2-3B) (Meta approves it) and create a read token.
-2. Modal: create an account, then in this workspace run `pip install modal && modal token new` and finish the browser login.
+2. Modal: create an account and add a payment method (Modal refuses GPU functions without one), then in this workspace run `pip install modal && modal token new` and finish the browser login.
 3. In the Modal dashboard, create a secret named `preflight-huggingface` with the key `HF_TOKEN`.
 
 Run from the repository root:
 
 ```bash
-modal run workers/tribe/deploy/modal_app.py --check     # CPU only: token present, gated repos readable
+modal run workers/tribe/deploy/check_access.py          # CPU only: token present, gated repos readable
 modal run workers/tribe/deploy/modal_app.py --video owned.mp4 \
   --title "Example" --license "Owned by <company>; shown with permission"
 ```
