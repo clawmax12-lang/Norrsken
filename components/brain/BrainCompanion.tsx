@@ -482,6 +482,9 @@ export function BrainCompanion(props: BrainCompanionProps) {
       const isRange = tag === "INPUT" && (target as HTMLInputElement).type === "range";
       if ((tag === "INPUT" && !isRange) || tag === "TEXTAREA" || tag === "SELECT" || target.isContentEditable) return;
       if (sequence === "running" || entry) return;
+      // Playback/fullscreen keys belong to the expanded analysis view only. In the dock they would
+      // steal the host canvas's keys (e.g. space-drag pan); the focused dock has its own Enter/Space/Esc.
+      if (mode !== "expanded") return;
       if (e.key === "Escape" && mode === "expanded" && !document.fullscreenElement) {
         setMode("dock");
         return;
@@ -496,10 +499,7 @@ export function BrainCompanion(props: BrainCompanionProps) {
         clock.seek(stepSeconds(clock.getSnapshot().time, e.key === "ArrowRight" ? 1 : -1, clock.getSnapshot().duration));
       } else if (e.key === "f" || e.key === "F") {
         e.preventDefault();
-        if (mode !== "expanded") {
-          setMode("expanded");
-          window.setTimeout(toggleFullscreen, 60);
-        } else toggleFullscreen();
+        toggleFullscreen();
       }
     };
     window.addEventListener("keydown", onKey);
@@ -540,6 +540,14 @@ export function BrainCompanion(props: BrainCompanionProps) {
     },
     [emit],
   );
+
+  // Expanding is a deliberate reveal: frame the reference profile instead of wherever the dock's
+  // idle spin happened to stop (the scene itself skips the move under reduced motion).
+  useEffect(() => {
+    if (mode === "expanded") scene?.applyCameraPreset(open ? "open" : "profile", 700);
+    // Only on entering the expanded view.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, scene]);
 
   // Mode/variant/region events for the canvas and voice owners (changes only, not the initial state).
   const lastReported = useRef({ mode: initialMode as BrainMode, variant: "A" as VariantId, pick: null as PickResult | null });
@@ -781,6 +789,7 @@ export function BrainCompanion(props: BrainCompanionProps) {
     harness ? "bv-harness" : "bv-embedded",
     `bv-dock-${dockCorner}`,
     dockLarge ? "bv-dock-large" : "",
+    pinned && mode === "dock" ? "bv-dock-pinned" : "",
     working && mode === "dock" ? "bv-dock-working" : "",
     beat ? "bv-dock-focus" : "",
     sequence === "running" ? "bv-seq-running" : "",
@@ -910,7 +919,6 @@ export function BrainCompanion(props: BrainCompanionProps) {
                 <strong>MOCK</strong> Synthetic test fixture · not a simulation result · do not use as evidence
               </div>
             )}
-            <div className="bv-hud" aria-hidden="true"><i /><i /><i /><i /></div>
             {loadError && <p className="bv-stage-error">Brain mesh failed to load: {loadError}</p>}
             {!geometry && !loadError && <p className="bv-stage-loading bv-mono">Loading fsaverage5 cortex…</p>}
             {geometry && (
@@ -985,6 +993,9 @@ export function BrainCompanion(props: BrainCompanionProps) {
             )}
 
             <div className="bv-stage-tools">
+              <button type="button" className="bv-icon-button" onClick={() => setMode("dock")} title="Return the brain to its dock (Esc)">
+                {harness ? "Dock" : "Back to canvas"}
+              </button>
               <button type="button" className="bv-icon-button" onClick={() => scene?.resetCamera()} title="Reset camera (double-click the brain)">Reset view</button>
               <button type="button" className="bv-icon-button" onClick={toggleFullscreen} title="Fullscreen (F)" aria-pressed={fullscreen}>
                 {fullscreen ? "Exit fullscreen" : "Fullscreen"}
@@ -1117,8 +1128,8 @@ export function BrainCompanion(props: BrainCompanionProps) {
               noDataLabel={brainSim === "off" ? "Brain sim off" : "No brain data"}
               onClear={() => setPick(null)}
             />
-            <section className="bv-card bv-about">
-              <span className="bv-eyebrow">About this view</span>
+            <details className="bv-card bv-about">
+              <summary className="bv-eyebrow">About this view</summary>
               <p>
                 Predicted cortical (fMRI-like) response for an average viewer from TRIBE v2, sampled about once per second and interpolated for display. It is
                 not measured EEG and does not read emotions, desire or buying intent.
@@ -1126,7 +1137,7 @@ export function BrainCompanion(props: BrainCompanionProps) {
               <p className="bv-footnote">
                 Mesh: FreeSurfer fsaverage5 (normal and inflated). Scale: {scale ? scale.rule : "none until data is bound"}. Keys: space play/pause, ←/→ one second, F fullscreen, Esc dock, double-click reset.
               </p>
-            </section>
+            </details>
           </aside>
         </div>
       </div>

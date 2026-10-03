@@ -2,7 +2,7 @@
 
 Implementation notes for the reusable browser brain built by Claude Opus 5.5 on `conductor/3d-brain-opus-55` ([PR #3](https://github.com/clawmax12-lang/Norrsken/pull/3)). [PRD.md](../../PRD.md) stays authoritative; this file documents what exists and the **proposed** seams other owners consume. Nothing here is agreed with the backend/TRIBE, canvas (Dashboard) or voice owners until they confirm it in TEAM.md and PRD §16.
 
-Ownership: brain, dock, choreography and the read-only artifact adapter. The canvas shell/graph (Dashboard), the Gemini Live Director, ThinkingOrb and VoiceBeam (Voice), and the API, workers and contracts (backend) belong to their owners and are not modified here.
+Ownership: brain, dock, choreography and the read-only artifact adapter. Design baseline: PRD v1.6 / [CLEAN_FLOW_DESIGN.md](https://github.com/clawmax12-lang/Norrsken/blob/docs/tribe-foundation/docs/design/CLEAN_FLOW_DESIGN.md) on docs PR #1 (FLORA primary). This branch does not import the shell theme, fonts or Director visuals; those belong to the Dashboard and Voice owners. The canvas shell/graph (Dashboard), the Gemini Live Director, ThinkingOrb and VoiceBeam (Voice), and the API, workers and contracts (backend) belong to their owners and are not modified here.
 
 ## What is built
 
@@ -32,7 +32,14 @@ import { CanvasBrain } from "@/components/brain/CanvasBrain";
 ```
 
 - `apiBase` defaults to `NEXT_PUBLIC_PREFLIGHT_API_BASE` (a public URL, not a secret). The backend's CORS already allows `http://localhost:3000`; other origins need its `CORS_ORIGINS` setting.
-- Placement/theme without touching brain code (CSS variables on any ancestor): `--brain-dock-top`, `--brain-dock-left` (default 86 px / 20 px), `--brain-dock-surface` (dock background), `--brain-dock-halo` (RGB triplet for the workload halo; keep it out of the red-yellow heat range so it is never read as cortical response). Typography is inherited from the host (`--font-mono` for numbers).
+- **Placement and theme** are CSS variables on any ancestor; no brain code needs to change.
+  - Compact dock: `--brain-dock-top`, `--brain-dock-left`, `--brain-dock-width`, `--brain-dock-height` (defaults 86 / 20 / 196 / 148 px).
+  - Enlarged (hover/pin/focus beat): `--brain-dock-large-top`, `--brain-dock-large-left`, `--brain-dock-large-width`, `--brain-dock-large-height` (defaults: same top/left, 420×306). This lets it move clear of host tools.
+  - `--brain-dock-surface` sets the dock background.
+  - `--brain-dock-halo` is an RGB triplet for the workload halo. Keep it out of the red-yellow heat range so it is never read as cortical response.
+- **PRD v1.6 FLORA layout** (identity top-left, ~52 px floating tool rail left-centre at about y 220–600 on a 1440×900 viewport). Recommended values: `--brain-dock-top: 64px; --brain-dock-left: 14px; --brain-dock-height: 140px; --brain-dock-large-left: 64px; --brain-dock-large-top: 64px`.
+  - Checked in headless Chrome with a test-only ghost identity and rail. The compact dock (14–210 × 64–204) ends above the rail. The enlarged/pinned dock (64–484 × 64–370) and the callout to its right never overlap it.
+- **v1.6 tokens:** when the host applies `.preflight-theme` (`docs/design/preflight-theme.css`), the dock picks up `--pf-accent` (focus ring, pinned border), `--pf-border`, `--pf-surface`, `--pf-radius-card`, `--pf-font-display` (callout title) and `--pf-font-mono`. Otherwise it falls back to neutral values. The UI accent never touches the cortical heat scale. Typography is inherited from the host; the brain loads no fonts.
 - The component renders nothing in flow (`position: fixed` parts only), so the canvas layout is unaffected. With no `projectId`/API base it shows gray anatomy, a slow idle spin and no status line.
 - `BrainCompanion` remains available for custom hosts (props: `bindings`, `scenesByVariant`, `videos`, `workload`, `consumeMilestone`, `dockCorner`, `results`, `concepts`, `demoExample`, `brainSim`, …).
 
@@ -46,6 +53,7 @@ import { CanvasBrain } from "@/components/brain/CanvasBrain";
 | Failed / ended | `failed` event, SSE `end` frame | Halo stops, status shows the backend failure message or "Run complete" |
 
 - **Separation:** job events drive spin speed, halo, status line and camera; they never write cortical values or choose a region. Heat comes only from the bound artifact at the current playback time. A focus beat never seeks or changes playback speed, and the callout says so.
+- **Keys:** space, arrows and F apply only in the expanded analysis view; the dock never captures host canvas keys (only Enter/Space/Esc while the dock itself is focused).
 - **Control:** hover enlarges the dock. Click, or Enter/Space on the focused dock, pins it, and once pinned clicks select regions. Esc unpins. **Pause motion** stops spin and camera moves. Dragging the brain switches to manual control until **Resume motion**. Reduced motion keeps everything still; beats then show only the text and the region outline.
 - **Bounded:** at most 2 queued beats, keeping the newest; SSE ids at or below the last applied are ignored on reconnect. Replayed history doesn't trigger beats.
 - **Provenance always visible:** the compact dock shows a **MOCK**, **Demo example · precomputed** or **Precomputed** tag whenever activity is drawn.
@@ -124,3 +132,25 @@ The earlier proposal `meta.cortical` v0 (float32 JSON/base64/URL, Desikan groups
   - the Dashboard flow canvas (v1.6 design) integration;
   - MacBook/GPU performance;
   - FR-15 (P1).
+
+### PRD v1.6 visual pass (3 Oct 2026)
+
+**Removed or changed against the FLORA quality bar:**
+- the blue pulsing workload halo is now a static neutral border with an accent status dot;
+- the HUD corner brackets and the blurred glass panels are gone;
+- brain titles use the host display face (Redaction through `--pf-font-display`).
+
+**Embedded expanded view:**
+- anatomy, video, timeline and region detail only; the canvas owns the verdict and variants;
+- a visible **Back to canvas** button;
+- "About this view" collapsed;
+- expanding eases to the reference profile pose;
+- the empty state is one line above the anatomy.
+
+**Captured at 1440×900** on a test-only FLORA host simulation (`.context/v16-*.png`): docked, pinned, expanded no-data and selected region. No console errors.
+
+**Remaining mismatches, not claimed as done:**
+- The expanded view still uses boxed timeline/region panels rather than FLORA's floating minimal controls. Final shell styling should be agreed with Dashboard.
+- Region outlines follow fsaverage5 mesh edges, so they look jagged at close range.
+- The entry title uses the host face only when `.preflight-theme` is applied; this branch doesn't load the Redaction files (docs PR #1 owns them).
+- Genuine activity has not been seen, because none exists.
