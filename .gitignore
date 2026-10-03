@@ -33,9 +33,7 @@ __pycache__/
 workers/renderer/node_modules/
 workers/renderer/out/
 
-# Web dependencies and build products
-node_modules/
-.next/
+# Web build products
 out/
 .DS_Store
 npm-debug.log*
