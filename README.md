@@ -4,7 +4,7 @@ Launch videos that are tested before anyone sees them.
 
 Preflight turns a product brief and 3–6 screenshots into three 15-second motion graphics videos, pretests them with simulated viewers, and exports a recommended winner, a runner up and a launch brief. The first customer is a founder launching an app or SaaS product. E-commerce is a later audience.
 
-**Current approved specification: [PRD v1.1](PRD.md).** It supersedes earlier brainstorming, including editing an existing customer video. This repository is the shared reference for the hackathon team and its coding agents.
+**Current approved specification: [PRD v1.2](PRD.md).** It supersedes earlier brainstorming, including editing an existing customer video. This repository is the shared reference for the hackathon team and its coding agents.
 
 ## Start here
 
@@ -19,22 +19,39 @@ Humans: start with PRD §1–§7. Builders: also read §8–§14. Agents: read A
 
 ## How to run
 
-At this documentation bootstrap, the repository has no application implementation, dependency manifests, start command or test suite. No application acceptance criteria have been verified. Do not infer that a feature works from its presence in the PRD.
+The implemented vertical slice is the FR-01 voice-native Preflight Director: interruptible Gemini Live audio, transcripts, typed fallback, a permission-scoped local asset shelf, a six-scene draft storyboard, a visible decision thread and persisted `brief.json`. Planning, rendering, simulation, scoring and export are not implemented yet.
 
 ```bash
 git clone https://github.com/clawmax12-lang/Norrsken.git
 cd Norrsken
+cp .env.example .env.local
+npm install
+npm run dev
 ```
 
-Read the documents above and claim work in TEAM.md. The first implementation change must replace this section with the actual installation, environment, development and verification commands, checked from a clean clone. Keep it current with subsequent changes.
+Use Node.js 20.9 or newer. Set `GEMINI_API_KEY` in `.env.local` to an AI Studio key with access to `gemini-3.8-live`, then open `http://localhost:3000` in current desktop Chrome. Click **Start Director** once to grant microphone permission. **Choose folder** grants read access to one folder through the browser; Preflight indexes at most 100 PNG/JPG filenames locally and uploads only the 3–6 screens selected when **Run Preflight** is clicked.
 
-## Planned build stack
+The permanent key is read only by `/api/live-token`, which exchanges it for a one-use, short-lived token. It must never be named `NEXT_PUBLIC_GEMINI_API_KEY`, placed in client code or committed. The temporary hackathon account and its project may be deleted after the event, so replace the key for any later deployment.
 
-The PRD proposes Next.js, TypeScript, Tailwind and three.js for the web app; Python/FastAPI for orchestration; Remotion for rendering; and a GPU worker for TRIBE v2. Gemini provides planning, the viewer panel and explanations, with all LLM calls routed through Condense.
+Verification commands:
+
+```bash
+npm run typecheck
+npm run lint
+npm test
+npm run build
+npm audit --omit=dev
+```
+
+## Build stack
+
+The FR-01 slice uses Next.js 16, React 19, TypeScript, Zod and `@google/genai`. `gemini-3.8-live` provides low-latency native audio, automatic voice activity detection, barge-in, transcripts and function calls; the Director uses the firm `Kore` voice. A Next.js server route mints ephemeral Live tokens, while Live audio flows directly between the browser and Gemini. Later orchestration remains planned for Python/FastAPI, rendering for Remotion and the TRIBE v2 worker for a GPU environment.
+
+The direct Gemini Live WebSocket is the narrow PRD v1.2 exception to Condense routing because the required full-duplex transport is not available through the adopted Condense path. Planning, viewer-panel and explanation calls must still go through Condense and report real token savings when implemented.
 
 The PRD designates **Claude Opus 5.5** as the primary coding agent. This is a build plan, not a claim that the application has already been implemented with it. This documentation bootstrap was prepared with Codex from the supplied PDF.
 
-Required environment variable names from PRD §10.4: `GEMINI_API_KEY`, `CONDENSE_API_KEY`, `TRIBE_ENDPOINT`. Implementation must provide `.env.example` with placeholders; never commit real credentials or model weights.
+Environment variable names from PRD §10.4: `GEMINI_API_KEY`, `CONDENSE_API_KEY`, `TRIBE_ENDPOINT`. Only `GEMINI_API_KEY` is consumed by the current slice. `.env.example` contains placeholders; `.env*` files remain ignored except for that example.
 
 ## Demo and research honesty
 
@@ -44,7 +61,7 @@ Required environment variable names from PRD §10.4: `GEMINI_API_KEY`, `CONDENSE
 - Document the implemented scoring/confidence rule here when FR-05 lands. Simulator agreement is not a demonstrated probability of real-world success.
 - Do not claim that neural response predicts retention, virality, emotions or sales. Live A/B testing is the eventual validation.
 
-Current TRIBE mode, scoring implementation and Condense integration: **not yet implemented or verified in this repository**.
+Current TRIBE mode, scoring implementation and Condense integration: **not yet implemented or verified in this repository**. The Director UI labels its intake advice **Creative rationale · no simulation yet** and cannot call TRIBE. With no configured `GEMINI_API_KEY`, typed intake and folder selection still work, while voice shows a configuration error instead of fake output.
 
 ## Attribution and eligibility
 
