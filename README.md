@@ -36,7 +36,7 @@ cd Norrsken
 
 Read the documents above and claim work in TEAM.md. The first implementation change must replace this section with the actual installation, environment, development and verification commands, checked from a clean clone. Keep it current with subsequent changes.
 
-An existing Next.js Dashboard implementation is on the team's separate `williu16/preflight-swiftui-dashboard` branch (the name is historical; its code is web-based). Its **[Vercel canvas preview](https://temporary-instant-flint-xxlx4l9.vercel.app/?demo=1)** was checked on 3 Oct 2026: HTTP 200 and browser inspection. It now shows a branching storyline prototype, not genuine generated/tested batches or an integrated brain/voice pipeline. See the [workspace/preview details](docs/design/README.md#existing-dashboard-and-preview). This documentation branch does not yet contain that application; keep its actual run commands when integrating the docs.
+An existing Next.js Dashboard implementation is on the team's separate `williu16/preflight-swiftui-dashboard` branch (the name is historical; its code is web-based). Its latest **[Vercel canvas preview](https://temporary-fast-delta-pq4oez4.vercel.app/?demo=1)** was checked on 3 Oct 2026 at approximately 11:45 UTC: HTTP 200. It shows a five-way branching prototype (156 nodes), not genuine generated/tested batches or an integrated brain/voice pipeline. The older `temporary-instant-flint-xxlx4l9` preview now redirects to deployment-expired; the new one is also temporary. See the [workspace/preview details](docs/design/README.md#existing-dashboard-and-preview). This documentation branch does not yet contain that application; keep its actual run commands when integrating the docs.
 
 ## Canvas, brain and voice experience
 

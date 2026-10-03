@@ -66,10 +66,10 @@ Gemini drives the runtime variant/analysis loop. A separate, planned Opus step c
 
 - Dashboard workspace: [open in Conductor](conductor://workspace?id=6e7c2346-1d02-4ca4-b560-17b77aba0c1c).
 - Existing web implementation branch: `williu16/preflight-swiftui-dashboard`. The branch name is historical; its current application is Next.js/React/TypeScript.
-- **Vercel canvas preview:** https://temporary-instant-flint-xxlx4l9.vercel.app/?demo=1
+- **Latest Vercel canvas preview:** https://temporary-fast-delta-pq4oez4.vercel.app/?demo=1
 - Conductor preview: https://norrsken-w4.conductor.show/
 
-The Vercel URL was found in the Dashboard session and rechecked at approximately 11:30 UTC on 3 Oct 2026: HTTP 200 and browser screenshot. It now shows a branching storyline canvas prototype with "Brain sim off", untested placeholder content and compressed "+47" branch groups, not genuine batch tests or an integrated brain/voice feature. Dashboard is actively refining full-tree rendering; see the [status audit](../status/2026-10-03-build-audit.md). It is a temporary preview, not a guaranteed production address. The Conductor preview requires access and previously returned HTTP 401 to an unauthenticated request. Keep the deployed preview updated separately from these source references.
+The latest Vercel URL was found in the Dashboard session and checked at approximately 11:45 UTC on 3 Oct 2026: HTTP 200. Its current branch head is `2f95071`, a five-way storyline prototype with 156 nodes (5 hooks, 25 continuations, 125 next beats plus the root), not genuine batch tests or an integrated brain/voice feature. It replaces the earlier compressed "+47" view and a brief 127,551-node version; see the [status audit](../status/2026-10-03-build-audit.md). The old `temporary-instant-flint-xxlx4l9` URL now redirects to deployment-expired. The latest preview was described by its owner as a temporary 60-minute deployment, not a production address. The Conductor preview requires access and previously returned HTTP 401 to an unauthenticated request. Keep the deployed preview updated separately from these source references.
 
 ## Original-file provenance
 

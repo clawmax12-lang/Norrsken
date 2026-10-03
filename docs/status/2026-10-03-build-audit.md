@@ -1,10 +1,10 @@
 # Norrsken build audit — 3 Oct 2026
 
-**Observation window:** approximately 11:27–11:30 UTC, with follow-up metadata/package checks at 11:37. Snapshot, not a live completion dashboard. Scope: all nine visible cloud workspaces attached to `clawmax12-lang/Norrsken`, their session transcripts/status, remote branches/PRs and the public Dashboard preview. No teammate code, runtime secret or paid model/GPU call was changed/run for this audit.
+**Observation window:** initial snapshot 11:27–11:30 UTC, package checks at 11:37 and a distinct follow-up at 11:44–11:45 below. Not a live completion dashboard. Scope: all nine visible cloud workspaces attached to `clawmax12-lang/Norrsken`, their session transcripts/status, remote branches/PRs and the public Dashboard preview. No teammate code, runtime secret or paid model/GPU call was changed/run for this audit. The explicitly requested brain-agent scope/quality handoff was delivered separately.
 
 User direction now in [PRD v1.4](../../PRD.md): flow canvas; first-entry brain then persistent corner view; female Gemini voice mandatory P0; standalone growing orb; genuine per-video neural data; bounded scale. This is product scope, not proof that these features are implemented.
 
-## What exists versus what is verified
+## Initial snapshot — what exists versus what is verified
 
 | Area / workspace | Observed evidence | Missing acceptance / integration |
 | --- | --- | --- |
@@ -20,9 +20,18 @@ User direction now in [PRD v1.4](../../PRD.md): flow canvas; first-entry brain t
 
 Session idle/working metadata is not a feature-status test. Backend subagent/transcript activity was still advancing while the coordinator briefly reported idle; use concrete handoff/build evidence, not that single flag.
 
+## 11:44–11:45 follow-up
+
+- **Canvas:** Dashboard briefly built a full 127,551-node prototype (`672d5ea`), then its user requested five choices per generation. Current remote `2f95071`: 5 hooks, 25 continuations, 125 next beats plus root = 156 nodes. Agent reports clean build/browser inspection. These are still prototype nodes, not generated/evaluated videos. Latest [temporary preview](https://temporary-fast-delta-pq4oez4.vercel.app/?demo=1) independently returned HTTP 200 at 11:45; a new browser screenshot was captured as `.context/dashboard-canvas-current.png`. The previous preview returns 307 to `vercel.com/deployment-expired`.
+- **Brain:** Opus reports 19 focused tests pass, clean `tsc` and production build, test MOCK excluded from the production bundle, ingestion/no-data/reduced-motion paths checked, and video-master sync within a frame using a local test MP4. Genuine neural results remain unverified. The owner-authorized v1.4/quality handoff was delivered at 11:43; at 11:44 Opus explicitly acknowledged it and began adapting entry → dock → expand non-destructively. No Conductor brain preview or brain PR was published at the time of this check.
+- **Backend API:** local handoff reports 184 scoped tests/100% coverage and a live uvicorn smoke check for health, brief upload, CORS and traversal rejection. SSE includes event IDs/replay; actual pipeline wiring remains an integration step, not a tested end-to-end run here.
+- **Backend LLM/planner/panel:** coordinator now reports a green `make check`, 459 tests/96% coverage. Real Gemini/Condense calls have not run; SDK/error tests use fake HTTP transport. Compression is limited to repair retries, so actual savings may be near zero. These are reported results, not independently rerun checks in this docs branch.
+- **Backend blocker:** after that handoff the coordinator repeatedly reported “session limit” with reset at 15:20 UTC. Renderer/TRIBE handoffs and full integration are pending. No model change, cancellation or additional agent was started for this audit; the backend owner needs to decide how to continue.
+- **Voice:** the workspace explicitly confirmed no implementation started. Its proposed product is a two-way `gemini-3.8-live` creative Director, not merely narration. Its suggested Kore voice/account access is not verified by a real connection. Owner clarification was requested on whether Live itself is required P0; meanwhile v1.4's minimum real Gemini narration stays P0 and the routing/Condense decision is open. No permanent key was copied into its message or code.
+
 ## Preview and Git integration
 
-- Current [canvas prototype](https://temporary-instant-flint-xxlx4l9.vercel.app/?demo=1): temporary Vercel URL, HTTP 200. Browser screenshot captured under the documentation workspace's `.context/dashboard-canvas-status.png`; it visibly says PROTOTYPE, No simulation yet/Brain sim off. The screenshot is local evidence, not a committed production asset.
+- Initial [canvas prototype](https://temporary-instant-flint-xxlx4l9.vercel.app/?demo=1) returned HTTP 200 at 11:30 and was captured as `.context/dashboard-canvas-status.png`; it visibly said PROTOTYPE/Brain sim off. It has since expired; use the latest link above. Screenshots are local evidence, not committed production assets.
 - Only [PR #1](https://github.com/clawmax12-lang/Norrsken/pull/1) was listed at this audit, open and unmerged. It carries current product/design documentation; a later status does not retroactively change this snapshot.
 - `origin/main` was still `0a38a71`, the initial v1.1 docs adoption. Current v1.4 baseline is on `docs/tribe-foundation` until integrated. Older chats/branches do not automatically acquire it.
 - Dashboard head observed: `7633390`. Brain remote head: `e6ee2d0` (docs/ownership only); its new viewer code was visible in the ongoing transcript, not yet published at that snapshot.
