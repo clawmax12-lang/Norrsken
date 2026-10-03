@@ -15,6 +15,7 @@ import { directorWelcome, type DirectorProjectContext } from "@/lib/director-con
 import { DirectorToolQueue, type DirectorUserTurn } from "@/lib/director-tool-queue";
 import { DirectorTranscript } from "@/lib/director-transcript";
 import { normalizedRms, outputVisualState, Pcm16StreamEncoder, stopQueuedPlayback } from "@/lib/live-audio";
+import { liveTokenMessage } from "@/lib/live-token-errors";
 
 export type ConnectionState = "idle" | "requesting" | "connecting" | "listening" | "error";
 export type TranscriptLine = { id: string; role: "user" | "director"; text: string; interrupted?: boolean };
@@ -313,11 +314,9 @@ export function useLiveDirector({ onToolCall, getProjectContext }: UseLiveDirect
       setState("connecting");
       const tokenResponse = await fetch("/api/live-token", { method: "POST", signal: AbortSignal.timeout(12_000) });
       if (!isCurrent()) return;
-      const tokenPayload = await tokenResponse.json() as { token?: string; error?: string; model?: string };
+      const tokenPayload = await tokenResponse.json() as { token?: string; code?: string; model?: string };
       if (!tokenResponse.ok || !tokenPayload.token) {
-        publicError = tokenResponse.status === 503 ? "Voice is not configured. Set GOOGLE_API_KEY on the server and redeploy."
-          : tokenResponse.status === 429 ? "Too many Live sessions or quota exhausted. Wait a minute and retry."
-          : "Gemini Live is unavailable. Verify this project's model access and server configuration.";
+        publicError = liveTokenMessage(tokenPayload, tokenResponse.status);
         throw new Error("Token request failed.");
       }
       const client = new GoogleGenAI({ apiKey: tokenPayload.token, httpOptions: { apiVersion: "v1alpha" } });

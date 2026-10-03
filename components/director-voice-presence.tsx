@@ -56,21 +56,20 @@ export function DirectorVoicePresence({ open, director, paused, anchorRef, onClo
   const orbState = director.isMicPaused && !director.isSpeaking && !director.isProcessing ? "breathing"
     : directorOrbState(director.state, director.isSpeaking, director.isProcessing);
   const caption = director.liveDirectorText || director.liveUserText;
+  const floorActive = open && connected && (director.isProcessing
+    || (director.isSpeaking && !director.isMuted)
+    || (!director.isMicPaused && director.inputLevel > 0.012));
 
-  return <section id="director-voice-mode" className={`voice-session ${open ? "is-open" : ""}`} aria-label="Live voice conversation" aria-hidden={!open} inert={!open}>
+  return <><section id="director-voice-mode" className={`voice-session ${open ? "is-open" : ""}`} aria-label="Live voice conversation" aria-hidden={!open} inert={!open}>
     <div className="voice-presence" ref={presenceRef}>
       <div className="voice-orb" ref={orbRef} data-speaking={director.isSpeaking}>
-        <DirectorOrb state={orbState} label={label} paused={paused || !open || director.state === "idle" || director.state === "error"} />
+        <DirectorOrb state={orbState} label={label} speaking={director.isSpeaking && !director.isMuted}
+          level={() => director.outputLevel}
+          paused={paused || !open || director.state === "idle" || director.state === "error"} />
       </div>
       <div className="voice-status" role="status">{label}{director.isMuted && <span> · speaker muted</span>}</div>
       <div className="voice-caption-slot">{caption && <button className="voice-caption" onClick={onTranscript}>{caption}</button>}</div>
       {director.error && <p className="voice-error" role={open ? "alert" : undefined}>{director.error}</p>}
-      <VoiceBeam className="voice-dock-beam" type="pill" theme="dark"
-        level={() => director.isSpeaking ? director.outputLevel : connected && !director.isMicPaused ? director.inputLevel : 0}
-        processing={director.isProcessing} active={open && (connected || director.isProcessing)} paused={paused || !open}
-        colorVariant="sunset" colors={["#FF5A36", "#F2472C", "#FF773F", "#CB3828"]}
-        bandColors={{ core: "#FFE1C7", above: "#FF773F", mid: "#FF5A36", below: "#CB3828" }}
-        staticColors strength={0.3} idle={0}>
       <div className="voice-actions">
         {connected && <>
           <button aria-label={director.isMuted ? "Unmute Director" : "Mute Director"} aria-pressed={director.isMuted} onClick={director.toggleMute} title={director.isMuted ? "Unmute speaker" : "Mute speaker"}>
@@ -83,7 +82,6 @@ export function DirectorVoicePresence({ open, director, paused, anchorRef, onClo
         {!connected && (director.state === "error" || director.state === "idle") && <button className="voice-retry" onClick={onRetry}>Try again</button>}
         <button className="voice-close" onClick={onClose} aria-label="End voice conversation" title="End conversation · Esc"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg></button>
       </div>
-      </VoiceBeam>
       {connected && pushToTalk && <button className="voice-hold"
         onPointerDown={(event) => { event.currentTarget.setPointerCapture(event.pointerId); director.setMicPaused(false); }}
         onPointerUp={() => director.setMicPaused(true)} onPointerCancel={() => director.setMicPaused(true)}
@@ -92,5 +90,18 @@ export function DirectorVoicePresence({ open, director, paused, anchorRef, onClo
         onBlur={() => director.setMicPaused(true)}>Hold to talk</button>}
       <small className="voice-privacy">{connected ? pushToTalk ? "Microphone sends only while you hold to talk." : "Microphone stays on until you pause or end the conversation." : "Voice starts only with your permission."}</small>
     </div>
-  </section>;
+  </section>
+    <div className={`voice-floor ${open ? "is-open" : ""}`} data-audio-active={floorActive} aria-hidden="true">
+      <VoiceBeam className="voice-floor-beam" type="mobile" theme="dark"
+        level={() => director.isSpeaking && !director.isMuted ? director.outputLevel : connected && !director.isMicPaused ? director.inputLevel : 0}
+        processing={open && director.isProcessing && !director.isSpeaking}
+        active={floorActive} paused={paused || !open}
+        colorVariant="sunset" colors={["#FF5A36", "#F2472C", "#FF773F", "#CB3828"]}
+        bandColors={{ core: "#FFE1C7", above: "#FF773F", mid: "#FF5A36", below: "#CB3828" }}
+        staticColors strength={0.65} sensitivity={1} threshold={0.01} attack={0.08} release={0.18}
+        reach={2.2} spread={0.45} scale={0.8} idle={0}>
+        <div className="voice-floor-anchor" />
+      </VoiceBeam>
+    </div>
+  </>;
 }

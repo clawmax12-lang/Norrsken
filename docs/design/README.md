@@ -64,7 +64,7 @@ Apply [minimum interface, complete capability](CLEAN_FLOW_DESIGN.md#minimum-inte
 
 ![Owner-supplied neutral gray Libraries.dev orb](references/10-voice-orb-bottom.png)
 
-Latest FR-16 placement correction (PRD v1.6.1): enabling voice **replaces the bottom prompt with a fairly large standalone orb at the bottom**. No central/full-screen voice view, dimmed canvas, backdrop or card. Match this neutral gray orb; keep the warm beam restrained and actual audio/state-driven. Compact captions/mute/end remain available and the canvas stays interactive. Closing restores the prompt. This supersedes the central-orb interpretation, not Gemini Live or the shared audio graph.
+Latest FR-16 correction (PRD v1.6.2): enabling voice **replaces the bottom prompt with a fairly large standalone orb at the bottom**. This reference is the library's **composing sash**, not its breathing ring; retain its silhouette even when disconnected (paused and honestly labeled). Transparent on black, no white substrate/central/full-screen view/dimmed canvas/backdrop/card. Orb scale/deformation follows actual output amplitude; warm VoiceBeam reacts simultaneously at the viewport's bottom border, like a floor under it. Compact captions/mute/end remain available and canvas stays interactive. Closing restores prompt/focus. This supersedes the controls-beam/central-orb interpretations, not Gemini Live or the shared audio graph.
 
 ## What "extremely cool, and you can see how it works" means
 
