@@ -12,24 +12,22 @@ const navigation: Array<{ label: string; icon: IconName }> = [
   { label: "Activity", icon: "activity" },
 ];
 
-const scenes = [
-  { number: "01", title: "Hook", note: "Open on the strongest idea", preview: "hook", y: 70 },
-  { number: "02", title: "Problem", note: "Make the pain concrete", preview: "problem", y: 230 },
-  { number: "03", title: "Product reveal", note: "Introduce the real interface", preview: "reveal", y: 390 },
-  { number: "04", title: "Core workflow", note: "Show the product in motion", preview: "workflow", y: 550 },
-  { number: "05", title: "CTA", note: "End on the launch goal", preview: "cta", y: 710 },
+const hookVariants = [
+  { label: "01", title: "Start with the blank canvas", preview: "variant-a", y: 70 },
+  { label: "02", title: "Open on the finished launch", preview: "variant-b", y: 220 },
+  { label: "03", title: "Lead with a founder question", preview: "variant-c", y: 370 },
 ];
 
-const variants = [
-  { label: "A", title: "Question hook", preview: "variant-a", y: 25 },
-  { label: "B", title: "Outcome hook", preview: "variant-b", y: 150 },
-  { label: "C", title: "Product-first hook", preview: "variant-c", y: 275 },
+const continuations = [
+  { suffix: "01", title: "The brief arrives", preview: "refine-a", y: 55 },
+  { suffix: "02", title: "Ideas begin to branch", preview: "refine-b", y: 205 },
+  { suffix: "03", title: "A direction takes shape", preview: "refine-c", y: 355 },
 ];
 
-const refinements = [
-  { label: "A1", title: "Faster reveal", preview: "refine-a", y: 25 },
-  { label: "A2", title: "Larger headline", preview: "refine-b", y: 150 },
-  { label: "A3", title: "Motion intro", preview: "refine-c", y: 275 },
+const nextBeats = [
+  { suffix: "01", title: "Turn the idea into motion", preview: "variant-b", y: 55 },
+  { suffix: "02", title: "Reveal the first output", preview: "variant-a", y: 205 },
+  { suffix: "03", title: "Compare the directions", preview: "variant-c", y: 355 },
 ];
 
 function AppIcon({ name }: { name: IconName }) {
@@ -80,6 +78,8 @@ export default function DashboardPage() {
   const [assetCount, setAssetCount] = useState(0);
   const [zoom, setZoom] = useState(0.82);
   const [selectedNode, setSelectedNode] = useState<SelectedNode>(null);
+  const [selectedHook, setSelectedHook] = useState("01");
+  const [selectedContinuation, setSelectedContinuation] = useState("01");
   const [isPanning, setIsPanning] = useState(false);
   const canvasRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef({ x: 0, y: 0, left: 0, top: 0 });
@@ -113,6 +113,8 @@ export default function DashboardPage() {
     setPrompt("");
     setAssetCount(0);
     setSelectedNode(null);
+    setSelectedHook("01");
+    setSelectedContinuation("01");
     setIsSidebarOpen(false);
     window.history.replaceState(null, "", window.location.pathname);
   };
@@ -155,7 +157,7 @@ export default function DashboardPage() {
             <p>Recent</p>
             <button type="button" className="recent-canvas active-canvas">
               <span className="canvas-dot" />
-              <span><strong>{promptTitle}</strong><small>Concept tree</small></span>
+              <span><strong>{promptTitle}</strong><small>Recursive story tree</small></span>
             </button>
           </div>
         )}
@@ -212,19 +214,19 @@ export default function DashboardPage() {
                   <div className="composer-submit-group"><span>↵ to create</span><button className="send-button" type="submit" disabled={!prompt.trim() || isGenerating} aria-label="Create demo canvas"><SendIcon /></button></div>
                 </div>
               </form>
-              <div className="prompt-notes"><span>5 scenes</span><i /><span>50 branches per scene</span><i /><span>No simulation yet</span></div>
+              <div className="prompt-notes"><span>50 opening hooks</span><i /><span>50 continuations each</span><i /><span>No simulation yet</span></div>
             </section>
 
             {isGenerating && (
               <div className="generating-overlay" role="status">
-                <div className="generating-card"><span className="loading-mark" /><strong>Building the concept tree</strong><small>Mapping scenes and first-pass branches…</small></div>
+                <div className="generating-card"><span className="loading-mark" /><strong>Generating the first 50 hooks</strong><small>Starting one storyline with many possible openings…</small></div>
               </div>
             )}
           </div>
         ) : (
           <div className="canvas-workspace">
             <div className="canvas-toolbar">
-              <div><strong>Concept tree</strong><span>5 scenes · 50 branches per scene</span></div>
+              <div><strong>Story tree</strong><span>One evolving storyline · 50 branches at every step</span></div>
               <div className="canvas-controls">
                 <button type="button" onClick={() => setZoom((value) => Math.max(0.55, value - 0.1))} aria-label="Zoom out">−</button>
                 <span>{Math.round(zoom * 100)}%</span>
@@ -240,55 +242,75 @@ export default function DashboardPage() {
               onPointerUp={endPan}
               onPointerCancel={endPan}
             >
-              <div className="tree-scale" style={{ width: 1840 * zoom, height: 930 * zoom }}>
+              <div className="tree-scale" style={{ width: 1900 * zoom, height: 850 * zoom }}>
                 <div className="tree-stage" style={{ transform: `scale(${zoom})` }}>
-                  <svg className="tree-lines" viewBox="0 0 1840 930" aria-hidden="true">
-                    {scenes.map((scene) => <path key={scene.number} d={`M300 485 C360 485 360 ${scene.y + 60} 420 ${scene.y + 60}`} />)}
-                    {variants.map((variant) => <path key={variant.label} d={`M640 130 C700 130 700 ${variant.y + 50} 760 ${variant.y + 50}`} />)}
-                    <path d="M640 130 C700 130 700 470 760 470" />
-                    {refinements.map((variant) => <path key={variant.label} d={`M970 75 C1030 75 1030 ${variant.y + 50} 1090 ${variant.y + 50}`} />)}
-                    <path d="M970 75 C1030 75 1030 470 1090 470" />
-                    <path d="M1300 75 C1370 75 1370 160 1430 160" />
+                  <svg className="tree-lines" viewBox="0 0 1900 850" aria-hidden="true">
+                    {hookVariants.map((hook) => <path key={hook.label} d={`M300 475 C350 475 350 ${hook.y + 52} 400 ${hook.y + 52}`} />)}
+                    <path d="M300 475 C350 475 350 572 400 572" />
+                    {continuations.map((continuation) => (
+                      <path className="active-branch-line" key={continuation.suffix} d={`M630 ${hookVariants.find((hook) => hook.label === selectedHook)!.y + 52} C705 ${hookVariants.find((hook) => hook.label === selectedHook)!.y + 52} 705 ${continuation.y + 50} 780 ${continuation.y + 50}`} />
+                    ))}
+                    <path className="active-branch-line" d={`M630 ${hookVariants.find((hook) => hook.label === selectedHook)!.y + 52} C705 ${hookVariants.find((hook) => hook.label === selectedHook)!.y + 52} 705 557 780 557`} />
+                    {nextBeats.map((beat) => (
+                      <path className="active-branch-line" key={beat.suffix} d={`M1000 ${continuations.find((continuation) => continuation.suffix === selectedContinuation)!.y + 50} C1070 ${continuations.find((continuation) => continuation.suffix === selectedContinuation)!.y + 50} 1070 ${beat.y + 50} 1140 ${beat.y + 50}`} />
+                    ))}
+                    <path className="active-branch-line" d={`M1000 ${continuations.find((continuation) => continuation.suffix === selectedContinuation)!.y + 50} C1070 ${continuations.find((continuation) => continuation.suffix === selectedContinuation)!.y + 50} 1070 557 1140 557`} />
+                    <path className="active-branch-line" d="M1360 105 C1430 105 1430 155 1500 155" />
                   </svg>
 
-                  <button className="tree-node root-node" type="button" onClick={() => setSelectedNode({ eyebrow: "Source prompt", title: promptTitle, description: "The product-demo direction that anchors every scene and branch." })}>
+                  <button className="tree-node root-node" type="button" onClick={() => setSelectedNode({ eyebrow: "Source prompt", title: promptTitle, description: "The starting idea for one product-demo storyline." })}>
                     <span className="node-eyebrow">Source prompt</span><strong>{promptTitle}</strong><small>{assetCount > 0 ? `${assetCount} source assets attached` : "No source assets attached"}</small>
                   </button>
 
-                  {scenes.map((scene, index) => (
+                  {hookVariants.map((hook) => (
                     <button
-                      className={`tree-node scene-node ${index === 0 ? "expanded-node" : ""}`}
-                      style={{ left: 420, top: scene.y }}
+                      className={`tree-node path-node ${selectedHook === hook.label ? "selected-path-node" : ""}`}
+                      style={{ left: 400, top: hook.y }}
                       type="button"
-                      key={scene.number}
-                      onClick={() => setSelectedNode({ eyebrow: `Scene ${scene.number}`, title: scene.title, description: scene.note, branches: "50 first-pass branches" })}
+                      key={hook.label}
+                      onClick={() => {
+                        setSelectedHook(hook.label);
+                        setSelectedContinuation("01");
+                        setSelectedNode({ eyebrow: `Hook ${hook.label} of 50`, title: hook.title, description: "A possible opening for the same storyline. Selecting it reveals 50 ways the story could continue.", branches: "50 continuations" });
+                      }}
                     >
-                      <Preview kind={scene.preview} />
-                      <span className="node-body"><span className="node-eyebrow">Scene {scene.number}</span><strong>{scene.title}</strong><small>{scene.note}</small></span>
+                      <Preview kind={hook.preview} />
+                      <span className="node-body"><span className="node-eyebrow">Hook {hook.label}</span><strong>{hook.title}</strong><small>{selectedHook === hook.label ? "Story path open" : "Select to continue"}</small></span>
                       <span className="branch-count">50</span>
                     </button>
                   ))}
+                  <button className="tree-node collapsed-node" style={{ left: 400, top: 520 }} type="button" onClick={() => setSelectedNode({ eyebrow: "Hook generation", title: "47 more opening hooks", description: "The remaining hook concepts are compressed into this expandable branch group.", branches: "47 hooks" })}><span className="stack-glyph"><i /><i /><i /></span><strong>+47 hooks</strong><small>Generation 01</small></button>
 
-                  {variants.map((variant) => (
-                    <button className="tree-node variant-node" style={{ left: 760, top: variant.y }} type="button" key={variant.label} onClick={() => setSelectedNode({ eyebrow: `Hook variant ${variant.label}`, title: variant.title, description: "A visual direction within Scene 01. This is a front-end concept, not a tested result.", branches: "50 refinement branches" })}>
-                      <Preview kind={variant.preview} /><span className="node-body"><span className="node-eyebrow">Variant {variant.label}</span><strong>{variant.title}</strong><small>Concept preview</small></span>
+                  {continuations.map((continuation) => (
+                    <button
+                      className={`tree-node continuation-node ${selectedContinuation === continuation.suffix ? "selected-path-node" : ""}`}
+                      style={{ left: 780, top: continuation.y }}
+                      type="button"
+                      key={continuation.suffix}
+                      onClick={() => {
+                        setSelectedContinuation(continuation.suffix);
+                        setSelectedNode({ eyebrow: `Beat ${selectedHook}.${continuation.suffix}`, title: continuation.title, description: `One of 50 ways to continue from Hook ${selectedHook}. Selecting it opens the next generation of the storyline.`, branches: "50 next story beats" });
+                      }}
+                    >
+                      <Preview kind={continuation.preview} /><span className="node-body"><span className="node-eyebrow">Beat {selectedHook}.{continuation.suffix}</span><strong>{continuation.title}</strong><small>{selectedContinuation === continuation.suffix ? "Story path open" : "Select to continue"}</small></span><span className="branch-count">50</span>
                     </button>
                   ))}
-                  <button className="tree-node collapsed-node" style={{ left: 760, top: 420 }} type="button" onClick={() => setSelectedNode({ eyebrow: "Collapsed branches", title: "47 more hook variants", description: "The canvas compresses large generations into expandable branch groups.", branches: "47 branches" })}><span className="stack-glyph"><i /><i /><i /></span><strong>+47 variants</strong><small>Expand branch group</small></button>
+                  <button className="tree-node collapsed-node" style={{ left: 780, top: 505 }} type="button" onClick={() => setSelectedNode({ eyebrow: `Hook ${selectedHook} continuations`, title: "47 more ways to continue", description: `The remaining continuations generated from Hook ${selectedHook} are grouped here.`, branches: "47 continuations" })}><span className="stack-glyph"><i /><i /><i /></span><strong>+47 continuations</strong><small>Generation 02</small></button>
 
-                  {refinements.map((variant) => (
-                    <button className="tree-node refinement-node" style={{ left: 1090, top: variant.y }} type="button" key={variant.label} onClick={() => setSelectedNode({ eyebrow: `Refinement ${variant.label}`, title: variant.title, description: "A second-generation direction branching from Hook A.", branches: "50 next-pass branches" })}>
-                      <Preview kind={variant.preview} /><span className="node-body"><span className="node-eyebrow">Refinement {variant.label}</span><strong>{variant.title}</strong><small>Generation 02</small></span>
+                  {nextBeats.map((beat) => (
+                    <button className="tree-node continuation-node" style={{ left: 1140, top: beat.y }} type="button" key={beat.suffix} onClick={() => setSelectedNode({ eyebrow: `Beat ${selectedHook}.${selectedContinuation}.${beat.suffix}`, title: beat.title, description: `A third-generation story beat continuing from ${selectedHook}.${selectedContinuation}. This is an untested visual concept.`, branches: "50 deeper continuations" })}>
+                      <Preview kind={beat.preview} /><span className="node-body"><span className="node-eyebrow">Beat {selectedHook}.{selectedContinuation}.{beat.suffix}</span><strong>{beat.title}</strong><small>Generation 03</small></span><span className="branch-count">50</span>
                     </button>
                   ))}
-                  <button className="tree-node collapsed-node" style={{ left: 1090, top: 420 }} type="button" onClick={() => setSelectedNode({ eyebrow: "Collapsed branches", title: "47 more refinements", description: "More second-generation concepts are grouped here.", branches: "47 branches" })}><span className="stack-glyph"><i /><i /><i /></span><strong>+47 refinements</strong><small>Generation 02</small></button>
+                  <button className="tree-node collapsed-node" style={{ left: 1140, top: 505 }} type="button" onClick={() => setSelectedNode({ eyebrow: "Generation 03", title: "47 more story beats", description: "The storyline can continue recursively from every beat.", branches: "47 continuations" })}><span className="stack-glyph"><i /><i /><i /></span><strong>+47 next beats</strong><small>Generation 03</small></button>
 
-                  <button className="tree-node generation-node" style={{ left: 1430, top: 105 }} type="button" onClick={() => setSelectedNode({ eyebrow: "Generation 03", title: "50 next-pass directions", description: "Each selected refinement can open another set of visual directions.", branches: "50 branches" })}><span className="generation-orbit"><i /><i /><i /></span><span><span className="node-eyebrow">Generation 03</span><strong>50 next-pass directions</strong><small>Continue branching</small></span></button>
+                  <button className="tree-node generation-node" style={{ left: 1500, top: 100 }} type="button" onClick={() => setSelectedNode({ eyebrow: "Generation 04+", title: "The storyline keeps expanding", description: "Every story beat can open another set of 50 possible continuations.", branches: "50 branches per beat" })}><span className="generation-orbit"><i /><i /><i /></span><span><span className="node-eyebrow">Generation 04+</span><strong>50 ways forward</strong><small>Continue this storyline</small></span></button>
 
-                  <div className="lane-label" style={{ left: 420 }}>Scenes</div>
-                  <div className="lane-label" style={{ left: 760 }}>Hook branches</div>
-                  <div className="lane-label" style={{ left: 1090 }}>Refinements</div>
-                  <div className="lane-label" style={{ left: 1430 }}>Next generation</div>
+                  <div className="lane-label" style={{ left: 60 }}>Idea</div>
+                  <div className="lane-label" style={{ left: 400 }}>50 hooks</div>
+                  <div className="lane-label" style={{ left: 780 }}>50 continuations from hook {selectedHook}</div>
+                  <div className="lane-label" style={{ left: 1140 }}>50 next beats from {selectedHook}.{selectedContinuation}</div>
+                  <div className="lane-label" style={{ left: 1500 }}>Keeps branching</div>
                 </div>
               </div>
             </div>
@@ -299,7 +321,7 @@ export default function DashboardPage() {
               <button className="canvas-send" type="submit" aria-label="Send direction"><SendIcon /></button>
             </form>
 
-            <div className="canvas-minimap" aria-hidden="true"><i className="mini-root" />{scenes.map((scene) => <i className="mini-scene" style={{ top: 10 + Number(scene.number) * 9 }} key={scene.number} />)}<span /></div>
+            <div className="canvas-minimap" aria-hidden="true"><i className="mini-root" />{hookVariants.map((hook) => <i className="mini-scene" style={{ top: 15 + Number(hook.label) * 10 }} key={hook.label} />)}<i className="mini-generation mini-generation-two" /><i className="mini-generation mini-generation-three" /><span /></div>
 
             {selectedNode && (
               <aside className="node-inspector">

@@ -66,7 +66,7 @@ P2 stays outside today's build. The broader validation programme also has the ex
 
 | Date | Scope | Owner / branch | Status and evidence | Remaining work |
 | --- | --- | --- | --- | --- |
-| 3 Oct 2026 | TypeScript creation canvas; FR-01 entry point and §12.6 visual tokens | Codex / `williu16/preflight-swiftui-dashboard` | In review. Added a responsive dark app shell with prompt composer, asset picker, generation transition, pannable/zoomable recursive scene-variant tree, collapsed branch groups and node inspector. `npm run build` passed on Next.js 16.3.8, including strict TypeScript validation; desktop and 390 px mobile layouts were visually checked. | Front-end prototype only. Prompt processing, persistence, real generation, brain simulation, scoring, results and export remain unimplemented. No FR is marked done. |
+| 3 Oct 2026 | TypeScript creation canvas; FR-01 entry point and §12.6 visual tokens | Codex / `williu16/preflight-swiftui-dashboard` | In review. Added a responsive dark app shell with prompt composer, asset picker, generation transition, and a pannable/zoomable recursive story tree: 50 opening hooks, 50 continuations from a selected hook, and another 50 branches from each selected beat. Large generations are compressed into branch groups; selecting a visible node updates the active narrative path and inspector. `npm run build` passed on Next.js 16.3.8, including strict TypeScript validation; desktop and 390 px mobile layouts were visually checked. | Front-end prototype only. Prompt processing, persistence, real generation, brain simulation, scoring, results and export remain unimplemented. No FR is marked done. |
 
 For each task, record:
 

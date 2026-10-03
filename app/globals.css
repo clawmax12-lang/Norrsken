@@ -102,19 +102,21 @@ button:focus-visible, textarea:focus-visible, input:focus-visible { outline: 2px
 .tree-viewport { min-height: 0; overflow: auto; cursor: grab; user-select: none; }
 .tree-viewport.is-panning { cursor: grabbing; }
 .tree-scale { position: relative; }
-.tree-stage { width: 1840px; height: 930px; position: absolute; top: 0; left: 0; transform-origin: top left; }
-.tree-lines { position: absolute; inset: 0; width: 1840px; height: 930px; overflow: visible; }
+.tree-stage { width: 1900px; height: 850px; position: absolute; top: 0; left: 0; transform-origin: top left; }
+.tree-lines { position: absolute; inset: 0; width: 1900px; height: 850px; overflow: visible; }
 .tree-lines path { fill: none; stroke: #343434; stroke-width: 1; vector-effect: non-scaling-stroke; }
+.tree-lines .active-branch-line { stroke: #555; }
 .lane-label { position: absolute; top: 18px; color: #5d5d5d; font: 600 8px/1 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .1em; text-transform: uppercase; }
 
 .tree-node { position: absolute; padding: 0; overflow: hidden; border: 1px solid var(--border-light); border-radius: 8px; background: #131313; color: var(--text); text-align: left; box-shadow: 0 8px 25px rgba(0,0,0,.18); cursor: pointer; transition: border-color 120ms ease, transform 120ms ease; }
 .tree-node:hover { z-index: 3; border-color: #555; transform: translateY(-1px); }
-.root-node { left: 70px; top: 420px; width: 230px; min-height: 130px; padding: 17px; display: flex; flex-direction: column; justify-content: center; }
+.root-node { left: 60px; top: 410px; width: 240px; min-height: 130px; padding: 17px; display: flex; flex-direction: column; justify-content: center; }
 .root-node strong { display: -webkit-box; overflow: hidden; margin: 8px 0; font-size: 12px; font-weight: 600; line-height: 1.45; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
 .root-node small, .node-body small, .collapsed-node small, .generation-node small { color: var(--subtle); font-size: 8px; }
 .node-eyebrow { color: var(--subtle); font: 600 7px/1 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .08em; text-transform: uppercase; }
-.scene-node { width: 220px; height: 120px; display: grid; grid-template-columns: 84px 1fr; }
-.expanded-node { border-color: #575757; box-shadow: 0 0 0 1px #333, 0 12px 35px rgba(0,0,0,.25); }
+.path-node { width: 230px; height: 105px; display: grid; grid-template-columns: 80px 1fr; }
+.selected-path-node { border-color: #6a6a6a; box-shadow: 0 0 0 1px #373737, 0 12px 35px rgba(0,0,0,.3); }
+.selected-path-node::after { content: ""; position: absolute; inset: 0; border-left: 2px solid #e8e8e8; pointer-events: none; }
 .node-preview { position: relative; overflow: hidden; background: linear-gradient(145deg, #272727, #171717); }
 .node-preview::after { content: ""; position: absolute; inset: 0; background: linear-gradient(135deg, transparent 20%, rgba(255,255,255,.04)); }
 .preview-window { position: absolute; left: 13px; top: 18px; width: 58px; height: 66px; padding: 7px; border: 1px solid #555; border-radius: 5px; background: #191919; }
@@ -135,9 +137,9 @@ button:focus-visible, textarea:focus-visible, input:focus-visible { outline: 2px
 .node-body strong { margin: 7px 0 5px; font-size: 10px; font-weight: 600; }
 .node-body small { line-height: 1.35; }
 .branch-count { position: absolute; right: 7px; top: 7px; min-width: 22px; height: 18px; display: grid; place-items: center; border: 1px solid #444; border-radius: 999px; background: rgba(12,12,12,.9); color: #aaa; font: 600 7px/1 ui-monospace, SFMono-Regular, Menlo, monospace; }
-.variant-node, .refinement-node { width: 210px; height: 100px; display: grid; grid-template-columns: 72px 1fr; }
-.variant-node .preview-window, .refinement-node .preview-window { left: 10px; top: 15px; width: 52px; height: 58px; }
-.variant-node .preview-copy, .refinement-node .preview-copy { display: none; }
+.continuation-node { width: 220px; height: 100px; display: grid; grid-template-columns: 72px 1fr; }
+.path-node .preview-window, .continuation-node .preview-window { left: 10px; top: 15px; width: 52px; height: 58px; }
+.path-node .preview-copy, .continuation-node .preview-copy { display: none; }
 .collapsed-node { width: 210px; height: 100px; padding: 14px; display: grid; grid-template-columns: 48px 1fr; grid-template-rows: 1fr 1fr; align-items: center; }
 .stack-glyph { width: 38px; height: 38px; grid-row: 1 / 3; position: relative; }
 .stack-glyph i { position: absolute; width: 29px; height: 22px; border: 1px solid #444; border-radius: 4px; background: #181818; }
@@ -164,7 +166,7 @@ button:focus-visible, textarea:focus-visible, input:focus-visible { outline: 2px
 .composer-attach svg, .canvas-send svg { width: 14px; height: 14px; }
 .canvas-minimap { position: absolute; right: 14px; bottom: 15px; width: 106px; height: 66px; border: 1px solid var(--border); border-radius: 6px; background: rgba(17,17,17,.92); overflow: hidden; }
 .canvas-minimap i { position: absolute; display: block; width: 10px; height: 6px; border: 1px solid #555; border-radius: 1px; }
-.mini-root { left: 8px; top: 31px; }.mini-scene { left: 32px; }.canvas-minimap span { position: absolute; inset: 5px 40px 5px 4px; border: 1px solid rgba(255,255,255,.12); }
+.mini-root { left: 8px; top: 31px; }.mini-scene { left: 27px; }.mini-generation { top: 27px; }.mini-generation-two { left: 50px; }.mini-generation-three { left: 72px; }.canvas-minimap span { position: absolute; inset: 5px 10px 5px 4px; border: 1px solid rgba(255,255,255,.12); }
 .node-inspector { position: absolute; z-index: 12; right: 14px; top: 62px; width: 260px; padding: 19px; border: 1px solid var(--border-light); border-radius: 9px; background: rgba(19,19,19,.96); box-shadow: 0 18px 60px rgba(0,0,0,.45); backdrop-filter: blur(12px); }
 .inspector-close { position: absolute; right: 8px; top: 8px; width: 25px; height: 25px; border: 0; background: transparent; color: var(--muted); font-size: 17px; cursor: pointer; }
 .node-inspector h2 { margin: 13px 25px 8px 0; font-size: 16px; font-weight: 610; letter-spacing: -.02em; }
