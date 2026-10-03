@@ -32,9 +32,8 @@ def build_gemini_client(
     compressed; requests are grouped per ``project_id`` in the Condense dashboard. Without
     the key the client still works and the ledger reports zero savings.
 
-    Build the planner's client with ``proxy=False``: the proxy rewrites the user message
-    (texts merged, media moved last), which costs the planner a repair on every run. Give
-    every client the same ``ledger`` so one report covers the whole run.
+    ``proxy=False`` calls Gemini directly (used for comparisons). Give every client the
+    same ``ledger`` so one report covers the whole run.
 
     Raises:
         ProviderError: ``GEMINI_API_KEY`` is not configured, so the UI can show "not configured".

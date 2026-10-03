@@ -7,7 +7,7 @@ These are provider output models: they stop at the adapter and are translated in
 import re
 from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, BeforeValidator, ConfigDict, Field
 
 from preflight.contracts import EventType
 
@@ -15,7 +15,17 @@ PERSONA_COUNT = 3
 MAX_MOMENTS = 6
 _TIMESTAMP = re.compile(r"^(\d{1,2}):([0-5]\d)$")
 
+MAX_LABEL = 120
+
 Rating = Annotated[float, Field(ge=0.0, le=1.0)]
+
+
+def _shorten_label(value: object) -> object:
+    """Cut an over-long label at a word boundary instead of paying for a repair call."""
+    if not isinstance(value, str) or len(value.strip()) <= MAX_LABEL:
+        return value
+    cut = value.strip()[: MAX_LABEL - 1].rsplit(" ", 1)[0].rstrip(",;:- ")
+    return f"{cut}…"
 
 
 class _Output(BaseModel):
@@ -51,7 +61,11 @@ class MomentFlag(_Output):
 
     timestamp: Annotated[str, Field(description="mm:ss from the start of the video")]
     kind: EventType
-    label: Annotated[str, Field(min_length=1, max_length=120)]
+    label: Annotated[
+        str,
+        BeforeValidator(_shorten_label),
+        Field(min_length=1, max_length=MAX_LABEL, description=f"At most {MAX_LABEL} characters"),
+    ]
 
 
 class PersonaRating(_Output):

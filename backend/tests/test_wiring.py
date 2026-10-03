@@ -6,7 +6,7 @@ from pydantic import SecretStr
 
 from preflight.config import Settings
 from preflight.errors import ProviderError
-from preflight.llm import CondenseProxyBackend, GenAIBackend
+from preflight.llm import CondenseProxyBackend
 from preflight.storage import ProjectStore
 from preflight.wiring import ProductionRunService
 
@@ -29,13 +29,13 @@ def stage(pipeline, name):
     return next(s for s in pipeline._stages if type(s).__name__ == name)
 
 
-def test_planner_calls_gemini_directly_and_the_rest_goes_through_condense(tmp_path) -> None:
+def test_every_generation_goes_through_condense(tmp_path) -> None:
     pipeline = build(tmp_path)
 
     planner = stage(pipeline, "PlanStage")._planner
     panel = stage(pipeline, "SimulateStage")._simulators[0]
     explainer = stage(pipeline, "ExplainStage")._explainer
-    assert isinstance(planner._client._backend, GenAIBackend)
+    assert isinstance(planner._client._backend, CondenseProxyBackend)
     assert isinstance(panel._client._backend, CondenseProxyBackend)
     assert isinstance(explainer._client._backend, CondenseProxyBackend)
 

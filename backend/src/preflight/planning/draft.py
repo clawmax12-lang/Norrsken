@@ -42,10 +42,42 @@ class ConceptDraft(_Draft):
 
     @model_validator(mode="after")
     def _scenes_fill_the_video(self) -> Self:
-        total = sum(scene.duration_s for scene in self.scenes)
-        if total != VIDEO_SECONDS:
-            raise ValueError(f"scene durations must add up to {VIDEO_SECONDS} seconds, got {total}")
-        return self
+        """Scale the scene lengths to exactly 15 s, keeping their proportions.
+
+        Gemini often returns 12-14 s in total; asking it again costs a whole call for
+        arithmetic that code does exactly.
+        """
+        durations = fit_durations([scene.duration_s for scene in self.scenes], VIDEO_SECONDS)
+        if durations == [scene.duration_s for scene in self.scenes]:
+            return self
+        scenes = tuple(
+            scene.model_copy(update={"duration_s": seconds})
+            for scene, seconds in zip(self.scenes, durations, strict=True)
+        )
+        return self.model_copy(update={"scenes": scenes})
+
+
+def fit_durations(durations: list[int], total: int) -> list[int]:
+    """Whole-second lengths summing to ``total``, proportional to ``durations``, each >= 1.
+
+    Uses largest remainders, so lengths that already sum to ``total`` are unchanged.
+    """
+    current = sum(durations)
+    if current == total:
+        return list(durations)
+    if len(durations) > total:
+        raise ValueError(f"{len(durations)} scenes cannot fit in {total} seconds")
+    weights = [max(duration, 1) for duration in durations]
+    shares = [total * weight / sum(weights) for weight in weights]
+    fitted = [max(1, int(share)) for share in shares]
+    while sum(fitted) > total:
+        fitted[fitted.index(max(fitted))] -= 1
+    by_remainder = sorted(
+        range(len(shares)), key=lambda index: shares[index] - int(shares[index]), reverse=True
+    )
+    for index in by_remainder[: total - sum(fitted)]:
+        fitted[index] += 1
+    return fitted
 
 
 class PlanDraft(_Draft):
