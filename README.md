@@ -8,17 +8,19 @@ Preflight turns a product brief and 3–6 screenshots into three 15-second motio
 
 **[TRIBE v2 by Meta FAIR](https://github.com/facebookresearch/tribev2) is a foundational component of Preflight's planned neural pretesting system.** It supplies the predicted brain responses behind the brain simulation, synchronized activity curves, interactive 3D brain and Preflight sequence. Gemini supplies the complementary viewer panel and the agent's planning/explanations; Preflight coordinates generation, simulation, comparison and export.
 
-**Current approved specification: [PRD v1.3](PRD.md).** It supersedes earlier brainstorming, including editing an existing customer video, and establishes the web platform, adopted visual references and reusable-brain architecture. This repository is the shared reference for the hackathon team and its coding agents.
+**Current approved specification: [PRD v1.4](PRD.md).** It supersedes earlier brainstorming, including editing an existing customer video. The product is a web flow canvas with a cinematic brain entry, persistent brain companion and mandatory female Gemini voice, plus the genuine video-generation/pretest/export pipeline. This repository is the shared reference for the hackathon team and its coding agents.
 
 ## Start here
 
 | Document | Purpose |
 | --- | --- |
-| [PRD.md](PRD.md) | Product scope, FR-01–FR-15, acceptance criteria, architecture, UI, timeline and decision log. The source of truth for what to build. |
+| [PRD.md](PRD.md) | Product scope, FR-01–FR-16, acceptance criteria, architecture, UI, timeline and decision log. The source of truth for what to build. |
 | [TEAM.md](TEAM.md) | Owners, task status, integration evidence, open blockers and the shared Git/Conductor workflow. |
 | [AGENTS.md](AGENTS.md) | Instructions every coding agent must follow. Claude loads these through [CLAUDE.md](CLAUDE.md). |
-| [Visual baseline](docs/design/README.md) | All three original reference images and the motion clip, shared visual direction, provenance and the existing Dashboard preview. |
+| [Visual baseline](docs/design/README.md) | All four original reference images and the motion clip, shared brain/canvas direction, provenance and existing preview. |
 | [Opus 5.5 brain brief](docs/design/OPUS_BRAIN_BRIEF.md) | Complete interactive browser brain, reuse/data boundaries, A/B synchronization and verification/handoff. |
+| [Canvas and voice brief](docs/design/CANVAS_VOICE_BRIEF.md) | Integration of canvas, docked brain, actual job events and mandatory female Gemini TTS with voice glow. |
+| [Build status audit](docs/status/2026-10-03-build-audit.md) | Timestamped evidence from all nine Norrsken workspaces; prototype, implementation and genuine-data gaps are separate. |
 | [Original PDF](docs/source/Preflight-PRD-v1.1.pdf) | Unchanged, 20-page source supplied by the product owner. [Provenance and checksum](docs/source/README.md). |
 
 Humans: start with PRD §1–§7. Builders: also read §8–§14. Agents: read AGENTS.md and PRD §15, §8, §9, §10 and §12 before implementing.
@@ -44,7 +46,15 @@ npm run build
 
 Read the documents above and claim work in TEAM.md before extending the dashboard into the P0 flow. Keep this section current as runtime services are added.
 
-An existing Next.js Dashboard implementation is on the team's separate `williu16/preflight-swiftui-dashboard` branch (the name is historical; its code is web-based). Its **[Vercel preview](https://temporary-instant-flint-xxlx4l9.vercel.app)** was checked on 3 Oct 2026: HTTP 200, `Preflight — Dashboard`. This is a temporary preview of the dashboard shell, not evidence that the brain or complete pipeline is implemented. See the [workspace/preview details](docs/design/README.md#existing-dashboard-and-preview). The run commands above are that application's actual commands.
+An existing Next.js Dashboard implementation is on the team's separate `williu16/preflight-swiftui-dashboard` branch (the name is historical; its code is web-based). Its **[Vercel canvas preview](https://temporary-instant-flint-xxlx4l9.vercel.app/?demo=1)** was checked on 3 Oct 2026: HTTP 200 and browser inspection. It now shows a branching storyline prototype, not genuine generated/tested batches or an integrated brain/voice pipeline. See the [workspace/preview details](docs/design/README.md#existing-dashboard-and-preview). The brain viewer branch adds the `/brain` route below; the canvas itself lives on the Dashboard branch.
+
+## Canvas, brain and voice experience
+
+On first arrival, the anatomical brain rotates and focuses on regions, then docks in a corner while the flow canvas opens. Sources and the validated brief branch into storyboards/concepts, rendered videos, actual simulation results and a verdict/export. The corner brain follows the selected video's stored predictions; realtime job events update the canvas. Introductory colored response requires a genuine disclosed example, not fabricated waves before a run exists.
+
+**Female Gemini speech is required for the demo (FR-16/P0).** Gemini TTS voices welcome, actual progress and evidence-backed verdicts; captions/mute/stop remain available. The assistant's visual direction is a standalone `ThinkingOrb`, no surrounding card, growing during speech. Its work states are event-driven; audio-amplitude binding is our code, not a built-in orb feature. `voice-glow` is an optional prompt effect, not a speech engine. The selected target is `gemini-3.8-flash-tts` pending account/routing verification. Optional microphone conversation uses a separate Gemini Live integration and user permission. A supplied Gemini key is not proof that speech or Live is configured; all long-lived keys remain server-side.
+
+The large experiment tree is a design/architecture goal. Proposed nodes are not completed neural tests; today's three-video execution cap remains until the owner approves a batch budget and the backend team measures capacity. Keep prototype/untested states visible.
 
 ## Brain and generation roles
 
@@ -126,7 +136,7 @@ First use downloads model weights and extracts multimodal features. Record both 
 4. Expose the worker to the orchestrator and configure `TRIBE_ENDPOINT` with **our deployed worker's address**. It is not the GitHub URL or a hosted Meta inference API supplied by the upstream project. The Preflight endpoint and request/response transport still need implementation; this guide does not define a ready-made HTTP route.
 5. Verify one real clip for the go/no-go, then the actual 15-second rendered variants, including any silent/no-speech case produced by the template. Record output, timing, GPU environment and failures in TEAM.md before marking FR-04 complete.
 
-The PRD's hackathon fallback still applies: if TRIBE fails the 12:30 gate, keep the Gemini path with **Brain sim off** and drop the conditional brain viewer/intro as specified. This is a degraded execution path, not equivalent neural evidence. Never replace missing brain activity with generated values. Genuine precomputed results must be tied to the video they analyzed and visibly disclosed.
+The v1.4 fallback applies: if live TRIBE fails the 12:30 gate, keep the Gemini path with **Brain sim off**, the gray anatomical entry/dock and the required voice/canvas. This is a degraded execution path, not equivalent neural evidence. Never replace missing brain activity with generated values. Genuine precomputed examples must be tied to the video they analyzed, visibly disclosed and kept separate from the current run.
 
 ## Planned build stack
 
@@ -140,13 +150,13 @@ Runtime Opus, if integrated, requires its own server-side provider credentials (
 
 ## Demo and research honesty
 
-- Complete P0 before P1. FR-12 and FR-14 are conditional on the TRIBE go/no-go in PRD §14.2.
+- Complete P0 before P1. Brain anatomy/entry/dock and FR-16 voice remain P0; genuine neural animation/live inference require actual TRIBE data/go-no-go as described in PRD §8/§14.2.
 - Use genuine simulation output in the demo. Disclose precomputed TRIBE output in both the UI and this README when introduced. Never present test mocks as real results.
 - Without TRIBE, finish with Gemini and show **Brain sim off**. Without brain data, show **No brain data**. Record the actual go/no-go result in TEAM.md.
 - Document the implemented scoring/confidence rule here when FR-05 lands. Simulator agreement is not a demonstrated probability of real-world success.
 - Do not claim that neural response predicts retention, virality, emotions or sales. Live A/B testing is the eventual validation.
 
-Current TRIBE mode, scoring implementation and Condense integration: **not yet implemented or verified in this repository**.
+Current integration evidence: backend adapters/scoring are being implemented in the team's separate workspaces; **live TRIBE inference, Gemini speech, Condense routing and an end-to-end run are not yet verified by this documentation audit**. See the timestamped [status evidence](docs/status/2026-10-03-build-audit.md), rather than treating branch/session activity as product completion.
 
 ## Attribution and eligibility
 

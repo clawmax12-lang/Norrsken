@@ -1,6 +1,6 @@
 # Preflight — shared team board
 
-**Product baseline:** [PRD v1.3](PRD.md). **Platform:** desktop-browser web product; no iOS/SwiftUI or native client. **Repository:** https://github.com/clawmax12-lang/Norrsken. **Product owner:** William.
+**Product baseline:** [PRD v1.4](PRD.md). **Platform:** desktop-browser flow-canvas web product; no iOS/SwiftUI or native client. **Demo:** female Gemini voice is mandatory FR-16/P0. **Repository:** https://github.com/clawmax12-lang/Norrsken. **Product owner:** William.
 
 This document tracks coordination and implementation evidence. It does not redefine the product. Update it when claiming work, handing off a change, resolving a blocker or integrating a pull request. Blank ownership is intentional: technical names and progress were not supplied in the PRD.
 
@@ -15,7 +15,7 @@ This document tracks coordination and implementation evidence. It does not redef
 
 Suggested first message for any existing or new agent session:
 
-> Read AGENTS.md, then PRD.md §15, §8, §9, §10 and §12, then TEAM.md. PRD v1.3 supersedes earlier brainstorming: Preflight is a web platform, not an iOS/SwiftUI app; the interactive brain is built once and reused with genuine per-video data. For brain/design work also read docs/design/README.md and OPUS_BRAIN_BRIEF.md. Work only on my assigned requirement IDs. Report the scope, dependencies and acceptance criteria before implementing, and keep shared contracts coordinated with their owners.
+> Read AGENTS.md, then PRD.md §15, §8, §9, §10 and §12, then TEAM.md. PRD v1.4 makes the flow canvas, first-entry/persistent brain and female Gemini narration core demo requirements. Reuse the brain once-built; genuine neural data is still required for activation. For UI/brain/voice also read docs/design/README.md, OPUS_BRAIN_BRIEF.md and CANVAS_VOICE_BRIEF.md. Work only on my assigned IDs, preserve existing backend/frontend work and agree shared contracts before editing them. Do not remove execution caps or claim completed tests from prototype graph nodes.
 
 ## Ownership
 
@@ -24,38 +24,40 @@ Fill in real people rather than assigning all work to an unnamed agent. Record a
 | Area | Requirement IDs | Owner | Workspace / branch / owned files |
 | --- | --- | --- | --- |
 | Product decisions | Scope, priority, PRD changes | William | — |
-| Brief intake and tablehopp fixture | FR-01 | Unassigned | — |
-| Template and renderer | FR-03 | Unassigned | — |
-| TRIBE worker | FR-04 (TRIBE) | Unassigned | — |
-| Agent, Gemini, Condense | FR-02, FR-04 (panel), FR-05, FR-06, FR-10 | Unassigned | — |
-| Web app, results, export and log | FR-07, FR-08, FR-09 | Unassigned | — |
-| Brain viewer and Preflight sequence | FR-12, FR-14, FR-15 | Claude Opus 5.5 (implementation); William (product review) | Conductor workspace `3d-brain-opus-55` / branch `conductor/3d-brain-opus-55`. Owned files: `app/brain/**`, `components/brain/**`, `lib/brain/**`, `public/brain/**`, `scripts/brain/**`, `tests/brain/**`; integration touches only a nav link in `app/page.tsx` plus `package.json`/lockfile for `three`. FR-15 remains gated P1. |
-| Web dashboard shell | FR-01 entry point, §12.6 visual tokens | Codex | Dashboard workspace / `williu16/preflight-swiftui-dashboard`; `app/*.tsx`, `app/*.css` |
+| Brief intake and tablehopp fixture | FR-01 | Backend team + Dashboard integration | Backend: Hackathon Project Overview; UI: Dashboard; API/fixture acceptance not integrated |
+| Template and renderer | FR-03 | Backend team (Mihir's workspace agents) | [Hackathon Project Overview](conductor://workspace?id=35a48d23-f284-4204-b9cb-8d44dc06bfa8); render/composer in progress |
+| TRIBE worker | FR-04 (TRIBE) | Backend team (Mihir's workspace agents) | Same workspace; upstream vendored on `Mihir-Bhargav/hackathon-project-overview`; worker being built, live GPU evidence not verified |
+| Agent, Gemini, Condense | FR-02, FR-04 (panel), FR-05, FR-06, FR-10 | Backend team (Mihir's workspace agents) | Same workspace; contracts/LLM/simulators/scoring being integrated |
+| Web canvas and results | FR-07 | William U. / Dashboard agent | [Dashboard](conductor://workspace?id=6e7c2346-1d02-4ca4-b560-17b77aba0c1c) / `williu16/preflight-swiftui-dashboard`; preserve its app shell/graph work |
+| Persisted jobs and export | FR-08, FR-09 | Backend team + Dashboard consumer | Backend owns activity/API/artifacts; canvas and voice consume agreed events |
+| Brain viewer and Preflight sequence | FR-12, FR-14, FR-15 | Claude Opus 5.5 (implementation); William (product review) | [3D Brain — Opus 5.5](conductor://workspace?id=e14af4c4-eada-4c17-bc3b-42cd2ef08dcd) / `conductor/3d-brain-opus-55`; reusable viewer/scene and minimal web integration. Owned files: `app/brain/**`, `components/brain/**`, `lib/brain/**`, `public/brain/**`, `scripts/brain/**`, `tests/brain/**`; shared touches: one nav link in `app/page.tsx`, `three` in `package.json`/lockfile, `test` script, `allowImportingTsExtensions` in `tsconfig.json`. See docs/design/OPUS_BRAIN_BRIEF.md. FR-15 remains gated P1. |
+| Female Gemini voice and orb | FR-16; optional Live intake | William U. / Voice workspace agent (scope handoff pending) | [Voice Hackathon Brainstorming](conductor://workspace?id=987f2949-3647-4e9a-a202-04e6d2c1d023); currently design/research, no real speech acceptance yet |
 | Integration and release | Shared contracts, clean-clone run, final demo path | Unassigned | — |
 | Demo video and pitch | PRD §14.4–§14.6 | William | — |
 
 ## Requirement tracker
 
-Source requirements and full acceptance criteria: [PRD §8](PRD.md#8-functional-requirements). No implementation evidence has been registered at this documentation bootstrap. A PRD requirement is not a completed feature.
+Source requirements and full acceptance criteria: [PRD §8](PRD.md#8-functional-requirements). The [timestamped audit](docs/status/2026-10-03-build-audit.md) distinguishes agent-reported local work from integrated acceptance. A PRD requirement or a working session is not a completed feature.
 
 Statuses: `unclaimed` → `in_progress` → `in_review` → `done`. Use `blocked` with a reason. Use `dropped` only for an explicitly permitted conditional cut, with the decision and evidence recorded below. `done` means integrated into the shared branch with acceptance evidence, not merely working in someone's workspace.
 
 | ID | Requirement | Priority / gate | Owner | Status | Branch / PR / acceptance evidence |
 | --- | --- | --- | --- | --- | --- |
-| FR-01 | Brief intake and fixture | P0 | — | unclaimed | — |
-| FR-02 | Three creative concepts | P0 | — | unclaimed | — |
-| FR-03 | Three rendered MP4s | P0 | — | unclaimed | — |
-| FR-04 | Simulators and Gemini fallback | P0 | — | unclaimed | — |
-| FR-05 | Deterministic score and rank | P0 | — | unclaimed | — |
-| FR-06 | Timestamped explanations | P0 | — | unclaimed | — |
-| FR-07 | Results UI and synced playback | P0 | — | unclaimed | — |
-| FR-08 | Four export files | P0 | — | unclaimed | — |
-| FR-09 | Live persisted activity log | P0 | — | unclaimed | — |
-| FR-10 | Gemini via Condense, measured savings | P0 | — | unclaimed | — |
-| FR-12 | Interactive 3D brain | Conditional P0: TRIBE go/no-go | Claude Opus 5.5 | in_progress | `conductor/3d-brain-opus-55` |
-| FR-14 | Preflight sequence | Conditional P0: FR-12 | Claude Opus 5.5 | in_progress | `conductor/3d-brain-opus-55` |
+| FR-01 | Brief intake and fixture | P0 | Backend + Dashboard | in_progress | Backend intake/API in progress; old SwiftUI brief is not web acceptance |
+| FR-02 | Three creative concepts | P0 | Backend team | in_progress | Planner/LLM being built; no real-provider acceptance verified |
+| FR-03 | Three rendered MP4s | P0 | Backend team | in_progress | Renderer/composer being built; research render is not the three-variant AC |
+| FR-04 | Simulators and Gemini fallback | P0 | Backend team | in_progress | TRIBE/Gemini panel adapters being built; live GPU/result not verified |
+| FR-05 | Deterministic score and rank | P0 | Backend team | in_progress | Agent reports local scoring checks/69 tests; not merged/integrated acceptance |
+| FR-06 | Timestamped explanations | P0 | Backend team | in_progress | Same local handoff, no end-to-end real evidence verified |
+| FR-07 | Flow canvas, results and synced playback | P0 | Dashboard + brain integration | in_progress | Canvas prototype on branch/preview; actual backend binding/brain not integrated |
+| FR-08 | Four export files | P0 | Backend team | in_progress | API/export implementation underway; four real exports not verified |
+| FR-09 | Live persisted activity log | P0 | Backend team | in_progress | Orchestrator handoff reports 222 tests with fakes; global check/integration pending |
+| FR-10 | Gemini via Condense, measured savings | P0 | Backend team | in_progress | Provider adapters underway; audio/Live routing and genuine savings unverified |
+| FR-12 | Reusable interactive brain and dock | P0 anatomy/dock; genuine response gated | Opus 5.5 | in_progress | `conductor/3d-brain-opus-55`; browser tests in progress, activity tested as MOCK only so far |
+| FR-14 | Entry and analysis Preflight sequence | P0 entry; genuine analysis gated | Opus 5.5 | in_progress | Existing analysis sequence being debugged; new entry/dock handoff needs adoption |
+| FR-16 | Female Gemini narration and orb | P0, owner-confirmed | Voice owner (handoff pending) | unclaimed | Voice design/research exists; no implemented real TTS acceptance verified |
 | FR-11 | One revision of the winner | P1: all applicable P0 pass | — | unclaimed | — |
-| FR-15 | A/B and brain difference view | P1: all applicable P0 pass | — | unclaimed | — |
+| FR-15 | A/B and brain difference view | P1: all applicable P0 pass | Opus 5.5 (queued) | unclaimed | Shared component/time/camera groundwork in FR-12; P1 implementation awaits gate |
 | FR-13 | Historical backtest | P1: P0 pass and real historical data exists | — | unclaimed | — |
 
 P2 stays outside today's build. The broader validation programme also has the explicit prerequisite in PRD §13; do not silently start it as part of the MVP.
@@ -68,11 +70,17 @@ P2 stays outside today's build. The broader validation programme also has the ex
 | --- | --- | --- | --- | --- |
 | 3 Oct 2026 | TypeScript web dashboard shell; FR-01 entry point and §12.6 visual tokens | Codex / `williu16/preflight-swiftui-dashboard` | In review. Added a responsive app shell with sidebar/top bar, priority-first overview, workflow, empty recent-brief state and new-preflight entry surface. `npm run build` passed on Next.js 16.3.8, including strict TypeScript validation; desktop and 390 px mobile layouts were visually checked. | Dashboard only. Brief persistence and every render, simulator, score, result, and export acceptance criterion remain unimplemented. No FR is marked done. |
 
-Documentation task **DOC-WEB** (clarifies FR-01, FR-07, FR-08, FR-09, FR-12 and FR-14): Codex owns the explicit web-platform decision and matching onboarding/agent guidance in [PR #1](https://github.com/clawmax12-lang/Norrsken/pull/1) on `docs/tribe-foundation`. Status: `in_review` (not yet integrated). Files: `PRD.md`, `README.md`, `AGENTS.md`, `TEAM.md`, `docs/source/README.md`. The web clarification landed in v1.2 (the current editable PRD is v1.3); all 15 requirement IDs/AC remain, local links and version references pass checks, and the original v1.1 PDF checksum is unchanged. No application code was changed.
+Documentation task **DOC-WEB** (clarifies FR-01, FR-07, FR-08, FR-09, FR-12 and FR-14): Codex owns the explicit web-platform decision and matching onboarding/agent guidance in [PR #1](https://github.com/clawmax12-lang/Norrsken/pull/1) on `docs/tribe-foundation`. Status: `in_review` (not yet integrated). Files: `PRD.md`, `README.md`, `AGENTS.md`, `TEAM.md`, `docs/source/README.md`. The web clarification landed in v1.2 (the current editable PRD is v1.4); that change retained all original 15 IDs/AC, local links passed and the original v1.1 PDF checksum is unchanged. No application code was changed.
 
 Documentation task **DOC-TRIBE** (supports FR-04, FR-12 and FR-14): Codex owns the README explanation and upstream quickstart on branch `docs/tribe-foundation`. Status: `in_review` (not yet integrated). Files: `README.md` and this handoff entry. Verified against upstream commit `af58661791a351a448a489042a28f6c37e1c14b7`; local links, Python/shell example syntax and whitespace checks pass. GPU installation/inference was not run. This does not claim ownership or completion of the TRIBE worker or brain-viewer implementation.
 
 Documentation task **DOC-BRAIN** (supports FR-12/FR-14/FR-15 and model roles in §9.1): Codex owns the tracked visual-reference package and Opus implementation brief on `docs/tribe-foundation`, [PR #1](https://github.com/clawmax12-lang/Norrsken/pull/1). Status: `in_review` (not yet integrated). Files: `docs/design/`, `PRD.md`, `README.md`, `AGENTS.md`, `TEAM.md`, `docs/source/README.md`. All three original images and the MP4 are copied without modification; byte comparisons and SHA-256 checks pass. PRD v1.3 adopts the visual/reuse decisions; all 15 FR IDs and original sections remain, 42 local document/media links and anchors pass, whitespace checks pass, and the original v1.1 PDF checksum is unchanged. Dashboard's temporary Vercel preview is recorded and checked (HTTP 200 plus browser screenshot); it is not a completed brain feature. Opus's code implementation is a separate assignment, not completed by this documentation work. No application tests or GPU inference were run on this documentation branch.
+
+Implementation task **BRAIN-WEB** (FR-12/FR-14; FR-15 queued P1): product-owner-requested Claude Opus 5.5 is running in [its isolated Conductor workspace](conductor://workspace?id=e14af4c4-eada-4c17-bc3b-42cd2ef08dcd&session=be40ac16-08d6-4ce4-999f-7e69ea8d4912), branch `conductor/3d-brain-opus-55`, based on the existing Dashboard web implementation. Launch verified on 3 Oct 2026: workspace ready, session working, model `opus-5-5-1m` resolved to `claude-opus-5-5[1m]`; initial task delivered and current docs/references being read/integrated. Scope: reusable mesh/materials/controls, data adapter, sync/fullscreen and conditional intro; no runtime video-generation API integration or replacement of the GPU worker. No brain PR, preview or implementation AC has passed yet. Opus must preserve Dashboard run instructions/ownership while integrating PR #1, then record its own build/browser evidence and handoff here. Do not mark the feature done merely because the agent has started.
+
+Documentation task **DOC-CANVAS-VOICE** (FR-07/FR-09/FR-12/FR-14/new FR-16): Codex owns PRD v1.4, the new original canvas reference, aligned shared docs, integration brief and build-status audit on `docs/tribe-foundation`, [PR #1](https://github.com/clawmax12-lang/Norrsken/pull/1). Status: `in_review` (not integrated). The owner explicitly confirmed female Gemini narration as P0, then proposed the standalone growing orb. Backend/application files, dependency manifests, runtime credentials and other agents' branches are not modified. Checks: all 19 original sections and FR-01–FR-16 with 16 AC blocks; 60 local links/anchors; byte/hash verification of the new reference and unchanged original PDF/assets; whitespace and credential-pattern checks; public canvas HTTP/browser inspection; documented registry/provider references. No paid model or GPU calls, app tests or voice acceptance run in this docs branch. This is a direction/status handoff, not completed provider/GPU/voice implementation.
+
+**Coordination warning:** `origin/main` was still the initial v1.1 documentation commit at this audit; PR #1 is open. Existing workspaces do not automatically adopt v1.4. Integrate the current docs non-destructively and preserve their actual application run instructions before claiming shared-baseline synchronization. Older Design System/Results/Activity/Brief sessions produced SwiftUI artifacts before the web decision; they are idle, off the current architecture and not web acceptance evidence. See the audit for exact sources.
 
 For each task, record:
 
@@ -89,14 +97,15 @@ The authoritative schedule, cut order and pitch are in [PRD §14](PRD.md#14-hack
 
 | Gate | Required evidence | Decision / status |
 | --- | --- | --- |
-| 12:30 — TRIBE | One real clip completes; capture environment, duration and real output artifact | Pending; owner unassigned |
-| 12:30 — renderer | One 15 s, 1080x1920, 30 fps MP4 renders through the template | Pending; owner unassigned |
-| P0 complete | All applicable FR-01–FR-10 plus conditional FR-12/FR-14 AC pass; clean-clone run and end-to-end duration recorded | Pending |
+| 12:30 — TRIBE | One real clip completes; capture environment, duration and real output artifact | Backend team; evidence pending |
+| 12:30 — renderer | One 15 s, 1080x1920, 30 fps MP4 renders through the template | Backend team; implementation proof pending |
+| 12:30 — voice | Real female Gemini TTS playback; account/model and Condense routing recorded | Voice owner handoff/acceptance pending |
+| P0 complete | FR-01–FR-10, anatomy/entry/dock FR-12/FR-14, voice FR-16 and applicable genuine-data AC; clean-clone end-to-end evidence | Pending |
 | 17:45 — code freeze | Demo path verified; remaining cuts recorded per PRD | Pending |
 | 18:00–18:40 — recording | Two-minute recording of the real product, as specified in PRD | Pending |
 | 18:45 — planned submission | Public repo, README and recording ready; team/platform requirements checked | Pending |
 
-If TRIBE fails its gate, record the result and apply the PRD's Gemini-only fallback. FR-12/FR-14 are dropped as specified, not falsely marked passed. Any proposed use of precomputed genuine outputs must follow the PRD disclosures and have its scope recorded; do not use it to silently bypass the documented go/no-go.
+If live TRIBE fails its gate, record the result and apply the Gemini-only fallback. Per v1.4 keep canvas, gray anatomy/entry/dock and mandatory voice, without falsely claiming neural AC passed. Genuine precomputed examples must be disclosed and separated from the run; do not silently bypass the live go/no-go. If voice is unavailable, explicitly report the unmet FR-16/P0; a glow/orb is not a substitute for Gemini speech.
 
 ## Open items from the PRD
 
@@ -106,7 +115,9 @@ If TRIBE fails its gate, record the result and apply the PRD's Gemini-only fallb
 | Exact submission time | PRD says verify 19:00 vs 19:19; planned submission is 18:45. | Confirm on the hackathon platform and record the source. |
 | GPU / TRIBE feasibility | GPU source and actual latency/VRAM are unverified; §11 itself asks for model-card verification. | Assign TRIBE owner; run the go/no-go and record evidence. |
 | Template style | Modern SaaS launch video reference in PRD; no selected template implementation. | Renderer owner + William to choose one family. |
-| Runtime model keys and finalization | Gemini key is to be supplied later. Coding-agent Opus is available in Conductor; runtime Opus API/Condense routing, credentials and budget remain unverified. | Keep explicit not-configured states; Gemini remains the P0 path. A changed final asset must be re-simulated, per PRD §9.1. |
+| Runtime model keys and finalization | Owner reports a Gemini key is available; deployment/account/TTS access is not yet verified. Coding-agent Opus is available; runtime Opus API/Condense routing and budget remain unverified. | Keep all keys server-side and out of Git/messages; use only verified provider routes. A changed final asset must be re-simulated, per PRD §9.1. |
+| Voice provider/transport | Google's docs list Gemini 3.8 Flash TTS; voice workspace is exploring Live intake. No working speech demo was observed. | Deliver P0 TTS narration/orb; verify Condense audio route. Optional direct Live needs supported transport or an approved documented exception. |
+| Batch capacity | Canvas prototype displays large branching claims, but real test throughput/cost is unknown. | Keep three-video execution cap; agree explicit hypothesis/render/inference budget and queue/pruning before increasing it. |
 | Lunch time | Unclear in the opening talk per PRD. | Confirm only if needed for team scheduling. |
 | Technical ownership and registration | Names absent from §14.3; team/platform registration not verified here. | Fill ownership and confirm participant registration. |
 

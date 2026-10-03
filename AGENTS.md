@@ -5,11 +5,11 @@
 1. Read [PRD.md](PRD.md) §15, then §8, §9, §10 and §12. Read the other sections relevant to your task.
 2. Read [TEAM.md](TEAM.md) for owners, work in progress, integration dependencies and unresolved decisions.
 3. Check `git status` and the current branch before editing. Preserve other people's changes. Fetch current remote state before starting shared work; integrate it without overwriting uncommitted work.
-4. For brain/viewer/design work, read the complete [visual baseline](docs/design/README.md) and [Opus brain brief](docs/design/OPUS_BRAIN_BRIEF.md), including the original images and motion reference.
+4. For brain/viewer/design work, read the complete [visual baseline](docs/design/README.md), [Opus brain brief](docs/design/OPUS_BRAIN_BRIEF.md) and [canvas/voice integration brief](docs/design/CANVAS_VOICE_BRIEF.md), including the original images and motion reference.
 
 ## Authority and scope
 
-- PRD v1.3 is the approved product baseline. The original v1.1 PDF is preserved at `docs/source/Preflight-PRD-v1.1.pdf` for provenance; subsequent approved decisions are in PRD.md and its §16 log.
+- PRD v1.4 is the approved product baseline. The original v1.1 PDF is preserved at `docs/source/Preflight-PRD-v1.1.pdf` for provenance; subsequent approved decisions are in PRD.md and its §16 log.
 - Preflight is a standard browser-based web platform. Build the frontend, including the 3D experience, with the web stack in PRD §10. Do not create an iOS app, Swift/SwiftUI code, an Xcode project or another native client. Customer app screenshots and vertical video exports do not determine Preflight's platform.
 - Earlier chats, advisor briefs and files under `.context/` do not override the adopted PRD. The product generates videos from screenshots for launch-week founders; editing existing videos and a creator/e-commerce-first product are not the current MVP.
 - README is the onboarding/run guide. TEAM.md tracks execution. Neither is a second product specification. If a summary disagrees with PRD.md, fix the summary.
@@ -27,6 +27,9 @@
 ## Required product constraints
 
 - Exactly three concepts; source-backed text; one template family; 15-second, 1080x1920, 30 fps MP4 output. Follow the complete criteria in PRD §8, not only this summary.
+- The primary UI is a connected flow canvas, with cinematic entry and persistent corner brain. Anatomy/entry/dock remain P0 if live TRIBE is unavailable; keep "Brain sim off"/"No brain data" and never animate fake response. Genuine introductory example data must be visibly separate from the current run.
+- Female Gemini TTS welcome/progress/verdict is mandatory P0 (FR-16), explicitly confirmed by the product owner. The assistant is a standalone `ThinkingOrb` without a surrounding card, growing during actual speech; prompt `voice-glow` is optional. Neither package is a voice engine or brain simulation. Optional Gemini Live microphone intake is P1 and must not block required narration.
+- Canvas and voice consume the same real persisted job events. Prototype trees, planned storyboards and completed neural tests are different states. “At scale” does not remove the three-video/default budget cap without an explicit decision and measured capacity.
 - Every simulator uses the shared `SimulationResult` boundary. Keep provider-specific output out of scoring and UI code.
 - Gemini powers planning, the viewer panel and explanations; route LLM calls through Condense. Report actual usage/savings, not invented metrics.
 - Opus 5.5 builds the reusable browser brain once as product code. Per-user/video data updates the same renderer; A/B views reuse its geometry. Do not ask an LLM to regenerate anatomy on each run or display Gemini-authored values as neural response.
