@@ -1,6 +1,6 @@
 # Preflight · Product Requirements Document
 
-**Version:** 1.3 · **Date:** 3 Oct 2026 · **Status:** Hackathon build ({Tech: Europe} Agentic AI Hack, Norrsken Stockholm)
+**Version:** 1.4 · **Date:** 3 Oct 2026 · **Status:** Hackathon build ({Tech: Europe} Agentic AI Hack, Norrsken Stockholm)
 
 **Owner:** William (product) · **Tech owners:** see §14.3 and [TEAM.md](TEAM.md)
 
@@ -9,6 +9,8 @@
 **Built with (PRD plan):** Claude Opus 5.5 as the coding agent · Gemini · Condense · TRIBE v2 (Meta FAIR, research use)
 
 > This is the team's canonical, editable product specification. It supersedes earlier brainstorming and advisor briefs. The baseline was imported from the complete, 20-page [Preflight PRD v1.1.pdf](docs/source/Preflight-PRD-v1.1.pdf), which is preserved unchanged; see [source provenance](docs/source/README.md). Versions 1.2 and 1.3 incorporate the product owner's web-platform, visual-reference and reusable-brain decisions, documented below and in §16. Actual implementation progress lives in [TEAM.md](TEAM.md), not in these requirements.
+
+**What changed in 1.4:** the backend generation layer is clarified (§9.2). Gemini may generate supporting image/video assets (backgrounds, abstract motion, b-roll, device lighting) that Remotion composes with the customer's real screenshots; Gemini never draws the product UI, and every on-screen claim still needs a `source_field`. The variant cap stays three for the demo but is a configuration value, not a hard-coded constant. See §9.2, §16.
 
 **What changed in 1.3:** all three supplied images and the original motion reference are adopted as the shared [visual baseline](docs/design/README.md). Claude Opus 5.5 builds the interactive browser brain once; the same renderer/geometry is reused across users and A/B views with different simulation data, not generated per customer. §9.1 separates this development task from the desired runtime roles: Gemini for the variant/analysis loop and Opus for final motion-graphics composition. Runtime Opus is planned, not connected or a new P0 requirement. FR-12/FR-14 remain conditional P0 and FR-15 remains P1. See §10.5, §12.1 and §16.
 
@@ -151,7 +153,7 @@ A simulated audience for all content: every launch video, ad, trailer and landin
 ### 7.4 Non goals (today)
 
 - Editing customers' existing videos `[DECISION]`
-- Text to video generative models (no generated footage, only motion graphics from real screens)
+- Generated footage of the customer's product or its UI (Gemini-generated supporting assets are allowed under §9.2; product screens always come from the customer's real screenshots)
 - Accounts, auth, payments, teams
 - Publishing to social platforms
 - More than one template family
@@ -312,6 +314,16 @@ The product owner's desired runtime direction is Gemini for the scalable experim
 Before enabling runtime Opus, verify the provider's actual API model ID, Condense support, server-side credentials, per-run limits and latency. Conductor's coding-agent model ID is not an inference API contract. A Gemini key does not authorize or authenticate Claude calls. Log actual model usage/cost separately from browser rendering and TRIBE inference; do not claim unmeasured savings or pricing.
 
 If finalization changes the content or timing of a tested video, re-render and re-simulate those exact bytes before attaching a tested verdict or brain response to the export. Keep the original winner/runner-up artifacts and results traceable; never reuse a candidate's prediction for a changed final asset. Replaying, orbiting or opening an A/B view does not trigger new LLM or TRIBE inference.
+
+### 9.2 Generation layer and final video
+
+`[DECISION — v1.4]` The bridge between the generator and the evaluator is a deterministic pipeline: plan, generate supporting assets, compose, simulate, score, finalize.
+
+- **Real product, generated surroundings.** Product UI appears only as the customer's real screenshots. Gemini image/video models may generate backgrounds, abstract motion, lighting and b-roll. Generated assets carry provenance (`model`, `prompt`, `sha256`) and never contain text claims; all text is rendered by the template from `source_field`-backed copy.
+- **Composition spec.** The planner (Gemini today; runtime Opus later, per §9.1) emits a validated `CompositionSpec` JSON (scenes, assets, motion preset, typography, timings). Remotion renders it. Nothing but the validated spec reaches the renderer.
+- **Pluggable generators.** Asset generation sits behind a `AssetGenerator` interface. If generation is slow, over quota or unavailable, the run falls back to template-only backgrounds and logs the fallback; it never blocks the run.
+- **Variant cap.** `MAX_VARIANTS` defaults to 3 (the demo) and `MAX_REVISIONS` to 1. Raising them is configuration, not a contract change.
+- **Final video.** The winner (or its P1 revision, re-rendered and re-simulated per §9.1) is the finished asset. Export still contains the winner, the runner-up, `report.json` and the launch brief.
 
 ## 10. Architecture
 
@@ -638,6 +650,7 @@ The original entries below are retained from the supplied v1.1 PRD; later decisi
 | 3 Oct, v1.2 | Preflight is a standard web platform accessed in a desktop browser, not an iOS/SwiftUI or other native app. The full user journey and 3D experience are web-based; vertical videos remain export assets. Applies to FR-01, FR-07, FR-08, FR-09, FR-12 and FR-14, and §7.5/§10/§15. | Explicit product-owner clarification; prevents agents and teammates from choosing a native-app architecture based on earlier workspace context or customer app screenshots. |
 | 3 Oct, v1.3 | Adopt all three supplied images and the original motion clip as tracked visual references. Claude Opus 5.5 builds the complete interactive brain once; reuse its mesh/renderer with each video's genuine TRIBE data and synchronized A/B instances. FR-12/FR-14 stay conditional P0, FR-15 stays P1. Applies to §10.5/§12/§15. | Explicit product-owner direction: reference-quality 3D that reveals how the system works, with a shared baseline across team workspaces and no per-user brain-generation expense. |
 | 3 Oct, v1.3 | Separate coding-agent Opus from desired runtime roles: Gemini for variants/analysis, Opus for the selected finished motion-graphics composition, Remotion for MP4 rendering and TRIBE for neural prediction. Runtime Opus remains planned until credentials, provider routing, budget and API model are verified; it does not add a P0 gate. Changed final videos must be re-simulated. Applies to FR-02/FR-03/FR-04/FR-10/FR-11 and §9.1/§10.4. | Captures the product owner's generation/cost direction without claiming the API exists in the app, conflating Gemini with neural simulation, or presenting a candidate's result as evidence for a different exported video. |
+| 3 Oct, v1.4 | Backend generation layer: Gemini may generate supporting image/video assets; Remotion composes them with real customer screenshots from a validated `CompositionSpec`; product UI is never generated; variant cap is configurable (default 3). Applies to FR-02, FR-03, FR-10 and §7.4/§9.2. | Product owner approval of the backend plan: higher visual quality without breaking "truth in the video" or the fixed three-variant demo. |
 
 ## 17. Open questions
 

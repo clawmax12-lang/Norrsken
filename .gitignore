@@ -14,3 +14,17 @@ model-cache/
 *.pt
 *.pth
 *.safetensors
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.coverage
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.hypothesis/
+
+# Renderer / worker outputs
+workers/renderer/node_modules/
+workers/renderer/out/
