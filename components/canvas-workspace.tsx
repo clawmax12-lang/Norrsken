@@ -93,6 +93,14 @@ function readStored<T>(key: string, parse: (value: unknown) => T): T | null {
   }
 }
 
+function isSupportedScreenshot(file: File) {
+  return file.type === "image/png" || file.type === "image/jpeg" || /\.(?:png|jpe?g)$/i.test(file.name);
+}
+
+function screenshotKey(file: File) {
+  return `${file.webkitRelativePath || file.name}:${file.size}:${file.lastModified}`;
+}
+
 export function CanvasWorkspace() {
   const [brief, setBrief] = useState<BriefDraft>(() => emptyBrief(PROJECT_ID));
   const [sources, setSources] = useState<SourceMap>({});
@@ -114,6 +122,7 @@ export function CanvasWorkspace() {
   const [dragging, setDragging] = useState(false);
   const [visualsPaused, setVisualsPaused] = useState(false);
 
+  const screenshotInputRef = useRef<HTMLInputElement | null>(null);
   const folderInputRef = useRef<HTMLInputElement | null>(null);
   const dragRef = useRef({ x: 0, y: 0, viewX: 0, viewY: 0, moved: false });
   const assetsRef = useRef(assets);
@@ -340,14 +349,47 @@ export function CanvasWorkspace() {
     if (!files) return;
     for (const asset of assetsRef.current) URL.revokeObjectURL(asset.previewUrl);
     const next = Array.from(files)
-      .filter((file) => file.type === "image/png" || file.type === "image/jpeg")
+      .filter(isSupportedScreenshot)
       .slice(0, 100)
       .map((file) => ({ id: crypto.randomUUID(), name: file.name, relativePath: file.webkitRelativePath || file.name, file, previewUrl: URL.createObjectURL(file) }));
+    assetsRef.current = next;
     setAssets(next);
     setSelectedAssetIds([]);
     selectedAssetsRef.current = [];
     setShowAssets(true);
     addNotice("system", `${next.length} image filenames indexed from the folder you approved.`);
+  }, [addNotice]);
+
+  const addScreenshots = useCallback((files: FileList | null) => {
+    if (!files) return;
+    const existingKeys = new Set(assetsRef.current.map((asset) => screenshotKey(asset.file)));
+    const additions = Array.from(files)
+      .filter(isSupportedScreenshot)
+      .filter((file) => !existingKeys.has(screenshotKey(file)))
+      .slice(0, Math.max(0, 100 - assetsRef.current.length))
+      .map((file) => ({ id: crypto.randomUUID(), name: file.name, relativePath: file.name, file, previewUrl: URL.createObjectURL(file) }));
+
+    if (additions.length === 0) {
+      addNotice("system", "Choose PNG or JPG screenshots that are not already in this project.");
+      setShowAssets(true);
+      return;
+    }
+
+    const nextAssets = [...assetsRef.current, ...additions];
+    assetsRef.current = nextAssets;
+    setAssets(nextAssets);
+
+    const availableSlots = Math.max(0, 6 - selectedAssetsRef.current.length);
+    const autoSelected = additions.slice(0, availableSlots).map((asset) => asset.id);
+    const nextSelected = [...selectedAssetsRef.current, ...autoSelected];
+    selectedAssetsRef.current = nextSelected;
+    setSelectedAssetIds(nextSelected);
+    setShowAssets(true);
+
+    const selectionNote = autoSelected.length === additions.length
+      ? "selected for the run"
+      : `${autoSelected.length} selected; choose up to 6 total`;
+    addNotice("system", `${additions.length} screenshot${additions.length === 1 ? "" : "s"} added · ${selectionNote}.`);
   }, [addNotice]);
 
   const toggleAsset = useCallback((assetId: string) => {
@@ -494,6 +536,7 @@ export function CanvasWorkspace() {
         <div className="project-identity"><span className="preflight-mark">P</span><div><strong>Preflight</strong><small>{brief.product_name || "Untitled launch"} · storyboard</small></div></div>
         <div className="header-actions">
           <span className={`draft-state ${draftState}`}>{draftState === "saving" ? "Saving…" : draftState === "error" ? "Saved in browser" : `Draft r${draft.revision}`}</span>
+          <button className="add-screenshots-top" onClick={() => screenshotInputRef.current?.click()}>Add screenshots</button>
           <button onClick={() => setShowBrief((current) => !current)}>Brief</button>
           <button className="run-top" onClick={() => setConfirmSummary("Generate exactly three 15-second concepts, then render and pretest them using the connected pipeline.")}>Run</button>
         </div>
@@ -501,12 +544,13 @@ export function CanvasWorkspace() {
 
       <nav className="tool-rail" aria-label="Canvas tools">
         <button className="active" aria-label="Select">↖</button>
-        <button onClick={() => folderInputRef.current?.click()} aria-label="Add screenshots">＋</button>
+        <button onClick={() => screenshotInputRef.current?.click()} aria-label="Add screenshots" title="Add screenshots">＋</button>
         <button onClick={() => setView({ x: 0, y: 0, zoom: 0.82 })} aria-label="Fit flow">⌂</button>
         <span />
         <button onClick={() => setShowTranscript((current) => !current)} aria-label="Transcript">≡</button>
       </nav>
-      <input ref={folderInputRef} hidden type="file" accept="image/png,image/jpeg" multiple onChange={(event) => loadFolder(event.target.files)} />
+      <input ref={screenshotInputRef} hidden type="file" accept="image/png,image/jpeg" multiple onChange={(event) => { addScreenshots(event.target.files); event.currentTarget.value = ""; }} />
+      <input ref={folderInputRef} hidden type="file" accept="image/png,image/jpeg" multiple onChange={(event) => { loadFolder(event.target.files); event.currentTarget.value = ""; }} />
 
       <section
         className={`flow-viewport ${dragging ? "dragging" : ""}`}
@@ -523,7 +567,7 @@ export function CanvasWorkspace() {
           <small>New preflight</small>
           <h1 id="empty-canvas-title">Bring your launch screens.</h1>
           <p>Choose 3–6 screenshots, or enable Live and describe what you are shipping.</p>
-          <div><button onClick={() => folderInputRef.current?.click()}>Choose screenshots</button><button className="enable-live-empty" onClick={() => void director.start()}>Enable Live</button></div>
+          <div><button className="add-screenshots-empty" onClick={() => screenshotInputRef.current?.click()}>Add screenshots</button><button className="enable-live-empty" onClick={() => void director.start()}>Enable Live</button></div>
         </section>}
 
         {hasProjectContent && <div className="flow-plane" style={{ transform: `translate(${view.x}px, ${view.y}px) scale(${view.zoom})` }}>
@@ -603,9 +647,9 @@ export function CanvasWorkspace() {
       </aside>}
 
       {showAssets && <aside className="asset-drawer">
-        <div className="drawer-heading"><div><small>User-approved folder</small><h2>Product screens</h2></div><button onClick={() => setShowAssets(false)}>×</button></div>
-        <div className="asset-tools"><button onClick={() => folderInputRef.current?.click()}>Choose folder</button><input value={assetQuery} onChange={(event) => setAssetQuery(event.target.value)} placeholder="Search filenames" /></div>
-        {assets.length === 0 ? <button className="empty-assets" onClick={() => folderInputRef.current?.click()}><strong>Grant one folder</strong><span>PNG/JPG filenames stay local until you confirm Run.</span></button> : <div className="asset-shelf">{visibleAssets.map((asset) => {
+        <div className="drawer-heading"><div><small>Approved source media</small><h2>Product screenshots</h2></div><button onClick={() => setShowAssets(false)}>×</button></div>
+        <div className="asset-tools"><button className="add-assets-button" onClick={() => screenshotInputRef.current?.click()}>Add screenshots</button><button className="folder-assets-button" onClick={() => folderInputRef.current?.click()}>Choose folder</button><input value={assetQuery} onChange={(event) => setAssetQuery(event.target.value)} placeholder="Search filenames" /></div>
+        {assets.length === 0 ? <button className="empty-assets" onClick={() => screenshotInputRef.current?.click()}><strong>Add 3–6 screenshots</strong><span>Select PNG or JPG files. They stay local until you confirm Run.</span></button> : <div className="asset-shelf">{visibleAssets.map((asset) => {
           const selected = selectedAssetIds.includes(asset.id);
           return <div className={`shelf-card ${selected ? "selected" : ""}`} key={asset.id}><button onClick={() => toggleAsset(asset.id)}><span style={{ backgroundImage: `url(${asset.previewUrl})` }} /><strong>{asset.name}</strong><small>{selected ? "Selected for brief" : "Select"}</small></button><button className="place-button" disabled={!selected} onClick={() => void handleToolCall({ name: "set_scene_asset", args: { scene_id: selectedScene.id, asset_id: asset.id, rationale: "Chosen by the user from the approved folder" } })}>Place in {selectedScene.id}</button></div>;
         })}</div>}
