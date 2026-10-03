@@ -42,7 +42,7 @@ Use Node.js 20.9 or newer. Set `GEMINI_API_KEY` in `.env.local` to an AI Studio 
 
 The permanent key is read only by `/api/live-token`, which exchanges it for a one-use, short-lived token. It must never be named `NEXT_PUBLIC_GEMINI_API_KEY`, placed in client code or committed. The temporary hackathon account and its project may be deleted after the event, so replace the key for any later deployment.
 
-Verification commands:
+Frontend verification commands:
 
 ```bash
 npm run typecheck
@@ -50,6 +50,12 @@ npm run lint
 npm test
 npm run build
 npm audit --omit=dev
+```
+
+Backend verification commands:
+
+```bash
+./backend/.venv/bin/pytest backend/
 ```
 
 ### Brain companion (FR-12/FR-14)
@@ -157,7 +163,9 @@ The v1.4 fallback applies: if live TRIBE fails the 12:30 gate, keep the Gemini p
 
 ## Build stack
 
-The FR-01 slice uses Next.js 16, React 19, TypeScript, Zod and `@google/genai`. `gemini-3.8-live` provides low-latency native audio, automatic voice activity detection, barge-in, transcripts and function calls; the Director uses the firm `Kore` voice. A Next.js server route mints ephemeral Live tokens, while Live audio flows directly between the browser and Gemini. Later orchestration remains planned for Python/FastAPI, rendering for Remotion and the TRIBE v2 worker for a GPU environment.
+The FR-01 slice uses Next.js 16, React 19, TypeScript, Zod and `@google/genai`. `gemini-3.8-live` provides low-latency native audio, automatic voice activity detection, barge-in, transcripts and function calls; the Director uses the firm `Kore` voice. A Next.js server route mints ephemeral Live tokens, while Live audio flows directly between the browser and Gemini.
+
+The backend pipeline (FR-01..FR-10) uses Python 3.12, FastAPI, Pydantic, and Hatchling, orchestrating concept planning, Remotion motion graphics composition specs, simulated viewer panels (Gemini via Condense), deterministic goal-aligned scoring, and export bundles. TRIBE v2 runs on a GPU worker for neural simulation.
 
 The direct Gemini Live WebSocket is the narrow PRD v1.2 exception to Condense routing because the required full-duplex transport is not available through the adopted Condense path. Planning, viewer-panel and explanation calls must still go through Condense and report real token savings when implemented.
 

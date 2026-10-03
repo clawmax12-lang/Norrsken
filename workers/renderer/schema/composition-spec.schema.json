@@ -1,0 +1,251 @@
+{
+  "$defs": {
+    "AssetKind": {
+      "description": "Generated supporting asset type.",
+      "enum": [
+        "image",
+        "video"
+      ],
+      "title": "AssetKind",
+      "type": "string"
+    },
+    "BriefField": {
+      "description": "Brief fields that on-screen copy may be sourced from (``source_field``).",
+      "enum": [
+        "product_name",
+        "one_liner",
+        "goal_note",
+        "audience"
+      ],
+      "title": "BriefField",
+      "type": "string"
+    },
+    "GeneratedAsset": {
+      "additionalProperties": false,
+      "description": "A generated background or b-roll clip with provenance. Never contains product UI or text.",
+      "properties": {
+        "duration_s": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Duration S"
+        },
+        "kind": {
+          "$ref": "#/$defs/AssetKind"
+        },
+        "model": {
+          "minLength": 1,
+          "title": "Model",
+          "type": "string"
+        },
+        "path": {
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "prompt": {
+          "minLength": 1,
+          "title": "Prompt",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "path",
+        "model",
+        "prompt",
+        "sha256"
+      ],
+      "title": "GeneratedAsset",
+      "type": "object"
+    },
+    "Layout": {
+      "description": "Where the real screenshot sits relative to the headline.",
+      "enum": [
+        "device_center",
+        "device_float",
+        "text_only"
+      ],
+      "title": "Layout",
+      "type": "string"
+    },
+    "SceneSpec": {
+      "additionalProperties": false,
+      "description": "One scene in frames, with its copy, real screenshot and optional generated backdrop.",
+      "properties": {
+        "backdrop": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/GeneratedAsset"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "end_frame": {
+          "exclusiveMinimum": 0,
+          "title": "End Frame",
+          "type": "integer"
+        },
+        "layout": {
+          "$ref": "#/$defs/Layout"
+        },
+        "screenshot": {
+          "minLength": 1,
+          "title": "Screenshot",
+          "type": "string"
+        },
+        "source_field": {
+          "$ref": "#/$defs/BriefField"
+        },
+        "start_frame": {
+          "minimum": 0,
+          "title": "Start Frame",
+          "type": "integer"
+        },
+        "text": {
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        },
+        "transition_in": {
+          "$ref": "#/$defs/Transition"
+        }
+      },
+      "required": [
+        "start_frame",
+        "end_frame",
+        "text",
+        "source_field",
+        "screenshot",
+        "layout",
+        "transition_in"
+      ],
+      "title": "SceneSpec",
+      "type": "object"
+    },
+    "Theme": {
+      "additionalProperties": false,
+      "description": "Visual tokens for one video. Typography follows the template's design system.",
+      "properties": {
+        "accent": {
+          "pattern": "^#[0-9a-fA-F]{6}$",
+          "title": "Accent",
+          "type": "string"
+        },
+        "background": {
+          "pattern": "^#[0-9a-fA-F]{6}$",
+          "title": "Background",
+          "type": "string"
+        },
+        "font_family": {
+          "minLength": 1,
+          "title": "Font Family",
+          "type": "string"
+        },
+        "foreground": {
+          "pattern": "^#[0-9a-fA-F]{6}$",
+          "title": "Foreground",
+          "type": "string"
+        }
+      },
+      "required": [
+        "background",
+        "foreground",
+        "accent",
+        "font_family"
+      ],
+      "title": "Theme",
+      "type": "object"
+    },
+    "Transition": {
+      "description": "How a scene enters.",
+      "enum": [
+        "cut",
+        "fade",
+        "push",
+        "scale"
+      ],
+      "title": "Transition",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Everything Remotion needs to render one 1080x1920, 30 fps, 15 s variant.",
+  "properties": {
+    "cta": {
+      "minLength": 1,
+      "title": "Cta",
+      "type": "string"
+    },
+    "cta_source_field": {
+      "$ref": "#/$defs/BriefField"
+    },
+    "duration_frames": {
+      "exclusiveMinimum": 0,
+      "title": "Duration Frames",
+      "type": "integer"
+    },
+    "fps": {
+      "default": 30,
+      "maximum": 30,
+      "minimum": 30,
+      "title": "Fps",
+      "type": "integer"
+    },
+    "height": {
+      "default": 1920,
+      "maximum": 1920,
+      "minimum": 1920,
+      "title": "Height",
+      "type": "integer"
+    },
+    "scenes": {
+      "items": {
+        "$ref": "#/$defs/SceneSpec"
+      },
+      "minItems": 1,
+      "title": "Scenes",
+      "type": "array"
+    },
+    "theme": {
+      "$ref": "#/$defs/Theme"
+    },
+    "variant_id": {
+      "pattern": "^[A-Z]$",
+      "title": "Variant Id",
+      "type": "string"
+    },
+    "width": {
+      "default": 1080,
+      "maximum": 1080,
+      "minimum": 1080,
+      "title": "Width",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "variant_id",
+    "duration_frames",
+    "theme",
+    "scenes",
+    "cta",
+    "cta_source_field"
+  ],
+  "title": "CompositionSpec",
+  "type": "object"
+}
