@@ -1,6 +1,6 @@
 # Preflight visual baseline
 
-**Approved direction:** seven original images and the motion clip supplied by the product owner are the shared baseline. **[FLORA](https://flora.ai/) and reference 08 are the primary main-interface target** in PRD v1.6: black dotted canvas, narrow floating tools and clean content-first branches. Earlier canvas images remain supporting references; original brain images still define anatomy quality. Two-way female Gemini Live, standalone orb and prompt beam are required. This document supports [PRD §12](../../PRD.md#12-ui-and-the-analysis-intro); it does not replace priorities, scientific constraints or acceptance criteria in the PRD.
+**Approved direction:** eight original images and the motion clip supplied by the product owner are the shared baseline. **[FLORA](https://flora.ai/) and reference 08 are the primary main-interface target** in PRD v1.6: black dotted canvas, narrow floating tools and clean content-first branches. Specific/reference 09 and the owner's Sana-like direction reinforce restraint and contextual detail, not a new shell. Earlier canvas images remain supporting references; original brain images still define anatomy quality. Two-way female Gemini Live, standalone orb and prompt beam are required. This document supports [PRD §12](../../PRD.md#12-ui-and-the-analysis-intro); it does not replace priorities, scientific constraints or acceptance criteria in the PRD.
 
 All originals are committed under `references/` so every teammate and Conductor workspace can access them. They are design references, not completed Preflight UI or brain simulation output. Preserve Meta/TRIBE source attribution; implement Preflight's own identity rather than copying their branding.
 
@@ -51,6 +51,14 @@ These images clarified readable media/storyboard cards, curved lineage and open 
 William explicitly selected **https://flora.ai/ — "exakt denna design"** and supplied this workspace screenshot. Match its spatial hierarchy: full black dotted workspace, generous negative space, narrow floating vertical tools at left, small project identity top-left, compact grouped actions top-right and discreet zoom/queue controls below. Add our bottom prompt and Gemini presence without turning the canvas into a chat dashboard. FLORA is the shell target, not an implementation dependency or new voice provider.
 
 Use Preflight branding, licensed Redaction and restrained orange-red instead of copying FLORA's logo/green accent. The visible onboarding survey, external assistant launch buttons, upgrade/account/share features and marketing assets are not our hackathon scope. Our empty state invites source upload/Enable Live; our content is real storyboard/render/pretest evidence. Detailed [clean-flow brief](CLEAN_FLOW_DESIGN.md), [Director visuals](DIRECTOR_VISUALS.md), [font assets](../../public/fonts/redaction/README.md) and [opt-in theme](preflight-theme.css) are ready for the existing frontend owners.
+
+## Reference 09 — Specific restraint and readable connections
+
+![Owner-supplied Specific screenshot: sparse dark dot canvas, compact neutral nodes and restrained orange connections](references/09-specific-sparse-flow.png)
+
+The owner supplied this as an additional reference from **specific.dev**, emphasizing professional UI/UX, minimal visible chrome and "nothing left to take away", with a Sana-like sense of calm. Use compact content, disciplined spacing, subdued surfaces and clear warm connections as supporting quality cues. FLORA/reference 08 remains the primary shell; do not import Specific's permanent navigation sidebar, deployment/database features, promotional panels, branding or copy into Preflight. The screenshot is a reference, not our system's backend topology.
+
+Apply [minimum interface, complete capability](CLEAN_FLOW_DESIGN.md#minimum-interface-complete-capability): one contextual primary action, details on demand, and persistent safety/evidence controls. Sparse does not mean low legibility, missing required features or hiding errors/privacy/data mode.
 
 ## What "extremely cool, and you can see how it works" means
 
@@ -103,3 +111,4 @@ The originals were copied byte-for-byte; they were not resized, generated or ret
 | `06-elevenlabs-flows-layout.png` | `aa9c4211-cd8d-47c2-810b-d287d42fa613` | 3420 × 1962 PNG | `e99f768f266fc0cc7e4d3e63b578233d660aa313daae7acdce589ab850f8d981` |
 | `07-dark-dotted-canvas.png` | `9398120a-d11f-4fac-a26a-a5adf8d20bca` | 3420 × 1962 PNG | `b14936d8202c324407ab2a09af0ca2342f3084d22eb8b757e5c8a855a4dc2a44` |
 | `08-flora-canvas-primary.png` | `07936ce0-78e6-44d6-b0c4-d3982ad4cb4c` | 3420 × 1962 PNG | `39a5152ec6e1d4a3dbaf56fc5e57403ca6884f1552ebb3353a3488cdde431b03` |
+| `09-specific-sparse-flow.png` | `3512cb96-690d-4cb9-a7c2-68a1d4a52f4d` | 3420 × 1962 PNG | `0434efb3fe3190e154b54e9cfafc11bae2c387607e591606e79b42bd4730b054` |

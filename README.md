@@ -17,7 +17,7 @@ Preflight turns a product brief and 3–6 screenshots into three 15-second motio
 | [PRD.md](PRD.md) | Product scope, FR-01–FR-16, acceptance criteria, architecture, UI, timeline and decision log. The source of truth for what to build. |
 | [TEAM.md](TEAM.md) | Owners, task status, integration evidence, open blockers and the shared Git/Conductor workflow. |
 | [AGENTS.md](AGENTS.md) | Instructions every coding agent must follow. Claude loads these through [CLAUDE.md](CLAUDE.md). |
-| [Visual baseline](docs/design/README.md) | All seven original reference images and the motion clip; FLORA is the primary shell reference, original TRIBE images define brain quality. |
+| [Visual baseline](docs/design/README.md) | All eight original reference images and the motion clip; FLORA is primary, Specific supports restraint and original TRIBE images define brain quality. |
 | [Clean-flow design](docs/design/CLEAN_FLOW_DESIGN.md) | FLORA-style layout, readable A/B/C branches, minimal floating controls, shared dark/orange-red tokens and frontend handoff. |
 | [Redaction assets](public/fonts/redaction/README.md) | Five unchanged self-hosted WOFF2 files, license/provenance and selective readable typography. |
 | [Director visuals](docs/design/DIRECTOR_VISUALS.md) | Both requested effects adapted to our palette, verified package API, controlled React example and actual audio/state binding. |

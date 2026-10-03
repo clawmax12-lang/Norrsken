@@ -6,6 +6,23 @@ Approved owner direction, 3 Oct 2026. Implements [PRD v1.6 §12](../../PRD.md#12
 
 A quiet black dotted workspace where real product screenshots become readable storyboard branches, playable videos, simulated comparisons and one clear launch recommendation — with a cinematic brain and a conversational Director as companions.
 
+## Minimum interface, complete capability
+
+Owner principle: "Great design is achieved not when there is nothing more to add, but when there is nothing left to take away." Treat this as an editing discipline, not permission to remove required functionality. FLORA remains the layout target; the [Specific screenshot](README.md#reference-09--specific-restraint-and-readable-connections) and the owner's Sana-like direction reinforce quiet hierarchy, precise type and progressive disclosure.
+
+The default view must answer **what am I making, what is happening, and what can I do next?** Prioritize the current content/selected path and one primary action appropriate to the stage. Full logs, transcripts, technical metadata, detailed reasons and advanced controls remain available on demand, with a clear return to the canvas. No panel opens merely to fill empty space.
+
+| Context | Primary visible content / action | Detail on demand |
+| --- | --- | --- |
+| Empty project | Short upload invitation, source upload, Enable Live | Validated brief fields and help |
+| Storyboard review | Readable source/hook/scene cards and A/B/C choices; approve the bounded Run | Full scene editor, source traceability |
+| Actual work | Real running node/status and current path | Persisted log, retries, durations |
+| Result | Recommended video, short evidence-backed reason, runner-up and Export | Curves, full explanations, detailed brain analysis |
+
+Compact status-only nodes can stay compact; show media where it helps recognize or compare content. Brain and voice are quiet companions at rest and expand for intentional interaction. Keep one accent hierarchy, consistent spacing/icons and readable neutral typography. Do not use extra badges, duplicated summaries, tooltips or glowing decoration to make the interface appear more sophisticated.
+
+Minimalism must not hide active microphone/privacy state, mute/stop, failures, job confirmation, selected variant/time or no-data/precomputed labels. Required brain legends/evidence remain visible when their view is open. Details must work with click/keyboard, not hover alone. Every persistent element should justify itself through the current decision, navigation, safety or evidence; otherwise remove it or reveal it contextually.
+
 ## Main layout
 
 - Full-viewport `#0A0A0A` canvas; faint neutral dot grid about 24 px apart. Preserve generous open space and fit the initial three lanes to the desktop viewport.
