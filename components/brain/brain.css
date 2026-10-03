@@ -97,7 +97,7 @@
 
 /* Legend */
 .bv-legend { position: absolute; z-index: 4; left: 40px; bottom: 90px; width: 210px; padding: 10px 12px; border: 1px solid rgba(255,255,255,.1); border-radius: 8px; background: rgba(13,13,13,.9); }
-.bv-heatbar { margin-top: 8px; height: 8px; border-radius: 4px; background: linear-gradient(90deg, #b9b9b9 0%, #b9b9b9 8%, #6b0805 8%, #cc1a08 30%, #fa6b0a 58%, #ffc72e 82%, #fff4b8 100%); }
+.bv-heatbar { margin-top: 8px; height: 8px; border-radius: 4px; background: linear-gradient(90deg, #b9b9b9 0%, #b9b9b9 8%, #730805 8%, #db1f0a 40%, #ff6b10 72%, #ffad29 90%, #ffe68c 100%); }
 .bv-heat-ticks { margin-top: 4px; display: flex; justify-content: space-between; color: var(--bv-text-2); font-size: 10px; }
 .bv-legend-empty { display: block; margin-top: 6px; font: 600 12px/1.3 var(--bv-mono); color: var(--bv-text); }
 .bv-legend .bv-footnote { font-size: 10px; margin-top: 6px; }
@@ -378,3 +378,31 @@
 .bv-embedded.bv-mode-expanded .bv-workspace { height: calc(100vh - 28px); grid-template-rows: minmax(0, 1fr) auto; }
 .bv-embedded.bv-mode-expanded .bv-stage { min-height: 0; }
 .bv-timeline { align-self: start; }
+
+/* ---- Entry isolation and quiet dock (owner correction, 3 Oct) ----
+   The intro is a seamless full-viewport field above any host chrome; nothing of the host shows. */
+.bv-mode-entry .bv-stage { z-index: 2147483000; border: 0; border-radius: 0; background: radial-gradient(ellipse 70% 70% at 55% 46%, #0c0c0d 0%, #040404 62%, #020202 100%); }
+/* Returning session: the pre-hydration script marks the document; the server-rendered cover never paints. */
+:root:has(#bv-played-flag) .bv-page.bv-booting .bv-stage { display: none !important; }
+.bv-entry-overlay { position: absolute; inset: 0; z-index: 10; pointer-events: none; }
+.bv-entry-overlay > * { pointer-events: auto; }
+.bv-entry-overlay .bv-skip { top: 28px; right: 28px; background: rgba(0,0,0,.35); border-color: rgba(243,239,233,.28); color: var(--pf-text, #f3efe9); }
+.bv-entry-overlay .bv-entry-title { position: absolute; left: 6vw; bottom: 9vh; display: grid; gap: 8px; justify-items: start; }
+.bv-entry-overlay .bv-entry-title h1 { margin: 0; font-family: var(--pf-font-display, Georgia, "Times New Roman", serif); font-weight: 400; font-size: clamp(44px, 5.4vw, 82px); letter-spacing: -.02em; line-height: 1; color: var(--pf-text, #f3efe9); }
+.bv-entry-overlay .bv-entry-title p { margin: 0; color: var(--pf-text-secondary, #aba7a2); font-size: 14px; }
+.bv-entry-data { color: var(--pf-text-secondary, #8f8b86); font: 500 11px/1.4 var(--bv-mono); letter-spacing: .06em; text-transform: uppercase; }
+.bv-entry-caption { position: absolute; z-index: 9; right: 7vw; bottom: 11vh; max-width: 300px; display: grid; gap: 5px; color: var(--pf-text, #f3efe9); animation: bv-fade .6s ease both; }
+.bv-entry-caption strong { font-family: var(--pf-font-display, Georgia, serif); font-weight: 400; font-size: 22px; }
+.bv-entry-caption span:last-child { color: var(--pf-text-secondary, #aba7a2); font-size: 12.5px; line-height: 1.5; }
+/* Docked: the brain floats on the canvas, no surrounding card, border or shadow. */
+.bv-mode-dock .bv-stage, .bv-mode-dock.bv-dock-working .bv-stage, .bv-mode-dock.bv-dock-focus .bv-stage, .bv-mode-dock.bv-dock-pinned .bv-stage { background: transparent !important; border-color: transparent !important; box-shadow: none !important; }
+
+/* Stacking: the hidden layout wrapper must never form a stacking context in entry/dock, or the
+   intro (and Skip) would be trapped below host chrome. Absolute + z-index:auto does not. */
+.bv-mode-dock .bv-layout, .bv-mode-entry .bv-layout { position: absolute; inset: 0 auto auto 0; width: 0; height: 0; overflow: visible; z-index: auto; }
+/* Expanded analysis is a deliberate full overlay above host chrome; dock stays in the canvas layer. */
+.bv-embedded.bv-mode-expanded .bv-layout { z-index: 2147482000; }
+/* Size/position animation only while docking from the intro or resizing in the dock, never on first paint. */
+.bv-mode-dock .bv-stage, .bv-mode-entry .bv-stage { transition: none; }
+.bv-page.bv-docking .bv-stage, .bv-page.bv-mode-dock.bv-dock-settled .bv-stage { transition: top .9s cubic-bezier(.2,.8,.2,1), left .9s cubic-bezier(.2,.8,.2,1), width .9s cubic-bezier(.2,.8,.2,1), height .9s cubic-bezier(.2,.8,.2,1); }
+.bv-page.bv-mode-dock.bv-dock-settled .bv-stage { transition-duration: .35s; }

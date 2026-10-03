@@ -94,6 +94,8 @@ export class BrainScene {
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this.renderer.toneMappingExposure = 0.92;
     this.renderer.setClearColor(0x000000, 0);
     this.renderer.domElement.className = "brain-canvas";
     this.renderer.domElement.setAttribute("aria-hidden", "true");
@@ -303,6 +305,13 @@ export class BrainScene {
     // Aim slightly below and in front of the brain centre so the head profile frames it.
     const target = new THREE.Vector3(0, -6, -6);
     this.flyTo(target.clone().add(pose.dir.multiplyScalar(pose.distance)), target, durationMs);
+  }
+
+  /** Camera shot by direction and distance (multiples of the brain radius), around the framing target. */
+  flyToDirection(dir: [number, number, number], distanceFactor: number, durationMs: number) {
+    const target = new THREE.Vector3(0, -6, -6);
+    const offset = new THREE.Vector3(...dir).normalize().multiplyScalar(this.geometry.radius * distanceFactor * this.surfaceDistanceFactor());
+    this.flyTo(target.clone().add(offset), target, durationMs);
   }
 
   resetCamera() {
