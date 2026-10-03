@@ -19,18 +19,33 @@ Humans: start with PRD §1–§7. Builders: also read §8–§14. Agents: read A
 
 ## How to run
 
-At this documentation bootstrap, the repository has no application implementation, dependency manifests, start command or test suite. No application acceptance criteria have been verified. Do not infer that a feature works from its presence in the PRD.
+The repository currently includes the native SwiftUI dashboard shell for iPhone and iPad. It is an entry surface only: brief persistence, rendering, simulation, scoring, and results are not implemented, and no functional requirement acceptance criteria should be inferred from the dashboard.
 
 ```bash
 git clone https://github.com/clawmax12-lang/Norrsken.git
 cd Norrsken
+open Preflight.xcodeproj
 ```
 
-Read the documents above and claim work in TEAM.md. The first implementation change must replace this section with the actual installation, environment, development and verification commands, checked from a clean clone. Keep it current with subsequent changes.
+Select the shared **Preflight** scheme and run it on an iOS 17 or newer iPhone or iPad simulator. The app has no external package dependencies and does not require environment variables for the dashboard.
+
+Command-line build verification on a Mac with Xcode 16 or newer:
+
+```bash
+xcodebuild \
+  -project Preflight.xcodeproj \
+  -scheme Preflight \
+  -sdk iphonesimulator \
+  -destination 'generic/platform=iOS Simulator' \
+  CODE_SIGNING_ALLOWED=NO \
+  build
+```
+
+Read the documents above and claim work in TEAM.md before extending the dashboard into the P0 flow. Keep this section current as runtime services are added.
 
 ## Planned build stack
 
-The PRD proposes Next.js, TypeScript, Tailwind and three.js for the web app; Python/FastAPI for orchestration; Remotion for rendering; and a GPU worker for TRIBE v2. Gemini provides planning, the viewer panel and explanations, with all LLM calls routed through Condense.
+The current dashboard shell uses SwiftUI. The PRD proposes Next.js, TypeScript, Tailwind and three.js for the web experience; Python/FastAPI for orchestration; Remotion for rendering; and a GPU worker for TRIBE v2. Gemini provides planning, the viewer panel and explanations, with all LLM calls routed through Condense. The dashboard does not yet connect to those services.
 
 The PRD designates **Claude Opus 5.5** as the primary coding agent. This is a build plan, not a claim that the application has already been implemented with it. This documentation bootstrap was prepared with Codex from the supplied PDF.
 

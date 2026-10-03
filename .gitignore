@@ -14,3 +14,9 @@ model-cache/
 *.pt
 *.pth
 *.safetensors
+
+# Xcode user state and build products
+.DS_Store
+DerivedData/
+*.xcuserstate
+xcuserdata/
