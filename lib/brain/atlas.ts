@@ -113,6 +113,8 @@ export interface RegionStatistics {
   regionMeans: Float32Array;
   groupMeans: Record<GroupId, Float32Array>;
   nTimesteps: number;
+  /** "viewer Desikan-Killiany groups" or the producer's atlas (e.g. worker Destrieux groups.json). */
+  groupSource: string;
 }
 
 /**
@@ -167,7 +169,25 @@ export function computeRegionStatistics(binding: CorticalBinding, atlas: AtlasLa
     for (let c = 0; c < keys.length; c++) regionMeans[rowOffset + c] /= counts[c];
     for (const g of groupIds) if (groupCounts[g] > 0) groupMeans[g][t] /= groupCounts[g];
   }
-  return { keys, regionMeans, groupMeans, nTimesteps: nT };
+  let groupSource = "viewer Desikan-Killiany groups";
+  // Producer groups (e.g. the TRIBE worker's Destrieux visual/auditory/language) take precedence
+  // for the meters and curves, so the UI shows the same reduction the backend scored.
+  const worker = binding.workerGroups;
+  if (worker) {
+    groupSource = `worker groups · ${worker.atlas}`;
+    for (const wg of worker.groups) {
+      if (!METER_GROUPS.includes(wg.id as GroupId) || wg.vertexIndices.length === 0) continue;
+      const series = new Float32Array(nT);
+      for (let t = 0; t < nT; t++) {
+        const base = t * binding.nVertices;
+        let sum = 0;
+        for (const v of wg.vertexIndices) sum += binding.values[base + v];
+        series[t] = sum / wg.vertexIndices.length;
+      }
+      groupMeans[wg.id as GroupId] = series;
+    }
+  }
+  return { keys, regionMeans, groupMeans, nTimesteps: nT, groupSource };
 }
 
 export function regionSeries(stats: RegionStatistics, key: string): Float32Array | undefined {

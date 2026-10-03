@@ -57,6 +57,8 @@ export type BrainEvent =
   | { type: "mode.changed"; mode: BrainMode }
   | { type: "variant.selected"; variant: string; dataMode: DataMode }
   | { type: "region.selected"; region: RegionRef | null; time_s: number; dataMode: DataMode }
+  /** A real backend milestone started a ~3 s focus beat; `region` only from genuine samples. */
+  | { type: "workload.focus"; step: string; variant: string | null; message: string; region: RegionRef | null; sample_time_s: number | null; dataMode: DataMode | null }
   /** Emitted on variant/region/mode change, seek and pause (never per animation frame). */
   | { type: "selection.changed"; selection: SelectionSnapshot };
 

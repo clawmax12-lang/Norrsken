@@ -23,9 +23,11 @@ export interface BrainSceneOptions {
   onPick?: (pick: PickResult | null) => void;
   onCameraChange?: (state: CameraState) => void;
   onContextLost?: () => void;
+  /** The user started dragging/zooming: workload choreography should yield to manual control. */
+  onUserInteract?: () => void;
 }
 
-export type CameraPreset = "profile" | "open" | "intro-start" | "front";
+export type CameraPreset = "profile" | "open" | "intro-start" | "front" | "detail";
 
 interface HemiView {
   geo: HemisphereGeometry;
@@ -108,6 +110,7 @@ export class BrainScene {
     this.controls.minDistance = geometry.radius * 1.5;
     this.controls.maxDistance = geometry.radius * 7;
     this.controls.addEventListener("change", this.handleControlsChange);
+    this.controls.addEventListener("start", this.handleControlsStart);
 
     this.uniforms = createInstanceUniforms();
     this.uniforms.uRevealRadius.value = geometry.radius;
@@ -201,7 +204,7 @@ export class BrainScene {
   private applyTime() {
     const b = this.binding;
     if (!b) return;
-    const s = sampleAt(b.times, this.time);
+    const s = sampleAt(b.times, this.time, b.hz);
     this.uniforms.uHasActivity.value = s.inRange ? 1 : 0;
     this.uniforms.uFrameA.value = s.i0;
     this.uniforms.uFrameB.value = s.i1;
@@ -284,6 +287,9 @@ export class BrainScene {
         return { dir: new THREE.Vector3(-0.35, 0.3, -1).normalize(), distance: r * 4.6 };
       case "front":
         return { dir: new THREE.Vector3(0, 0.15, -1).normalize(), distance: r * 3.6 };
+      case "detail":
+        // Neutral closer 3/4 view for workload milestones without genuine data: no region implied.
+        return { dir: new THREE.Vector3(0.82, 0.48, -0.32).normalize(), distance: r * 2.7 };
       case "profile":
       default:
         // Right-hemisphere lateral 3/4 profile, face toward screen right.
@@ -485,6 +491,10 @@ export class BrainScene {
     this.renderer.render(this.scene, this.camera);
   };
 
+  private handleControlsStart = () => {
+    this.options.onUserInteract?.();
+  };
+
   private handleControlsChange = () => {
     this.options.onCameraChange?.(this.getCameraState());
   };
@@ -513,6 +523,7 @@ export class BrainScene {
     this.disposed = true;
     this.renderer.setAnimationLoop(null);
     this.resizeObserver.disconnect();
+    this.controls.removeEventListener("start", this.handleControlsStart);
     this.controls.dispose();
     const el = this.renderer.domElement;
     el.removeEventListener("pointerdown", this.handlePointerDown);

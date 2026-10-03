@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore
 import Link from "next/link";
 import type * as THREE from "three";
 import { adaptSimulationResult, computeDisplayScale, resolveCorticalValues } from "../../lib/brain/adapter";
-import { METER_GROUPS, REGION_GROUPS, computeRegionStatistics, regionInfo, type RegionStatistics } from "../../lib/brain/atlas";
+import { METER_GROUPS, REGION_GROUPS, computeRegionStatistics, regionInfo, strongestMoment, type RegionStatistics } from "../../lib/brain/atlas";
 import { loadBrainAssets, type BrainAssets } from "../../lib/brain/assets";
 import { PlaybackClock } from "../../lib/brain/clock";
 import type { CorticalBinding, Hemisphere, SceneRef, SimulationResult, SurfaceKind, VariantId } from "../../lib/brain/contract";
@@ -14,7 +14,9 @@ import type { BrainScene, PickResult } from "../../lib/brain/scene";
 import { formatTime, sampleAt, samplePeriod, seriesAt, stepSeconds } from "../../lib/brain/timeline";
 import { ANALYSIS_RUN_KEY_PREFIX, BRAIN_COMMAND, ENTRY_SESSION_KEY, dispatchBrainEvent, type BrainCommand, type BrainEvent, type BrainMode, type DataMode, type RegionRef, type SelectionSnapshot } from "../../lib/brain/events";
 import { useLatest } from "../../lib/brain/useLatest";
+import { STEP_LABELS, statusLine, isWorking, RESULT_STEPS, type Milestone, type WorkloadState } from "../../lib/brain/workload";
 import { BrainStage } from "./BrainStage";
+import { useDockChoreography, type BeatRegion } from "./useDockChoreography";
 import { EntrySequence } from "./EntrySequence";
 import { PreflightSequence } from "./PreflightSequence";
 import { RegionCard } from "./RegionCard";
@@ -25,7 +27,7 @@ import "./brain.css";
 const VARIANTS: VariantId[] = ["A", "B", "C"];
 const DEFAULT_DURATION_S = 15;
 
-type DataOrigin = "file" | "url" | "mock" | "prop";
+type DataOrigin = "file" | "url" | "mock" | "prop" | "backend";
 
 interface VariantData {
   binding?: CorticalBinding;
@@ -112,10 +114,23 @@ export interface BrainCompanionProps {
   initialMode?: Exclude<BrainMode, "entry">;
   /** Standalone /brain route: top bar, canvas placeholder, local loaders and URL parameters. */
   harness?: boolean;
+  /** Pre-adapted genuine bindings per variant (e.g. from the backend adapter in lib/brain/backend.ts). */
+  bindings?: Record<string, CorticalBinding>;
+  /** Concept scenes per variant for "what is on screen" (backend results). */
+  scenesByVariant?: Record<string, SceneRef[]>;
+  /** Real backend workload, for choreography only (never cortical data). */
+  workload?: WorkloadState;
+  consumeMilestone?: (id: number) => void;
+  /** Where the dock sits; the canvas uses top-left. */
+  dockCorner?: "top-left" | "bottom-right";
+  /** Play the once-per-session entry intro on this surface. */
+  entry?: boolean;
+  /** Extra honest notices from the host (e.g. backend artifact problems). */
+  hostNotices?: string[];
 }
 
 export function BrainCompanion(props: BrainCompanionProps) {
-  const { brainSim: brainSimProp = "available", projectId, results, concepts, videos, runId, demoExample, selectedVariant, onSelectVariant, onEvent, initialMode = "dock", harness = false } = props;
+  const { brainSim: brainSimProp = "available", projectId, results, concepts, videos, runId, demoExample, selectedVariant, onSelectVariant, onEvent, initialMode = "dock", harness = false, bindings, scenesByVariant, workload, consumeMilestone, dockCorner = "bottom-right", entry: entryEnabled = true, hostNotices } = props;
   const [assets, setAssets] = useState<BrainAssets | null>(null);
   const [geometry, setGeometry] = useState<BrainGeometry | null>(null);
   const [headGeometry, setHeadGeometry] = useState<THREE.BufferGeometry | null>(null);
@@ -323,6 +338,20 @@ export function BrainCompanion(props: BrainCompanionProps) {
     if (items.length) void ingest(items, "prop");
   }, [assets, results, concepts, ingest]);
 
+  // Backend-adapted bindings (already validated against the worker artifact) and scenes.
+  useEffect(() => {
+    if (!bindings && !scenesByVariant) return;
+    setData((prev) => {
+      const next = { ...prev };
+      for (const v of VARIANTS) {
+        const b = bindings?.[v];
+        const sc = scenesByVariant?.[v];
+        if (b || sc) next[v] = { ...next[v], ...(b ? { binding: b, origin: "backend" as const } : {}), ...(sc ? { scenes: sc } : {}) };
+      }
+      return next;
+    });
+  }, [bindings, scenesByVariant]);
+
   useEffect(() => {
     if (!videos) return;
     setData((prev) => {
@@ -401,7 +430,7 @@ export function BrainCompanion(props: BrainCompanionProps) {
         yMax = Math.max(yMax, v);
       }
     }
-    return { stats, times: binding.times, yMin, yMax: yMax || 1, units: binding.units, mock: binding.mock };
+    return { stats, times: binding.times, hz: binding.hz, groupSource: stats.groupSource, yMin, yMax: yMax || 1, units: binding.units, mock: binding.mock };
   }, [binding, stats, assets, allBindings]);
 
   const mock = Boolean(binding?.mock);
@@ -496,9 +525,11 @@ export function BrainCompanion(props: BrainCompanionProps) {
   useEffect(() => {
     if (entryChecked.current) return;
     entryChecked.current = true;
-    const forced = harness && new URLSearchParams(window.location.search).get("entry") === "replay";
+    const params = new URLSearchParams(window.location.search);
+    const forced = params.get("entry") === "replay";
+    if (!entryEnabled || params.get("entry") === "off") return;
     if (forced || !window.sessionStorage.getItem(ENTRY_SESSION_KEY)) startEntry(forced);
-  }, [harness, startEntry]);
+  }, [entryEnabled, startEntry]);
 
   const finishEntry = useCallback(
     (skipped: boolean) => {
@@ -562,10 +593,95 @@ export function BrainCompanion(props: BrainCompanionProps) {
     [onSelectVariant],
   );
 
+  // ---------------------------------------------------------- dock companion
+  // Hover enlarges; click or Enter/Space pins; Esc unpins. Workload choreography is presentation
+  // driven by real backend events and never writes cortical values or playback time.
+  const [hovered, setHovered] = useState(false);
+  const [pinned, setPinned] = useState(false);
+  const [motionPaused, setMotionPaused] = useState(false);
+  const [manual, setManual] = useState(false);
+  const pickRef = useLatest(pick);
+  const resolveRegion = useCallback(
+    (m: Milestone): BeatRegion | null => {
+      if (!assets || !m.variantId || !RESULT_STEPS.includes(m.step) || brainSim === "off") return null;
+      const vd = data[m.variantId as VariantId];
+      const b = vd?.binding;
+      if (!b) return null;
+      const strongest = strongestMoment(statsFor(b, assets));
+      if (!strongest) return null;
+      const [hemi, atlasName] = strongest.key.split(":") as [Hemisphere, string];
+      const info = regionInfo(atlasName);
+      const label = assets.atlas.names.indexOf(atlasName);
+      if (!info || label < 0) return null;
+      const sampleTime = b.times[strongest.sampleIndex];
+      const sc = vd?.scenes?.find((x) => sampleTime >= x.t_start && sampleTime < x.t_end);
+      return {
+        hemi,
+        label,
+        atlasName,
+        name: info.name,
+        knownFor: info.knownFor,
+        group: REGION_GROUPS[info.group].label,
+        sampleTime,
+        sceneText: sc?.text ?? null,
+        dataMode: b.mock ? "mock" : b.precomputed ? "genuine_precomputed" : "genuine",
+      };
+    },
+    [assets, data, brainSim],
+  );
+  const beat = useDockChoreography({
+    scene,
+    active: mode === "dock" && !entry && sequence === "idle",
+    workload,
+    consumeMilestone,
+    reducedMotion,
+    motionPaused,
+    manual,
+    resolveRegion,
+    dataVersion: data,
+    restoreSelection: () => {
+      const p = pickRef.current;
+      scene?.setSelected(p ? { hemi: p.hemi, label: p.label } : null);
+    },
+    onBeat: (b) =>
+      emit({
+        type: "workload.focus",
+        step: b.milestone.step,
+        variant: b.milestone.variantId,
+        message: b.milestone.message,
+        region: b.region ? { hemi: b.region.hemi, atlasName: b.region.atlasName, name: b.region.name } : null,
+        sample_time_s: b.region?.sampleTime ?? null,
+        dataMode: b.region?.dataMode ?? null,
+      }),
+  });
+  const dockLarge = mode === "dock" && (hovered || pinned || Boolean(beat));
+  const working = workload ? isWorking(workload) : false;
+  const onStagePick = useCallback(
+    (p: PickResult | null) => {
+      // In the dock, the first click pins it open; region picking starts once pinned.
+      if (mode === "dock" && !pinned) {
+        setPinned(true);
+        return;
+      }
+      setPick(p);
+    },
+    [mode, pinned],
+  );
+  const onDockKey = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (mode !== "dock" || e.target !== e.currentTarget) return;
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      e.stopPropagation();
+      setPinned((v) => !v);
+    } else if (e.key === "Escape") {
+      setPinned(false);
+    }
+  };
+
   // selection.changed: variant/region/mode/data changes, seeks and pauses — not every frame.
   const snapshotRef = useLatest((): SelectionSnapshot => {
     const t = clock.getSnapshot().time;
-    const s = binding ? sampleAt(binding.times, t) : null;
+    const s = binding ? sampleAt(binding.times, t, binding.hz) : null;
     const scenes = current?.scenes;
     const idx = scenes ? scenes.findIndex((sc) => t >= sc.t_start && t < sc.t_end) : -1;
     return {
@@ -654,14 +770,19 @@ export function BrainCompanion(props: BrainCompanionProps) {
     if (!b) return "No brain data";
     return b.mock ? "MOCK fixture" : b.precomputed ? "Precomputed result" : "Genuine result";
   };
+  const allNotices = hostNotices?.length ? [...notices, ...hostNotices] : notices;
   const emptyCopy = brainSim === "off" ? "Brain sim off · this run completed with the Gemini panel only" : "No brain data · curves appear only with genuine predictions";
-  const sample = binding ? sampleAt(binding.times, clockState.time) : null;
+  const sample = binding ? sampleAt(binding.times, clockState.time, binding.hz) : null;
   const viewLabel = demoActive && demo ? `Demo example · ${demo.title}` : `Variant ${variant}`;
   const chipClass = mock ? "bv-chip-mock" : dataMode === "demo_example" ? "bv-chip-demo" : binding ? "bv-chip-live" : "";
   const pageClass = [
     "bv-page",
     `bv-mode-${mode}`,
     harness ? "bv-harness" : "bv-embedded",
+    `bv-dock-${dockCorner}`,
+    dockLarge ? "bv-dock-large" : "",
+    working && mode === "dock" ? "bv-dock-working" : "",
+    beat ? "bv-dock-focus" : "",
     sequence === "running" ? "bv-seq-running" : "",
     sequence === "handover" || handoverAnim ? "bv-seq-handover" : "",
   ]
@@ -712,9 +833,9 @@ export function BrainCompanion(props: BrainCompanionProps) {
                 </button>
               ))}
             </div>
-            {notices.length > 0 && (
+            {allNotices.length > 0 && (
               <ul className="bv-notices" aria-live="polite">
-                {notices.slice(-3).map((n, i) => (
+                {allNotices.slice(-3).map((n, i) => (
                   <li key={`${i}-${n}`}>{n}</li>
                 ))}
               </ul>
@@ -765,9 +886,9 @@ export function BrainCompanion(props: BrainCompanionProps) {
               {runData?.videoName && <p className="bv-footnote">Video: {runData.videoName}</p>}
             </section>
           )}
-          {notices.length > 0 && (
+          {allNotices.length > 0 && (
             <ul className="bv-notices" aria-live="polite">
-              {notices.slice(-4).map((n, i) => (
+              {allNotices.slice(-4).map((n, i) => (
                 <li key={`${i}-${n}`}>{n}</li>
               ))}
             </ul>
@@ -775,7 +896,15 @@ export function BrainCompanion(props: BrainCompanionProps) {
         </aside>
 
         <div className={`bv-workspace${fullscreen ? " bv-fullscreen" : ""}`} ref={workspaceRef}>
-          <div className="bv-stage">
+          <div
+            className="bv-stage"
+            onMouseEnter={() => mode === "dock" && setHovered(true)}
+            onMouseLeave={() => setHovered(false)}
+            onKeyDown={onDockKey}
+            tabIndex={mode === "dock" ? 0 : -1}
+            role={mode === "dock" ? "group" : undefined}
+            aria-label={mode === "dock" ? `Brain companion, ${viewLabel}, ${statusLabel}. Enter pins it open, Escape unpins.` : undefined}
+          >
             {mock && (
               <div className="bv-mock-banner" role="status">
                 <strong>MOCK</strong> Synthetic test fixture · not a simulation result · do not use as evidence
@@ -795,9 +924,10 @@ export function BrainCompanion(props: BrainCompanionProps) {
                 open={open}
                 selected={selectedForScene}
                 reducedMotion={reducedMotion}
-                onPick={setPick}
+                onPick={onStagePick}
                 onReady={setScene}
                 onHead={setHead}
+                onUserInteract={() => mode === "dock" && setManual(true)}
                 label={`Interactive 3D cortex, variant ${variant}, ${statusLabel}. Drag to orbit, scroll to zoom, double-click to reset.`}
               />
             )}
@@ -818,7 +948,7 @@ export function BrainCompanion(props: BrainCompanionProps) {
             {binding && curves && sequence === "idle" && (
               <div className="bv-meters" aria-label="Group meters at the current time">
                 {METER_GROUPS.map((g) => {
-                  const v = seriesAt(curves.stats.groupMeans[g], curves.times, clockState.time);
+                  const v = seriesAt(curves.stats.groupMeans[g], curves.times, clockState.time, curves.hz);
                   const w = Number.isFinite(v) ? Math.max(0, Math.min(1, v / meterMax)) : 0;
                   return (
                     <div className="bv-meter" key={g}>
@@ -875,6 +1005,7 @@ export function BrainCompanion(props: BrainCompanionProps) {
                 variant={variant}
                 stats={stats}
                 times={binding?.times ?? null}
+                hz={binding?.hz}
                 scenes={current?.scenes}
                 atlasNames={assets?.atlas.names ?? []}
                 meterMax={meterMax}
@@ -885,6 +1016,19 @@ export function BrainCompanion(props: BrainCompanionProps) {
                 onLockOn={(hemi, atlasName, time_s) => emit({ type: "analysis.lock_on", runId: runKey ?? "preview", variant, region: regionRef(hemi, atlasName), time_s })}
                 onFinish={finishSequence}
               />
+            )}
+
+            {binding && (dataMode === "mock" || dataMode === "demo_example" || dataMode === "genuine_precomputed") && (
+              <span className={`bv-dock-tag ${dataMode === "mock" ? "bv-dock-tag-mock" : ""}`}>
+                {dataMode === "mock" ? "MOCK" : dataMode === "demo_example" ? "Demo example · precomputed" : "Precomputed"}
+              </span>
+            )}
+
+            {workload && (
+              <p className="bv-dock-status bv-mono" aria-live="polite">
+                <i aria-hidden="true" className={working ? "bv-dot-working" : ""} />
+                {statusLine(workload)}
+              </p>
             )}
 
             <div className="bv-dock-bar" aria-label="Brain dock">
@@ -899,6 +1043,12 @@ export function BrainCompanion(props: BrainCompanionProps) {
               <div className="bv-dock-actions">
                 <button type="button" className="bv-icon-button" onClick={() => setMode("expanded")} disabled={Boolean(entry)}>Expand</button>
                 <button type="button" className="bv-icon-button" onClick={() => startEntry(true)} disabled={Boolean(entry) || sequence !== "idle"} title="Replay the entry intro">Replay</button>
+                <button type="button" className="bv-icon-button" onClick={() => setPinned((v) => !v)} aria-pressed={pinned}>{pinned ? "Unpin" : "Pin"}</button>
+                {manual || motionPaused ? (
+                  <button type="button" className="bv-icon-button" onClick={() => { setManual(false); setMotionPaused(false); }}>Resume motion</button>
+                ) : (
+                  <button type="button" className="bv-icon-button" onClick={() => setMotionPaused(true)}>Pause motion</button>
+                )}
               </div>
             </div>
 
@@ -919,6 +1069,31 @@ export function BrainCompanion(props: BrainCompanionProps) {
             )}
           </div>
 
+          {mode === "dock" && beat && (
+            <aside className="bv-dock-callout" aria-live="polite">
+              <span className="bv-eyebrow">
+                {STEP_LABELS[beat.milestone.step]}
+                {beat.milestone.variantId ? ` · Variant ${beat.milestone.variantId}` : ""} · backend event
+              </span>
+              <h3>{beat.milestone.message}</h3>
+              {beat.milestone.durationS !== null && <p className="bv-mono bv-dim">Step took {beat.milestone.durationS.toFixed(1)} s</p>}
+              {beat.region ? (
+                <>
+                  <p className="bv-callout-region">
+                    {beat.region.dataMode === "mock" ? "MOCK fixture · " : "Strongest predicted response · "}
+                    <strong>{beat.region.name}</strong> ({beat.region.group}, {beat.region.hemi} hemisphere) at {formatTime(beat.region.sampleTime)}
+                    {beat.region.dataMode === "genuine_precomputed" ? " · precomputed" : ""}
+                  </p>
+                  <p>{beat.region.knownFor}</p>
+                  <p className="bv-mono bv-dim">On screen: {beat.region.sceneText ?? "no scene data at this time"}</p>
+                  <p className="bv-mono bv-dim">Brain colours still show playback time {formatTime(clockState.time)}; nothing was seeked.</p>
+                </>
+              ) : RESULT_STEPS.includes(beat.milestone.step) ? (
+                <p className="bv-dim">No region shown: no genuine brain data for this video yet.</p>
+              ) : null}
+            </aside>
+          )}
+
           <Timeline
             time={clockState.time}
             duration={clockState.duration}
@@ -936,6 +1111,7 @@ export function BrainCompanion(props: BrainCompanionProps) {
               time={clockState.time}
               stats={stats}
               times={binding?.times ?? null}
+              hz={binding?.hz}
               units={binding?.units ?? ""}
               scenes={current?.scenes}
               noDataLabel={brainSim === "off" ? "Brain sim off" : "No brain data"}

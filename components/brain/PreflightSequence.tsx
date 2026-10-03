@@ -29,6 +29,7 @@ export interface SequenceProps {
   variant: string;
   stats: RegionStatistics | null;
   times: Float64Array | null;
+  hz?: number;
   scenes?: SceneRef[];
   atlasNames: string[];
   meterMax: number;
@@ -212,7 +213,7 @@ export function PreflightSequence(props: SequenceProps) {
           </svg>
           <div className="bv-seq-meters" aria-label="Live meters">
             {METER_GROUPS.map((g) => {
-              const v = seriesAt(stats.groupMeans[g], times, t);
+              const v = seriesAt(stats.groupMeans[g], times, t, props.hz);
               const w = Number.isFinite(v) && meterMax > 0 ? Math.max(0, Math.min(1, v / meterMax)) : 0;
               return (
                 <div className="bv-meter" key={g} ref={(el) => { meterRefs.current[g] = el; }}>

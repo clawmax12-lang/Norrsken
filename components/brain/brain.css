@@ -9,7 +9,7 @@
   --bv-muted: #9a9a9a;
   --bv-subtle: #767676;
   --bv-accent: #f2f2f2;
-  --bv-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --bv-mono: var(--font-mono, ui-monospace), SFMono-Regular, Menlo, Consolas, monospace;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -281,3 +281,47 @@
 .bv-entry-card { right: 7vw; }
 .bv-entry-reveal .bv-entry-title { animation: bv-fade 1.6s ease both; }
 .bv-brand-mark { width: 0; height: 0; border-left: 7px solid transparent; border-right: 7px solid transparent; border-bottom: 13px solid #fff; }
+
+/* ---- Canvas companion dock (PRD v1.5): corner geometry, hover/pin enlarge, workload halo ----
+   Hosts can move the top-left dock with --brain-dock-top / --brain-dock-left. */
+.bv-page.bv-embedded { min-height: 0; height: 0; display: block; }
+.bv-page { --bv-dock-w: 372px; --bv-dock-h: 266px; --bv-dock-x: calc(100vw - var(--bv-dock-w) - 24px); --bv-dock-y: calc(100vh - var(--bv-dock-h) - 20px); }
+.bv-page.bv-dock-bottom-right.bv-dock-large { --bv-dock-w: 460px; --bv-dock-h: 330px; }
+.bv-page.bv-dock-top-left { --bv-dock-w: 196px; --bv-dock-h: 148px; --bv-dock-x: var(--brain-dock-left, 20px); --bv-dock-y: var(--brain-dock-top, 86px); }
+.bv-page.bv-dock-top-left.bv-dock-large { --bv-dock-w: 420px; --bv-dock-h: 306px; }
+.bv-mode-dock .bv-stage { top: var(--bv-dock-y); left: var(--bv-dock-x); width: var(--bv-dock-w); height: var(--bv-dock-h); }
+.bv-mode-dock .bv-stage:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+
+/* Compact dock: brain + one status line only; details appear when enlarged. */
+.bv-mode-dock:not(.bv-dock-large) .bv-dock-bar { display: none; }
+.bv-mode-dock.bv-dock-large .bv-dock-actions { flex-wrap: wrap; }
+.bv-dock-status { display: none; }
+.bv-mode-dock .bv-dock-status { position: absolute; z-index: 6; top: 8px; left: 10px; right: 10px; margin: 0; display: flex; align-items: center; gap: 7px; overflow: hidden; color: #d8d8d8; font-size: 10.5px; white-space: nowrap; text-overflow: ellipsis; text-shadow: 0 1px 3px #000; }
+.bv-dock-status i { width: 6px; height: 6px; flex: 0 0 auto; border-radius: 50%; background: #666; }
+.bv-dock-status i.bv-dot-working { background: rgb(var(--brain-dock-halo, 159, 210, 255)); box-shadow: 0 0 8px rgb(var(--brain-dock-halo, 159, 210, 255)); }
+
+/* Workload halo: job activity only. Themeable with --brain-dock-halo (an RGB triplet); keep it
+   out of the red-yellow heat range so it is never read as cortical response. */
+.bv-mode-dock.bv-dock-working .bv-stage { border-color: rgba(var(--brain-dock-halo, 140, 196, 255), .55); animation: bv-halo 1.6s ease-in-out infinite; }
+.bv-mode-dock.bv-dock-focus .bv-stage { border-color: rgba(255,255,255,.6); box-shadow: 0 0 0 1px rgba(255,255,255,.25), 0 24px 60px rgba(0,0,0,.65); animation: none; }
+@keyframes bv-halo { 0%, 100% { box-shadow: 0 0 0 1px rgba(var(--brain-dock-halo, 140, 196, 255), .18), 0 0 18px rgba(var(--brain-dock-halo, 140, 196, 255), .18), 0 24px 60px rgba(0,0,0,.65); } 50% { box-shadow: 0 0 0 1px rgba(var(--brain-dock-halo, 140, 196, 255), .4), 0 0 34px rgba(var(--brain-dock-halo, 140, 196, 255), .34), 0 24px 60px rgba(0,0,0,.65); } }
+@media (prefers-reduced-motion: reduce) { .bv-mode-dock.bv-dock-working .bv-stage { animation: none; box-shadow: 0 0 0 1px rgba(var(--brain-dock-halo, 140, 196, 255), .4), 0 0 24px rgba(var(--brain-dock-halo, 140, 196, 255), .25); } }
+
+/* Focus-beat callout beside the dock, backend text first. */
+.bv-dock-callout { display: none; }
+.bv-mode-dock .bv-dock-callout { position: fixed; z-index: 41; display: block; visibility: visible; width: 320px; padding: 14px 16px; border: 1px solid rgba(255,255,255,.18); border-radius: 12px; background: rgba(12,12,12,.92); backdrop-filter: blur(8px); color: var(--bv-text); animation: bv-fade-up .45s ease both; }
+.bv-dock-top-left .bv-dock-callout { top: var(--bv-dock-y); left: calc(var(--bv-dock-x) + var(--bv-dock-w) + 14px); }
+.bv-dock-bottom-right .bv-dock-callout { bottom: 20px; right: calc(var(--bv-dock-w) + 38px); }
+.bv-dock-callout h3 { margin: 8px 0 6px; font-size: 14px; font-weight: 620; line-height: 1.35; }
+.bv-dock-callout p { margin: 6px 0 0; color: var(--bv-text-2); font-size: 12px; line-height: 1.5; }
+.bv-dock-callout .bv-callout-region strong { color: #fff; }
+@media (prefers-reduced-motion: reduce) { .bv-mode-dock .bv-dock-callout { animation-name: bv-fade; } }
+
+/* Data-provenance tag stays visible on the compact dock whenever activity is drawn. */
+.bv-dock-tag { display: none; }
+.bv-mode-dock .bv-dock-tag { position: absolute; z-index: 7; right: 8px; bottom: 8px; display: inline-flex; padding: 3px 7px; border: 1px solid #555; border-radius: 999px; background: rgba(0,0,0,.75); color: #f1d9b3; font: 650 9.5px/1 var(--bv-mono); letter-spacing: .04em; }
+.bv-mode-dock .bv-dock-tag.bv-dock-tag-mock { background: #9b1c1c; border-color: #d23b3b; color: #fff; }
+.bv-mode-dock.bv-dock-large .bv-dock-tag { bottom: auto; top: 30px; }
+
+/* Minimal-chrome hosts (PRD v1.6 flow canvas): the dock surface follows the host theme. */
+.bv-mode-dock .bv-stage { background: var(--brain-dock-surface, radial-gradient(ellipse 60% 70% at 52% 46%, #121214 0%, #070707 60%, #000 100%)); }

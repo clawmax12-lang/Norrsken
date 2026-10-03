@@ -9,6 +9,8 @@
  * type-only so pure modules and tests can share it.
  */
 
+import type { WorkerGroups } from "./backend";
+
 export type VariantId = "A" | "B" | "C";
 
 export interface SimulationEvent {
@@ -90,6 +92,12 @@ export interface CorticalBinding {
   units: string;
   alignment: CorticalPayloadV0["hemodynamic_alignment"];
   video?: AnalyzedVideoRef;
+  /** Nominal sample rate; with it, interpolation never bridges a gap in `times`. */
+  hz?: number;
+  /** Hash of the exact analyzed video, when the producer supplies one. */
+  videoSha256?: string;
+  /** Producer-defined region groups (e.g. the TRIBE worker's Destrieux groups.json). */
+  workerGroups?: WorkerGroups;
 }
 
 export type AdaptResult =

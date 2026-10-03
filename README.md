@@ -40,23 +40,28 @@ npm run dev
 
 Use Node.js 20.9 or newer. Set `GEMINI_API_KEY` in `.env.local` to an AI Studio key with access to `gemini-3.8-live`, then open `http://localhost:3000` in current desktop Chrome. Click **Start Director** once to grant microphone permission. **Choose folder** grants read access to one folder through the browser; Preflight indexes at most 100 PNG/JPG filenames locally and uploads only the 3–6 screens selected when **Run Preflight** is clicked.
 
-Production build and checks:
+The permanent key is read only by `/api/live-token`, which exchanges it for a one-use, short-lived token. It must never be named `NEXT_PUBLIC_GEMINI_API_KEY`, placed in client code or committed. The temporary hackathon account and its project may be deleted after the event, so replace the key for any later deployment.
+
+Verification commands:
 
 ```bash
+npm run typecheck
+npm run lint
+npm test
 npm run build
-npm test        # brain adapter, timing, clock and asset/geometry-reuse tests (Node's built-in runner)
+npm audit --omit=dev
 ```
 
-### Brain companion (`/brain`, FR-12/FR-14)
+### Brain companion (FR-12/FR-14)
 
-Open [http://localhost:3000/brain](http://localhost:3000/brain) (also linked as **Brain viewer** in the dashboard sidebar). It needs no environment variables, GPU or model calls; the fsaverage5 mesh, atlas and head silhouette are committed static assets ([provenance and licences](public/brain/ATTRIBUTION.md)).
+The reusable fsaverage5 brain is mounted on the main route as a **top-left canvas dock** next to the Director (`app/page.tsx` renders `<CanvasBrain />`; no voice or backend code is replaced). It needs no GPU or model calls; the mesh, atlas and head silhouette are committed static assets ([provenance and licences](public/brain/ATTRIBUTION.md)).
 
-- First visit in a browser session plays the entry intro (Skip, reduced motion respected), then docks the brain in the corner over a placeholder canvas slot. **Expand brain** opens the analysis view; F toggles fullscreen, Esc returns to the dock. **Replay intro** and **Play/Preview analysis focus** are explicit.
-- With no bound result the cortex is gray and labelled **No brain data**. There is no genuine TRIBE output or demo example in the repository today, so this is the default state.
-- `?result=/same-origin/result.json` binds stored `SimulationResult` JSON (one object or an array; cortical payload `meta.cortical`, proposed in [BRAIN_COMPANION.md](docs/design/BRAIN_COMPANION.md)). The Data panel accepts the same files plus CreativeConcept JSON and the analyzed MP4 locally; nothing is uploaded.
-- `?demo=/same-origin/example.json` loads a genuine precomputed example for first arrival, shown as **Demo example · precomputed**; anything not precomputed or without its video is rejected.
-- `?sim=off` previews the **Brain sim off** fallback; `?entry=replay` forces the intro.
-- `?fixture=mock` (development server only, stripped from production builds) binds a deterministic **MOCK** test fixture with a red banner. It exists to test shaders and controls, not as evidence.
+- **Entry:** first visit per browser session plays the brain intro, then docks (Skip and reduced motion respected; `?entry=off` disables it, `?entry=replay` forces it).
+- **Dock:** hover enlarges it; click, or Enter/Space on the focused dock, pins it; Esc unpins. **Expand** opens the analysis view (F fullscreen, Esc back to the dock). **Pause motion** stops all camera/spin motion, and dragging the brain hands control to you until **Resume motion**.
+- **Backend activity (optional):** set `NEXT_PUBLIC_PREFLIGHT_API_BASE` (public URL of the FastAPI backend; it already allows `http://localhost:3000` by CORS) and open `/?project=<backend project id>`. The dock subscribes to `GET /api/projects/{id}/log` (SSE) and `GET /api/projects/{id}/results`. Running steps spin the brain briskly with a halo and status line; each live `succeeded` milestone (plan, render, simulate, score, explain, export) plays a ~3 s slower focus beat showing the backend's own message. The camera only moves to a region when that variant has a genuine TRIBE artifact (`brain.activity_path`, float16 `.npy`): the strongest genuine response, its sample time and the concept scene then. Otherwise it frames anatomy neutrally and says no region is shown. Playback time and speed are never changed by the beat. Without a project or API base, the dock stays idle.
+- **No brain data:** with no bound genuine result the cortex is gray and labelled **No brain data**; there is no genuine TRIBE output or demo example in this repository.
+- **`/brain` harness:** standalone page with a placeholder canvas, local loaders and event log for integration testing. `?result=/same-origin/result.json` binds stored `SimulationResult` JSON (proposed `meta.cortical`, see [BRAIN_COMPANION.md](docs/design/BRAIN_COMPANION.md)); `?demo=` loads a genuine precomputed example (**Demo example · precomputed**); `?sim=off` previews **Brain sim off**.
+- `?fixture=mock` on `/brain` (development server only, stripped from production builds) binds a deterministic **MOCK** test fixture with a red banner and a MOCK tag on the dock. It tests shaders and controls; it is not evidence.
 
 An existing Next.js Dashboard implementation is on the team's separate `williu16/preflight-swiftui-dashboard` branch (the name is historical; its code is web-based). Its **[Vercel canvas preview](https://temporary-instant-flint-xxlx4l9.vercel.app/?demo=1)** was checked on 3 Oct 2026: HTTP 200 and browser inspection. It now shows a branching storyline prototype, not genuine generated/tested batches or an integrated brain/voice pipeline. See the [workspace/preview details](docs/design/README.md#existing-dashboard-and-preview). The brain viewer branch adds the `/brain` route below; the canvas itself lives on the Dashboard branch.
 
@@ -149,18 +154,6 @@ First use downloads model weights and extracts multimodal features. Record both 
 5. Verify one real clip for the go/no-go, then the actual 15-second rendered variants, including any silent/no-speech case produced by the template. Record output, timing, GPU environment and failures in TEAM.md before marking FR-04 complete.
 
 The v1.4 fallback applies: if live TRIBE fails the 12:30 gate, keep the Gemini path with **Brain sim off**, the gray anatomical entry/dock and the required voice/canvas. This is a degraded execution path, not equivalent neural evidence. Never replace missing brain activity with generated values. Genuine precomputed examples must be tied to the video they analyzed, visibly disclosed and kept separate from the current run.
-
-The permanent key is read only by `/api/live-token`, which exchanges it for a one-use, short-lived token. It must never be named `NEXT_PUBLIC_GEMINI_API_KEY`, placed in client code or committed. The temporary hackathon account and its project may be deleted after the event, so replace the key for any later deployment.
-
-Verification commands:
-
-```bash
-npm run typecheck
-npm run lint
-npm test
-npm run build
-npm audit --omit=dev
-```
 
 ## Build stack
 

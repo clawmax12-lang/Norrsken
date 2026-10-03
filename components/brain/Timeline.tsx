@@ -24,6 +24,9 @@ export interface CurveData {
   yMin: number;
   yMax: number;
   units: string;
+  hz?: number;
+  /** Where the meter groups come from (viewer atlas or producer groups). */
+  groupSource: string;
   /** Test fixture: never describe its samples as genuine. */
   mock: boolean;
 }
@@ -78,7 +81,7 @@ export function Timeline({ time, duration, playing, onSeek, onToggle, curves, sc
   };
 
   const readoutT = hoverT ?? time;
-  const values = curves ? METER_GROUPS.map((g) => ({ g, v: seriesAt(curves.stats.groupMeans[g], curves.times, readoutT) })) : [];
+  const values = curves ? METER_GROUPS.map((g) => ({ g, v: seriesAt(curves.stats.groupMeans[g], curves.times, readoutT, curves.hz) })) : [];
   const currentScene = sceneAt(scenes, time);
 
   return (
@@ -170,7 +173,7 @@ export function Timeline({ time, duration, playing, onSeek, onToggle, curves, sc
       </div>
       {curves && (
         <details className="bv-table">
-          <summary>Sample table ({curves.times.length} {curves.mock ? "MOCK fixture" : "genuine"} samples, {curves.units})</summary>
+          <summary>Sample table ({curves.times.length} {curves.mock ? "MOCK fixture" : "genuine"} samples, {curves.units}; groups: {curves.groupSource})</summary>
           <table>
             <thead>
               <tr>

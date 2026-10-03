@@ -22,6 +22,7 @@ export interface BrainStageProps {
   onPick: (pick: PickResult | null) => void;
   onReady?: (scene: BrainScene | null) => void;
   onHead?: (head: HeadObject | null) => void;
+  onUserInteract?: () => void;
   label: string;
   children?: ReactNode;
 }
@@ -39,6 +40,7 @@ export function BrainStage(props: BrainStageProps) {
   const [contextLost, setContextLost] = useState(false);
   const onReadyRef = useLatest(props.onReady);
   const onHeadRef = useLatest(props.onHead);
+  const onInteractRef = useLatest(props.onUserInteract);
 
   useEffect(() => {
     if (!hostRef.current) return;
@@ -46,6 +48,7 @@ export function BrainStage(props: BrainStageProps) {
       reducedMotion,
       onPick: (p) => onPickRef.current(p),
       onContextLost: () => setContextLost(true),
+      onUserInteract: () => onInteractRef.current?.(),
     });
     sceneRef.current = scene;
     scene.setTime(clock.getSnapshot().time);

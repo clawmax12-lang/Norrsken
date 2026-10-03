@@ -25,10 +25,14 @@ export function samplePeriod(times: ArrayLike<number>): number {
   return (times[times.length - 1] - times[0]) / (times.length - 1);
 }
 
-export function sampleAt(times: ArrayLike<number>, t: number): FrameSample {
+/**
+ * With `hz`, consecutive samples further apart than 1.5 periods are a gap (e.g. a silent
+ * stretch the producer skipped): the earlier sample is held for one period, then nothing.
+ */
+export function sampleAt(times: ArrayLike<number>, t: number, hz?: number): FrameSample {
   const n = times.length;
   if (n === 0 || !Number.isFinite(t)) return OUT_OF_RANGE;
-  const period = samplePeriod(times);
+  const period = hz && hz > 0 ? 1 / hz : samplePeriod(times);
   const first = times[0];
   const last = times[n - 1];
   if (t < first) return t >= first - period ? { inRange: true, i0: 0, i1: 0, alpha: 0, nearestIndex: 0 } : OUT_OF_RANGE;
@@ -43,13 +47,16 @@ export function sampleAt(times: ArrayLike<number>, t: number): FrameSample {
     if (times[mid] <= t) lo = mid;
     else hi = mid;
   }
+  if (hz && times[hi] - times[lo] > 1.5 * period) {
+    return t <= times[lo] + period ? { inRange: true, i0: lo, i1: lo, alpha: 0, nearestIndex: lo } : OUT_OF_RANGE;
+  }
   const alpha = (t - times[lo]) / (times[hi] - times[lo]);
   return { inRange: true, i0: lo, i1: hi, alpha, nearestIndex: alpha < 0.5 ? lo : hi };
 }
 
 /** Linear interpolation of a per-sample series at time t (NaN when out of range). */
-export function seriesAt(series: ArrayLike<number>, times: ArrayLike<number>, t: number): number {
-  const s = sampleAt(times, t);
+export function seriesAt(series: ArrayLike<number>, times: ArrayLike<number>, t: number, hz?: number): number {
+  const s = sampleAt(times, t, hz);
   if (!s.inRange) return Number.NaN;
   return series[s.i0] * (1 - s.alpha) + series[s.i1] * s.alpha;
 }

@@ -9,13 +9,14 @@ interface RegionCardProps {
   time: number;
   stats: RegionStatistics | null;
   times: Float64Array | null;
+  hz?: number;
   units: string;
   scenes?: SceneRef[];
   noDataLabel: string;
   onClear: () => void;
 }
 
-export function RegionCard({ selection, time, stats, times, units, scenes, noDataLabel, onClear }: RegionCardProps) {
+export function RegionCard({ selection, time, stats, times, hz, units, scenes, noDataLabel, onClear }: RegionCardProps) {
   const scene = sceneAt(scenes, time);
   if (!selection) {
     return (
@@ -33,8 +34,8 @@ export function RegionCard({ selection, time, stats, times, units, scenes, noDat
   const info = regionInfo(selection.atlasName);
   const key = regionKey(selection.hemi, selection.atlasName);
   const series = stats ? regionSeries(stats, key) : undefined;
-  const value = series && times ? seriesAt(series, times, time) : Number.NaN;
-  const nearest = times ? sampleAt(times, time) : null;
+  const value = series && times ? seriesAt(series, times, time, hz) : Number.NaN;
+  const nearest = times ? sampleAt(times, time, hz) : null;
   const hemiLabel = selection.hemi === "left" ? "Left hemisphere" : "Right hemisphere";
 
   let spark: string | null = null;
