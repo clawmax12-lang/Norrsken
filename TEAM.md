@@ -26,7 +26,7 @@ Fill in real people rather than assigning all work to an unnamed agent. Record a
 | Product decisions | Scope, priority, PRD changes | William | — |
 | Brief intake, canvas and Live Director | FR-01, FR-07, FR-09, FR-16 | William / Codex | `williu16/fr-16-canvas-live` · canvas shell/composer, shared draft contracts, Gemini Live tools, Next API routes, package/README/PRD/TEAM. Preserves backend and brain-owner files. |
 | Template and renderer | FR-03 | Unassigned | — |
-| TRIBE worker | FR-04 (TRIBE) | Unassigned | — |
+| TRIBE worker | FR-04 (TRIBE) | Opus 5.5 (cloud GPU run only) | `conductor/tribe-cloud-gpu` · `workers/tribe/deploy/modal_app.py`, `workers/tribe/README.md`. Runs the existing worker unmodified on Modal; worker code itself stays unassigned. |
 | Agent, Gemini, Condense | FR-02, FR-04 (panel), FR-05, FR-06, FR-10 | Unassigned | — |
 | Web app, results, export and log | FR-07, FR-08, FR-09 | Unassigned | — |
 | Brain viewer and Preflight sequence | FR-12, FR-14, FR-15 | Claude Opus 5.5 (implementation); William (product review) | [3D Brain — Opus 5.5](conductor://workspace?id=e14af4c4-eada-4c17-bc3b-42cd2ef08dcd) / `conductor/3d-brain-opus-55`, [PR #3](https://github.com/clawmax12-lang/Norrsken/pull/3); reusable viewer/scene and assets. PR #6 only changes the canvas host seam. FR-15 remains gated P1. |
@@ -85,7 +85,7 @@ The authoritative schedule, cut order and pitch are in [PRD §14](PRD.md#14-hack
 
 | Gate | Required evidence | Decision / status |
 | --- | --- | --- |
-| 12:30 — TRIBE | One real clip completes; capture environment, duration and real output artifact | Pending; owner unassigned |
+| 12:30 — TRIBE | One real clip completes; capture environment, duration and real output artifact | Pending: Modal launcher ready on `conductor/tribe-cloud-gpu`; waiting for the owner's Modal login, `preflight-huggingface` secret (approved Llama-3.2-3B access) and an owned video. No inference has run yet. |
 | 12:30 — renderer | One 15 s, 1080x1920, 30 fps MP4 renders through the template | Pending; owner unassigned |
 | P0 complete | All applicable FR-01–FR-10 plus conditional FR-12/FR-14 AC pass; clean-clone run and end-to-end duration recorded | Pending |
 | 17:45 — code freeze | Demo path verified; remaining cuts recorded per PRD | Pending |
