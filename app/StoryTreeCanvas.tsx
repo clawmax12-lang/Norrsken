@@ -16,13 +16,13 @@ type StoryTreeCanvasProps = {
 type Point = { x: number; y: number };
 
 const TAU = Math.PI * 2;
-const HOOK_COUNT = 50;
-const CONTINUATIONS_PER_HOOK = 50;
-const BEATS_PER_CONTINUATION = 50;
+const HOOK_COUNT = 5;
+const CONTINUATIONS_PER_HOOK = 5;
+const BEATS_PER_CONTINUATION = 5;
 const CONTINUATION_COUNT = HOOK_COUNT * CONTINUATIONS_PER_HOOK;
 const BEAT_COUNT = CONTINUATION_COUNT * BEATS_PER_CONTINUATION;
 const TOTAL_NODES = 1 + HOOK_COUNT + CONTINUATION_COUNT + BEAT_COUNT;
-const MAX_RADIUS = 47_000;
+const MAX_RADIUS = 33_000;
 
 const hookNames = [
   "Start with the blank canvas",
@@ -44,7 +44,7 @@ function hookPosition(hook: number) {
 
 function continuationAngle(hook: number, continuation: number) {
   const sector = TAU / HOOK_COUNT;
-  return hookAngle(hook) + ((continuation - 24.5) / CONTINUATIONS_PER_HOOK) * sector * 0.82;
+  return hookAngle(hook) + ((continuation - (CONTINUATIONS_PER_HOOK - 1) / 2) / CONTINUATIONS_PER_HOOK) * sector * 0.82;
 }
 
 function continuationPosition(hook: number, continuation: number) {
@@ -112,8 +112,8 @@ export default function StoryTreeCanvas({ onInspect }: StoryTreeCanvasProps) {
     const beatReveal = Math.floor(generationProgress(progress, 0.54, 1) * BEAT_COUNT);
 
     context.lineCap = "round";
-    context.lineWidth = 0.65;
-    context.strokeStyle = "rgba(104,104,104,.38)";
+    context.lineWidth = 0.85;
+    context.strokeStyle = "rgba(132,132,132,.62)";
     context.beginPath();
     for (let hook = 0; hook < hookReveal; hook += 1) {
       const end = project(hookPosition(hook));
@@ -122,8 +122,8 @@ export default function StoryTreeCanvas({ onInspect }: StoryTreeCanvasProps) {
     }
     context.stroke();
 
-    context.lineWidth = 0.45;
-    context.strokeStyle = "rgba(78,78,78,.3)";
+    context.lineWidth = 0.7;
+    context.strokeStyle = "rgba(104,104,104,.48)";
     context.beginPath();
     for (let index = 0; index < continuationReveal; index += 1) {
       const hook = Math.floor(index / CONTINUATIONS_PER_HOOK);
@@ -136,10 +136,10 @@ export default function StoryTreeCanvas({ onInspect }: StoryTreeCanvasProps) {
     }
     context.stroke();
 
-    context.lineWidth = 0.35;
-    context.strokeStyle = "rgba(60,60,60,.24)";
+    context.lineWidth = 0.5;
+    context.strokeStyle = "rgba(88,88,88,.38)";
     context.beginPath();
-    const outerEdgeStep = progress < 0.98 ? 10 : 1;
+    const outerEdgeStep = BEAT_COUNT > 5_000 && progress < 0.98 ? 10 : 1;
     for (let index = 0; index < beatReveal; index += outerEdgeStep) {
       const continuationIndex = Math.floor(index / BEATS_PER_CONTINUATION);
       const beat = index % BEATS_PER_CONTINUATION;
@@ -154,8 +154,8 @@ export default function StoryTreeCanvas({ onInspect }: StoryTreeCanvasProps) {
     context.stroke();
 
     if (beatReveal > 0) {
-      context.fillStyle = "rgba(130,130,130,.52)";
-      const dotSize = viewRef.current.zoom < 0.02 ? 0.8 : clamp(viewRef.current.zoom * 28, 1, 3.2);
+      context.fillStyle = "rgba(168,168,168,.76)";
+      const dotSize = viewRef.current.zoom < 0.01 ? 1.7 : clamp(viewRef.current.zoom * 160, 2, 5);
       for (let index = 0; index < beatReveal; index += 1) {
         const continuationIndex = Math.floor(index / BEATS_PER_CONTINUATION);
         const beat = index % BEATS_PER_CONTINUATION;
@@ -167,8 +167,8 @@ export default function StoryTreeCanvas({ onInspect }: StoryTreeCanvasProps) {
       }
     }
 
-    context.fillStyle = "rgba(150,150,150,.82)";
-    const continuationSize = clamp(viewRef.current.zoom * 55, 1, 4);
+    context.fillStyle = "rgba(188,188,188,.9)";
+    const continuationSize = clamp(viewRef.current.zoom * 260, 3.5, 8);
     for (let index = 0; index < continuationReveal; index += 1) {
       const hook = Math.floor(index / CONTINUATIONS_PER_HOOK);
       const continuation = index % CONTINUATIONS_PER_HOOK;
@@ -180,7 +180,7 @@ export default function StoryTreeCanvas({ onInspect }: StoryTreeCanvasProps) {
     for (let hook = 0; hook < hookReveal; hook += 1) {
       const point = project(hookPosition(hook));
       if (!visible(point, 8)) continue;
-      const size = hook === selectedRef.current.hook ? 6 : 4;
+      const size = hook === selectedRef.current.hook ? 8 : 6;
       context.beginPath();
       context.fillStyle = hook === selectedRef.current.hook ? "#f1f1f1" : "#9a9a9a";
       context.arc(point.x, point.y, size, 0, TAU);
@@ -224,7 +224,7 @@ export default function StoryTreeCanvas({ onInspect }: StoryTreeCanvasProps) {
     context.arc(root.x, root.y, 11, 0, TAU);
     context.stroke();
 
-    if (viewRef.current.zoom > 0.045) {
+    if (viewRef.current.zoom > 0.01) {
       const activeHook = project(hookPosition(selectedRef.current.hook));
       const activeContinuation = project(continuationPosition(selectedRef.current.hook, selectedRef.current.continuation));
       context.font = "600 10px Inter, sans-serif";
@@ -232,7 +232,7 @@ export default function StoryTreeCanvas({ onInspect }: StoryTreeCanvasProps) {
       context.fillText(`HOOK ${String(selectedRef.current.hook + 1).padStart(2, "0")}`, activeHook.x + 10, activeHook.y - 4);
       context.font = "500 9px Inter, sans-serif";
       context.fillStyle = "rgba(180,180,180,.88)";
-      context.fillText(`BEAT ${String(selectedRef.current.continuation + 1).padStart(2, "0")} · 50 NEXT VERSIONS`, activeContinuation.x + 9, activeContinuation.y - 4);
+      context.fillText(`BEAT ${String(selectedRef.current.continuation + 1).padStart(2, "0")} · 5 NEXT VERSIONS`, activeContinuation.x + 9, activeContinuation.y - 4);
     }
   }, [project]);
 
@@ -335,10 +335,10 @@ export default function StoryTreeCanvas({ onInspect }: StoryTreeCanvasProps) {
       selectedRef.current = { hook: node.hook, continuation: 0 };
       window.requestAnimationFrame(redraw);
       onInspect({
-        eyebrow: `Hook ${String(node.hook + 1).padStart(2, "0")} of 50`,
+        eyebrow: `Hook ${String(node.hook + 1).padStart(2, "0")} of 5`,
         title: hookNames[node.hook] ?? `Opening direction ${String(node.hook + 1).padStart(2, "0")}`,
-        description: "A complete opening branch. All 50 possible continuations are drawn directly beyond it.",
-        branches: "50 visible continuations",
+        description: "A complete opening branch. All 5 possible continuations are drawn directly beyond it.",
+        branches: "5 visible continuations",
       });
       return;
     }
@@ -356,8 +356,8 @@ export default function StoryTreeCanvas({ onInspect }: StoryTreeCanvasProps) {
       onInspect({
         eyebrow: `Continuation ${String(node.hook + 1).padStart(2, "0")}.${String(node.continuation + 1).padStart(2, "0")}`,
         title: `Continuation from Hook ${String(node.hook + 1).padStart(2, "0")}`,
-        description: "One of 50 continuations from this hook. Its 50 next story beats are highlighted beyond it.",
-        branches: "50 visible next beats",
+        description: "One of 5 continuations from this hook. Its 5 next story beats are highlighted beyond it.",
+        branches: "5 visible next beats",
       });
     }
   };
@@ -383,7 +383,7 @@ export default function StoryTreeCanvas({ onInspect }: StoryTreeCanvasProps) {
         onPointerUp={handlePointerUp}
         onPointerCancel={() => { dragRef.current.active = false; setIsDragging(false); }}
       >
-        <canvas ref={canvasRef} aria-label="A recursive storyline tree containing 50 hooks, 2,500 continuations, and 125,000 next story beats" />
+        <canvas ref={canvasRef} aria-label="A recursive storyline tree containing 5 hooks, 25 continuations, and 125 next story beats" />
       </div>
 
       <div className="universe-summary">
@@ -394,9 +394,9 @@ export default function StoryTreeCanvas({ onInspect }: StoryTreeCanvasProps) {
 
       <div className="generation-legend" aria-label="Tree generations">
         <span><i />Idea <b>1</b></span>
-        <span><i />Hooks <b>50</b></span>
-        <span><i />Continuations <b>2,500</b></span>
-        <span><i />Next beats <b>125,000</b></span>
+        <span><i />Hooks <b>5</b></span>
+        <span><i />Continuations <b>25</b></span>
+        <span><i />Next beats <b>125</b></span>
       </div>
 
       <div className="universe-controls">

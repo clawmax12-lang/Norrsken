@@ -163,19 +163,19 @@ export default function DashboardPage() {
                   <div className="composer-submit-group"><span>↵ to create</span><button className="send-button" type="submit" disabled={!prompt.trim() || isGenerating} aria-label="Create demo canvas"><SendIcon /></button></div>
                 </div>
               </form>
-              <div className="prompt-notes"><span>50 opening hooks</span><i /><span>50 branches at every beat</span><i /><span>No simulation yet</span></div>
+              <div className="prompt-notes"><span>5 opening hooks</span><i /><span>5 branches at every beat</span><i /><span>No simulation yet</span></div>
             </section>
 
             {isGenerating && (
               <div className="generating-overlay" role="status">
-                <div className="generating-card"><span className="loading-mark" /><strong>Generating the first 50 hooks</strong><small>Starting one storyline with many possible openings…</small></div>
+                <div className="generating-card"><span className="loading-mark" /><strong>Generating the first 5 hooks</strong><small>Starting one storyline with five possible openings…</small></div>
               </div>
             )}
           </div>
         ) : (
           <div className="canvas-workspace">
             <div className="canvas-toolbar">
-              <div><strong>Story universe</strong><span>50 hooks · 2,500 continuations · 125,000 next beats</span></div>
+              <div><strong>Story tree</strong><span>5 hooks · 25 continuations · 125 next beats</span></div>
               <span className="canvas-render-mode">Every branch rendered</span>
             </div>
 
