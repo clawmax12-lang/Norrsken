@@ -65,3 +65,22 @@ def test_missing_gemini_key_is_an_explicit_error(tmp_path) -> None:
 
     with pytest.raises(ProviderError, match="GEMINI_API_KEY"):
         service.build_pipeline("proj-1")
+
+
+def test_exported_videos_get_sound_with_a_gemini_voice_by_default(tmp_path) -> None:
+    studio = stage(build(tmp_path), "SoundStage")._finisher
+
+    assert studio._speech is not None
+    assert (studio._voice, studio._tts_model) == ("Kore", "gemini-3.8-flash-tts")
+
+
+def test_narration_can_be_switched_off_while_music_and_effects_stay(tmp_path) -> None:
+    studio = stage(build(tmp_path, narration_enabled=False), "SoundStage")._finisher
+
+    assert studio._speech is None
+
+
+def test_sound_can_be_switched_off_entirely(tmp_path) -> None:
+    pipeline = build(tmp_path, sound_enabled=False)
+
+    assert all(type(s).__name__ != "SoundStage" for s in pipeline._stages)

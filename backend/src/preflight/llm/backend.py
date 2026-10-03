@@ -29,6 +29,24 @@ class BackendResponse:
     uncompressed_input_tokens: int | None = None
 
 
+@dataclass(frozen=True)
+class SpeechAudio:
+    """Mono 16-bit PCM speech and the token counts the provider reported for producing it."""
+
+    pcm: bytes
+    sample_rate: int
+    input_tokens: int
+    output_tokens: int
+
+
+class SpeechBackend(Protocol):
+    """Text-to-speech; errors surface as ``preflight.errors``."""
+
+    async def synthesize_speech(self, *, model: str, text: str, voice: str) -> SpeechAudio:
+        """Speak ``text`` with the prebuilt ``voice`` of a TTS ``model``."""
+        ...
+
+
 class GeminiBackend(Protocol):
     """Provider operations GeminiClient needs; errors surface as ``preflight.errors``."""
 

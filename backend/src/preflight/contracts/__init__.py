@@ -24,6 +24,7 @@ from .run import (
     VariantRecord,
 )
 from .simulation import BrainArtifact, EventType, SimEvent, SimulationResult, SimulatorName
+from .sound import CueKind, NarrationLine, SoundCue, SoundRecord
 
 __all__ = [
     "ActivityEvent",
@@ -34,10 +35,12 @@ __all__ = [
     "CompositionSpec",
     "Confidence",
     "CreativeConcept",
+    "CueKind",
     "EventType",
     "GeneratedAsset",
     "Goal",
     "Layout",
+    "NarrationLine",
     "Ranking",
     "Reason",
     "RenderResult",
@@ -50,6 +53,8 @@ __all__ = [
     "SimEvent",
     "SimulationResult",
     "SimulatorName",
+    "SoundCue",
+    "SoundRecord",
     "Step",
     "StepStatus",
     "Theme",

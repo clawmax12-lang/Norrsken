@@ -13,14 +13,15 @@ from preflight.contracts import RunRecord
 from preflight.explain.gemini import GeminiExplainer
 from preflight.generation.assets import TemplateBackdrops
 from preflight.generation.compose import TemplateComposer
-from preflight.llm import TokenLedger, build_gemini_client
+from preflight.llm import GenAIBackend, TokenLedger, build_gemini_client
 from preflight.orchestrator import Pipeline
 from preflight.planning.planner import GeminiPlanner
 from preflight.ports import Clock, Simulator
 from preflight.rendering import RemotionRenderer
 from preflight.simulators.gemini_panel.panel import GeminiViewerPanel
 from preflight.simulators.tribe import TribeSimulator
-from preflight.storage import ProjectStore
+from preflight.sound import Ffmpeg, GeminiSpeech, SoundStudio
+from preflight.storage import ProjectPaths, ProjectStore
 
 
 class ProductionRunService:
@@ -75,4 +76,26 @@ class ProductionRunService:
             ledger,
             settings,
             self._clock,
+            sound=_sound_studio(settings, self._store.paths(project_id)),
         )
+
+
+def _sound_studio(settings: Settings, paths: ProjectPaths) -> SoundStudio | None:
+    """Narration, music and effects for the exported videos, or ``None`` when sound is off.
+
+    Narration calls Gemini's text-to-speech model directly, not through Condense: Condense
+    documents only text chat routes, and each call sends a single on-screen line, so there is
+    nothing to compress. This is a logged exception to FR-10 (PRD §16).
+    """
+    if not settings.sound_enabled:
+        return None
+    speech = None
+    if settings.narration_enabled and settings.gemini_api_key is not None:
+        speech = GeminiSpeech(
+            GenAIBackend.from_api_key(settings.gemini_api_key.get_secret_value()),
+            model=settings.tts_model,
+            voice=settings.narration_voice,
+            cache_dir=paths.sound_work / "cache",
+        )
+    ffmpeg = Ffmpeg(settings.ffmpeg_binary, settings.ffprobe_binary)
+    return SoundStudio(ffmpeg, speech, voice=settings.narration_voice, tts_model=settings.tts_model)

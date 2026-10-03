@@ -24,12 +24,13 @@ from preflight.contracts import (
     SceneSpec,
     SimulationResult,
     SimulatorName,
+    SoundRecord,
     Theme,
     TokenSavings,
 )
 from preflight.contracts.composition import Layout, Transition
 from preflight.orchestrator import Pipeline
-from preflight.ports import SimulationRequest
+from preflight.ports import SimulationRequest, SoundFinisher, SoundRequest
 from preflight.storage import ProjectStore
 from tests.factories import FIXED_NOW, make_brief, make_concept, make_result
 
@@ -201,6 +202,33 @@ class FakeUsage:
         )
 
 
+class FakeSoundFinisher:
+    """Writes a stand-in final video and returns the record a real studio would."""
+
+    def __init__(self) -> None:
+        self.failures = Failures()
+        self.calls: list[str] = []
+
+    async def finish(self, request: SoundRequest) -> SoundRecord:
+        variant_id = request.spec.variant_id
+        self.calls.append(variant_id)
+        self.failures.maybe_raise(variant_id)
+        data = b"final-" + request.video_path.read_bytes()
+        request.output_path.write_bytes(data)
+        return SoundRecord(
+            variant_id=variant_id,
+            tested_video_sha256=request.video_sha256,
+            final_video_sha256=hashlib.sha256(data).hexdigest(),
+            final_video_path=request.output_path.name,
+            narrated=True,
+            voice="Kore",
+            tts_model="tts-test",
+            bpm=120,
+            integrated_lufs=-14.0,
+            true_peak_dbtp=-1.5,
+        )
+
+
 def no_suggestions(*_args: object) -> tuple[str, ...]:
     return ("Try a stronger hook",)
 
@@ -220,6 +248,7 @@ class World:
     settings: Settings = field(default_factory=Settings)
     extra_simulators: list[FakeSimulator] = field(default_factory=list)
     next_time: Callable[..., tuple[str, ...]] = no_suggestions
+    sound: SoundFinisher | None = None
 
     def __post_init__(self) -> None:
         paths = self.store.create(self.project_id)
@@ -238,4 +267,5 @@ class World:
             self.settings,
             FakeClock(),
             next_time=self.next_time,
+            sound=self.sound,
         )

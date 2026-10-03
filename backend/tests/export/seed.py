@@ -6,14 +6,17 @@ from datetime import UTC, datetime
 from preflight.contracts import (
     BrainArtifact,
     Brief,
+    BriefField,
     Confidence,
     CreativeConcept,
+    NarrationLine,
     Ranking,
     Reason,
     Report,
     RunRecord,
     RunState,
     SimulatorName,
+    SoundRecord,
     TokenSavings,
 )
 from preflight.storage import ProjectPaths, ProjectStore
@@ -108,3 +111,42 @@ def _write_brain(store: ProjectStore, paths: ProjectPaths, variant: str) -> None
 
 def brief_and_concepts() -> tuple[Brief, CreativeConcept, CreativeConcept]:
     return make_brief(), make_concept("A"), make_concept("B")
+
+
+def make_sound_record(variant: str = "A", *, narrated: bool = True, **overrides) -> SoundRecord:
+    """What the sound studio would record; the hashes are filled in by ``add_sound``."""
+    data = {
+        "variant_id": variant,
+        "tested_video_sha256": "a" * 64,
+        "final_video_sha256": "b" * 64,
+        "final_video_path": f"{variant}.final.mp4",
+        "narrated": narrated,
+        "voice": "Kore" if narrated else None,
+        "tts_model": "tts-test" if narrated else None,
+        "narration": make_narration() if narrated else (),
+        "bpm": 120,
+        "integrated_lufs": -14.1,
+        "true_peak_dbtp": -1.3,
+        "note": None if narrated else "Narration is off.",
+    }
+    return SoundRecord(**{**data, **overrides})
+
+
+def make_narration() -> tuple[NarrationLine, ...]:
+    return (
+        NarrationLine(
+            text="Notes that organise themselves",
+            source_field=BriefField.ONE_LINER,
+            start_s=0.3,
+            window_s=2.5,
+        ),
+    )
+
+
+def add_sound(store: ProjectStore, paths: ProjectPaths, variant: str, **overrides) -> bytes:
+    """Write a final video (with sound) and its record for ``variant``; return the video bytes."""
+    data = b"final-with-sound-" + variant.encode() * 50
+    paths.final_video(variant).write_bytes(data)
+    record = make_sound_record(variant, **overrides)
+    store.write(paths.sound(variant), record)
+    return data

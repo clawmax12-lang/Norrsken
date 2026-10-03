@@ -1,3 +1,4 @@
+import base64
 import json
 from types import SimpleNamespace
 
@@ -242,3 +243,59 @@ async def test_upload_response_without_uri_is_a_provider_error() -> None:
 
 def test_from_api_key_builds_an_sdk_backed_instance() -> None:
     assert isinstance(GenAIBackend.from_api_key("k", timeout_s=5), GenAIBackend)
+
+
+def speech_answer(
+    pcm: bytes = b"\x01\x00\x02\x00", mime: str = "audio/L16;codec=pcm;rate=24000"
+) -> httpx.Response:
+    part = {"inlineData": {"mimeType": mime, "data": base64.b64encode(pcm).decode()}}
+    return httpx.Response(
+        200,
+        json={
+            "candidates": [{"content": {"parts": [part], "role": "model"}}],
+            "usageMetadata": {"promptTokenCount": 12, "candidatesTokenCount": 75},
+        },
+    )
+
+
+async def test_speech_asks_for_audio_with_the_prebuilt_voice_and_returns_pcm() -> None:
+    client, requests = sdk_client(
+        lambda _r: speech_answer(b"\x05\x00" * 4, "audio/L16;codec=pcm;rate=24000")
+    )
+
+    audio = await GenAIBackend(client).synthesize_speech(
+        model="tts-test", text="Say warmly: Hello", voice="Kore"
+    )
+
+    assert (audio.pcm, audio.sample_rate, audio.input_tokens, audio.output_tokens) == (
+        b"\x05\x00" * 4, 24_000, 12, 75,
+    )  # fmt: skip
+    (request,) = requests
+    body = json.loads(request.content)
+    assert request.url.path.endswith("/models/tts-test:generateContent")
+    assert body["generationConfig"]["responseModalities"] == ["AUDIO"]
+    # The SDK serialises this nested config in snake_case; the Gemini API accepts both spellings.
+    voice = body["generationConfig"]["speechConfig"]["voice_config"]["prebuilt_voice_config"]
+    assert voice == {"voice_name": "Kore"}
+
+
+async def test_speech_assumes_24_khz_when_the_mime_type_has_no_rate() -> None:
+    client, _ = sdk_client(lambda _r: speech_answer(mime="audio/wav"))
+
+    audio = await GenAIBackend(client).synthesize_speech(model="m", text="t", voice="Kore")
+
+    assert audio.sample_rate == 24_000
+
+
+async def test_speech_without_audio_is_a_provider_error() -> None:
+    client, _ = sdk_client(lambda _r: answer("only text"))
+
+    with pytest.raises(ProviderError, match="no audio"):
+        await GenAIBackend(client).synthesize_speech(model="m", text="t", voice="Kore")
+
+
+async def test_speech_http_errors_are_mapped_like_every_other_call() -> None:
+    client, _ = sdk_client(lambda _r: httpx.Response(429, json={"error": {"message": "slow"}}))
+
+    with pytest.raises(TransientProviderError):
+        await GenAIBackend(client).synthesize_speech(model="m", text="t", voice="Kore")

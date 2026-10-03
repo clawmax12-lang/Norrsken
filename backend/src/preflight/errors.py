@@ -31,3 +31,10 @@ class RenderError(PreflightError):
 
 class StorageError(PreflightError):
     """A project file is missing, unreadable or fails its schema."""
+
+
+class SoundError(PreflightError):
+    """Narration, music or the final mix could not be produced.
+
+    Sound is an enhancement: the run reports it as skipped and exports the silent render.
+    """

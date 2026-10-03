@@ -9,6 +9,7 @@ work; ``client.aio.interactions`` also exists, but its request and response are 
 import asyncio
 import io
 import logging
+import re
 from collections.abc import Awaitable, Callable, Iterator, Sequence
 from contextlib import contextmanager
 
@@ -19,12 +20,13 @@ from google.genai import types
 
 from preflight.errors import ProviderError, TransientProviderError
 
-from .backend import BackendResponse, JsonSchema
+from .backend import BackendResponse, JsonSchema, SpeechAudio
 from .parts import MediaPart, Part, TextPart
 
 logger = logging.getLogger(__name__)
 
 INLINE_LIMIT_BYTES = 20 * 1024 * 1024
+DEFAULT_SPEECH_RATE_HZ = 24_000
 _TRANSIENT_STATUS = frozenset({408, 429})
 _SERVER_ERROR_FLOOR = 500
 
@@ -89,6 +91,22 @@ class GenAIBackend:
             )
         return _to_backend_response(response)
 
+    async def synthesize_speech(self, *, model: str, text: str, voice: str) -> SpeechAudio:
+        """Speak ``text`` with a prebuilt voice; Gemini answers with raw 16-bit mono PCM."""
+        prebuilt = types.PrebuiltVoiceConfig(voice_name=voice)
+        config = types.GenerateContentConfig(
+            response_modalities=["AUDIO"],
+            speech_config=types.SpeechConfig(
+                voice_config=types.VoiceConfig(prebuilt_voice_config=prebuilt)
+            ),
+            automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
+        )
+        with _mapped_provider_errors():
+            response = await self._client.aio.models.generate_content(
+                model=model, contents=text, config=config
+            )
+        return _to_speech_audio(response)
+
     async def count_text_tokens(self, *, model: str, text: str) -> int:
         """Count ``text`` with the Gemini tokenizer (a free, side-effect-free API call)."""
         with _mapped_provider_errors():
@@ -138,6 +156,35 @@ def _to_backend_response(response: types.GenerateContentResponse) -> BackendResp
         return BackendResponse(response.text, 0, 0)
     output = (usage.candidates_token_count or 0) + (usage.thoughts_token_count or 0)
     return BackendResponse(response.text, usage.prompt_token_count or 0, output)
+
+
+def _to_speech_audio(response: types.GenerateContentResponse) -> SpeechAudio:
+    """Extract the PCM part; its mime type (``audio/L16;rate=24000``) carries the sample rate."""
+    inline = next(
+        (p.inline_data for p in _response_parts(response) if p.inline_data and p.inline_data.data),
+        None,
+    )
+    if inline is None or not inline.data:
+        raise ProviderError(f"Gemini returned no audio ({_empty_reason(response)})")
+    usage = response.usage_metadata
+    return SpeechAudio(
+        pcm=inline.data,
+        sample_rate=_sample_rate(inline.mime_type),
+        input_tokens=(usage.prompt_token_count or 0) if usage else 0,
+        output_tokens=(usage.candidates_token_count or 0) if usage else 0,
+    )
+
+
+def _response_parts(response: types.GenerateContentResponse) -> list[types.Part]:
+    candidates = response.candidates or []
+    content = candidates[0].content if candidates else None
+    return (content.parts or []) if content else []
+
+
+def _sample_rate(mime_type: str | None) -> int:
+    """Rate from ``audio/L16;codec=pcm;rate=24000``; Gemini TTS documents 24 kHz as the default."""
+    match = re.search(r"rate=(\d+)", mime_type or "")
+    return int(match.group(1)) if match else DEFAULT_SPEECH_RATE_HZ
 
 
 def _empty_reason(response: types.GenerateContentResponse) -> str:

@@ -33,6 +33,7 @@ class Step(StrEnum):
     SIMULATE = "simulate"
     SCORE = "score"
     EXPLAIN = "explain"
+    AUDIO = "audio"
     ITERATE = "iterate"
     EXPORT = "export"
 

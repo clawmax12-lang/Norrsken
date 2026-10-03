@@ -3,11 +3,11 @@
 import os
 import shutil
 import tempfile
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from pathlib import Path
 
-from preflight.contracts import CreativeConcept, Ranking, Report
+from preflight.contracts import CreativeConcept, Ranking, Report, SoundRecord
 from preflight.errors import StorageError
 from preflight.storage import ProjectPaths, ProjectStore
 
@@ -32,7 +32,9 @@ class ExportBundle:
 def build_export(store: ProjectStore, project_id: str) -> ExportBundle:
     """Write the export files for a finished project and return their locations.
 
-    The videos are copies of the rendered MP4s, ``report.json`` is the validated report and
+    The videos are copies of the cuts with narration, music and effects when sound was added
+    (the pretest ran on the silent renders, which the launch brief says), otherwise of the
+    rendered MP4s. ``report.json`` is the validated report and
     the launch brief is rendered from the stored results. When only one variant survived there
     is no runner-up video: the file is absent (a stale one from an earlier run is removed)
     rather than faked. Every file is replaced atomically, so calling it again is safe and a
@@ -50,27 +52,49 @@ def build_export(store: ProjectStore, project_id: str) -> ExportBundle:
     runner_up = (
         store.read(paths.concept(report.runner_up), CreativeConcept) if report.runner_up else None
     )
-    launch_brief = render_launch_brief(brief, winner, runner_up, ranking, report)
+    sounds = _sound_records(store, paths, report)
+    launch_brief = render_launch_brief(brief, winner, runner_up, ranking, report, sounds)
 
     paths.exports.mkdir(exist_ok=True)
     winner_video = paths.exports / WINNER_VIDEO
-    _publish(winner_video, lambda tmp: _copy_video(paths.video(report.winner), tmp))
+    _publish(
+        winner_video, lambda tmp: _copy_video(_exported_video(paths, report.winner, sounds), tmp)
+    )
     store.write(paths.exports / REPORT_JSON, report)
     _publish(paths.exports / LAUNCH_BRIEF, lambda tmp: tmp.write_text(launch_brief, "utf-8"))
     return ExportBundle(
         winner_video=winner_video,
-        runner_up_video=_export_runner_up(paths, report.runner_up),
+        runner_up_video=_export_runner_up(paths, report.runner_up, sounds),
         report=paths.exports / REPORT_JSON,
         launch_brief=paths.exports / LAUNCH_BRIEF,
     )
 
 
-def _export_runner_up(paths: ProjectPaths, runner_up: str | None) -> Path | None:
+def _sound_records(
+    store: ProjectStore, paths: ProjectPaths, report: Report
+) -> dict[str, SoundRecord]:
+    """Sound records of the exported variants whose final video (with sound) exists."""
+    exported = [v for v in (report.winner, report.runner_up) if v is not None]
+    return {
+        variant: store.read(paths.sound(variant), SoundRecord)
+        for variant in exported
+        if paths.sound(variant).is_file() and paths.final_video(variant).is_file()
+    }
+
+
+def _exported_video(paths: ProjectPaths, variant: str, sounds: Mapping[str, SoundRecord]) -> Path:
+    """The cut with sound when one was made, otherwise the silent render that was pretested."""
+    return paths.final_video(variant) if variant in sounds else paths.video(variant)
+
+
+def _export_runner_up(
+    paths: ProjectPaths, runner_up: str | None, sounds: Mapping[str, SoundRecord]
+) -> Path | None:
     destination = paths.exports / RUNNER_UP_VIDEO
     if runner_up is None:
         destination.unlink(missing_ok=True)
         return None
-    _publish(destination, lambda tmp: _copy_video(paths.video(runner_up), tmp))
+    _publish(destination, lambda tmp: _copy_video(_exported_video(paths, runner_up, sounds), tmp))
     return destination
 
 
