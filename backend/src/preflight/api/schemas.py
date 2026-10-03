@@ -49,6 +49,13 @@ class ResultsResponse(BaseModel):
 
 
 class HealthResponse(BaseModel):
-    """Liveness probe body."""
+    """Liveness probe body, plus which providers are configured so the UI can say so up front.
+
+    ``brain_sim`` false means "Brain sim off": no TRIBE worker is configured.
+    """
 
     status: Literal["ok"] = "ok"
+    runs: bool = False
+    gemini: bool = False
+    condense: bool = False
+    brain_sim: bool = False

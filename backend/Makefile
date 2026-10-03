@@ -17,4 +17,4 @@ test:
 	uv run pytest
 
 run:
-	uv run uvicorn preflight.api.app:create_app --factory --reload
+	uv run uvicorn preflight.api.main:create_production_app --factory --port 8000
