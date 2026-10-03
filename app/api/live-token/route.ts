@@ -2,6 +2,7 @@ import { GoogleGenAI, Modality } from "@google/genai";
 import { NextRequest, NextResponse } from "next/server";
 
 import { DIRECTOR_INSTRUCTION, LIVE_MODEL, LIVE_VOICE } from "@/lib/director";
+import { getGoogleApiKey } from "@/lib/google-api-key";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -36,10 +37,10 @@ export async function POST(request: NextRequest) {
       { status: 429, headers: { "Cache-Control": "no-store", "Retry-After": "60" } },
     );
   }
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = getGoogleApiKey();
   if (!apiKey) {
     return NextResponse.json(
-      { error: "Voice is not configured. Set GEMINI_API_KEY on the server." },
+      { error: "Voice is not configured. Set GOOGLE_API_KEY on the server." },
       { status: 503, headers: { "Cache-Control": "no-store" } },
     );
   }

@@ -29,9 +29,9 @@ npm install
 npm run dev
 ```
 
-Use Node.js 20.9 or newer. Set `GEMINI_API_KEY` in `.env.local` to an AI Studio key with access to `gemini-3.8-live`, then open `http://localhost:3000` in current desktop Chrome. Click **Start Director** once to grant microphone permission. Add or drop up to 100 PNG/JPG product screens; the Director receives the complete asset index and can inspect any attached screen without further approval. Only the final 3–6 screens are uploaded when **Run Preflight** is clicked. Browser security does not permit undisclosed access to other device files.
+Use Node.js 20.9 or newer. Set `GOOGLE_API_KEY` in `.env.local` to an AI Studio key with access to `gemini-3.8-live`, then open `http://localhost:3000` in current desktop Chrome. `GEMINI_API_KEY` remains supported as a backwards-compatible alias. Click **Start Director** once to grant microphone permission. Add or drop up to 100 PNG/JPG product screens; the Director receives the complete asset index and can inspect any attached screen without further approval. Only the final 3–6 screens are uploaded when **Run Preflight** is clicked. Browser security does not permit undisclosed access to other device files.
 
-The permanent key is read only by `/api/live-token`, which exchanges it for a one-use, short-lived token. It must never be named `NEXT_PUBLIC_GEMINI_API_KEY`, placed in client code or committed. The temporary hackathon account and its project may be deleted after the event, so replace the key for any later deployment.
+The permanent key is read only by `/api/live-token`, which exchanges it for a one-use, short-lived token. It must never use a `NEXT_PUBLIC_*` name, be placed in client code or be committed. The temporary hackathon account and its project may be deleted after the event, so replace the key for any later deployment.
 
 Verification commands:
 
@@ -51,7 +51,7 @@ The direct Gemini Live WebSocket is the narrow PRD v1.2 exception to Condense ro
 
 The PRD designates **Claude Opus 5.5** as the primary coding agent. This is a build plan, not a claim that the application has already been implemented with it. This documentation bootstrap was prepared with Codex from the supplied PDF.
 
-Environment variable names from PRD §10.4: `GEMINI_API_KEY`, `CONDENSE_API_KEY`, `TRIBE_ENDPOINT`. Only `GEMINI_API_KEY` is consumed by the current slice. `.env.example` contains placeholders; `.env*` files remain ignored except for that example.
+Environment variable names from PRD §10.4: `GEMINI_API_KEY`, `CONDENSE_API_KEY`, `TRIBE_ENDPOINT`. The current slice consumes `GOOGLE_API_KEY`, with `GEMINI_API_KEY` retained as a compatible alias. `.env.example` contains placeholders; `.env*` files remain ignored except for that example.
 
 ## Demo and research honesty
 
@@ -61,7 +61,7 @@ Environment variable names from PRD §10.4: `GEMINI_API_KEY`, `CONDENSE_API_KEY`
 - Document the implemented scoring/confidence rule here when FR-05 lands. Simulator agreement is not a demonstrated probability of real-world success.
 - Do not claim that neural response predicts retention, virality, emotions or sales. Live A/B testing is the eventual validation.
 
-Current TRIBE mode, scoring implementation and Condense integration: **not yet implemented or verified in this repository**. The Director UI labels its intake advice **Creative rationale · no simulation yet** and cannot call TRIBE. With no configured `GEMINI_API_KEY`, typed intake and project-screen selection still work, while voice shows a configuration error instead of fake output.
+Current TRIBE mode, scoring implementation and Condense integration: **not yet implemented or verified in this repository**. The Director UI labels its intake advice **Creative rationale · no simulation yet** and cannot call TRIBE. With no configured Google API key, typed intake and project-screen selection still work, while voice shows a configuration error instead of fake output.
 
 ## Attribution and eligibility
 
