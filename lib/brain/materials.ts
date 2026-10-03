@@ -194,7 +194,7 @@ void main() {
 
   // Glowing front of the assembly sweep.
   float front = 1.0 - smoothstep(0.0, 0.035, uReveal - vReveal);
-  color += front * vec3(0.55, 0.6, 0.7) * step(uReveal, 0.999);
+  color += front * vec3(0.52, 0.5, 0.47) * step(uReveal, 0.999);
 
   color *= 1.0 - uDim;
   gl_FragColor = vec4(color, uOpacity);

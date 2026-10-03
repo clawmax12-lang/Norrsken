@@ -188,10 +188,17 @@ export function BrainCompanion(props: BrainCompanionProps) {
   const [mode, setMode] = useState<BrainMode>(entryEnabled ? "entry" : initialMode);
   const entryDecision = useSyncExternalStore(noopSubscribe, readEntryDecision, () => null);
   const booting = entryDecision === null;
+  const [docking, setDocking] = useState(false);
+  const [dockSettled, setDockSettled] = useState(false);
+  const anchorRef = useRef<HTMLSpanElement>(null);
+  const [hostVars, setHostVars] = useState<Record<string, string>>({});
   const pageRef = useRef<HTMLDivElement>(null);
   const entrySkipRef = useRef<(() => void) | null>(null);
   const skipEntryRef = useRef<() => void>(() => {});
   const [entry, setEntry] = useState<{ run: number; replay: boolean } | null>(null);
+  // Returning sessions never render an entry frame after hydration (no flash, no animate-in).
+  const shownMode: BrainMode =
+    mode === "entry" && !entry && entryDecision !== null && (!entryEnabled || entryDecision === "played" || entryDecision === "off") ? initialMode : mode;
   const [urlDemo, setDemo] = useState<DemoExample | null>(null);
   const [eventLog, setEventLog] = useState<BrainEvent[]>([]);
   const [runKey, setRunKey] = useState<string | null>(runId ?? null);
@@ -643,6 +650,40 @@ export function BrainCompanion(props: BrainCompanionProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, scene]);
 
+  useEffect(() => {
+    if (shownMode !== "dock") return;
+    const t = window.setTimeout(() => {
+      setDocking(false);
+      setDockSettled(true);
+    }, 1000);
+    return () => window.clearTimeout(t);
+  }, [shownMode]);
+
+  // The companion is portaled under <body>; carry the host's brain/theme variables from the mount point.
+  useEffect(() => {
+    const anchor = anchorRef.current;
+    if (!anchor || harness) return;
+    const names = [
+      "--brain-dock-top", "--brain-dock-left", "--brain-dock-width", "--brain-dock-height",
+      "--brain-dock-large-top", "--brain-dock-large-left", "--brain-dock-large-width", "--brain-dock-large-height",
+      "--brain-dock-surface", "--brain-dock-halo",
+      "--pf-accent", "--pf-accent-ink", "--pf-border", "--pf-surface", "--pf-text", "--pf-text-secondary",
+      "--pf-radius-card", "--pf-font-display", "--pf-font-mono", "--pf-font-ui",
+    ];
+    const read = () => {
+      const cs = getComputedStyle(anchor);
+      const next: Record<string, string> = {};
+      for (const n of names) {
+        const v = cs.getPropertyValue(n).trim();
+        if (v) next[n] = v;
+      }
+      setHostVars((prev) => (JSON.stringify(prev) === JSON.stringify(next) ? prev : next));
+    };
+    read();
+    window.addEventListener("resize", read);
+    return () => window.removeEventListener("resize", read);
+  }, [harness, booting]);
+
   // Mode/variant/region events for the canvas and voice owners (changes only, not the initial state).
   const lastReported = useRef({ mode: initialMode as BrainMode, variant: "A" as VariantId, pick: null as PickResult | null });
   useEffect(() => {
@@ -878,7 +919,9 @@ export function BrainCompanion(props: BrainCompanionProps) {
   const chipClass = mock ? "bv-chip-mock" : dataMode === "demo_example" ? "bv-chip-demo" : binding ? "bv-chip-live" : "";
   const pageClass = [
     "bv-page",
-    `bv-mode-${mode}`,
+    `bv-mode-${shownMode}`,
+    docking ? "bv-docking" : "",
+    dockSettled ? "bv-dock-settled" : "",
     booting ? "bv-booting" : "",
     harness ? "bv-harness" : "bv-embedded",
     `bv-dock-${dockCorner}`,
@@ -893,7 +936,7 @@ export function BrainCompanion(props: BrainCompanionProps) {
     .join(" ");
 
   const content = (
-    <div className={pageClass} ref={pageRef}>
+    <div className={pageClass} ref={pageRef} style={hostVars as React.CSSProperties}>
       {booting && entryEnabled && <script dangerouslySetInnerHTML={{ __html: BOOT_SCRIPT }} />}
       {harness && (
         <header className="bv-topbar">
@@ -1136,7 +1179,7 @@ export function BrainCompanion(props: BrainCompanionProps) {
               {pinned && <button type="button" className="bv-ghost-button" onClick={() => setPinned(false)}>Unpin</button>}
             </div>
 
-            {mode === "entry" && (
+            {shownMode === "entry" && (
               <div className="bv-entry-overlay" role="dialog" aria-modal="true" aria-label="Preflight intro">
                 <style>{ENTRY_LOCK_CSS}</style>
                 <button type="button" className="bv-skip" onClick={skipEntry} autoFocus>
@@ -1160,7 +1203,10 @@ export function BrainCompanion(props: BrainCompanionProps) {
                 atlasNames={assets?.atlas.names ?? []}
                 reducedMotion={reducedMotion}
                 onRegionFocus={(region) => emit({ type: "entry.region_focus", region, dataMode })}
-                onDock={() => setMode("dock")}
+                onDock={() => {
+                  setDocking(true);
+                  setMode("dock");
+                }}
                 onFinish={finishEntry}
                 registerSkip={(fn) => {
                   entrySkipRef.current = fn;
@@ -1233,8 +1279,21 @@ export function BrainCompanion(props: BrainCompanionProps) {
   // Embedded: after hydration the companion lives directly under <body>, so no host stacking
   // context, transform or overflow can cover the intro or clip the dock. The server/pre-hydration
   // frame renders in place (the matte-black cover paints before any script runs).
-  if (!harness && !booting && typeof document !== "undefined") return createPortal(content, document.body);
-  return content;
+  const anchor = <span ref={anchorRef} className="bv-anchor" aria-hidden="true" hidden />;
+  if (!harness && !booting && typeof document !== "undefined") {
+    return (
+      <>
+        {anchor}
+        {createPortal(content, document.body)}
+      </>
+    );
+  }
+  return (
+    <>
+      {anchor}
+      {content}
+    </>
+  );
 }
 
 /** @deprecated Use BrainCompanion. */

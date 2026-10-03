@@ -181,3 +181,35 @@ Replay, Reset view and the duplicate data chip left the dock. Replay and Reset l
 - Back to canvas, Fullscreen, and Variant/Surface/View controls.
 
 Everything works by click and keyboard, not hover only.
+
+### Actual-root correction (3 Oct, after William's live review)
+
+**Verified on the actual main-canvas root `/`.** This is main `a36670f`'s `CanvasWorkspace`, with its unchanged `CanvasBrain` mount plus this branch's brain files. Fresh Chrome contexts at 1440×1000 (SwiftShader); evidence is in `.context/actual-*`.
+
+**Root cause of the blocked Skip.** The brain's own hidden layout wrapper was `position: fixed; z-index: 30`. That created a stacking context, trapping the "max z-index" stage at 30, under the host header (70), rail (60) and composer (80). Fixes:
+- The wrapper no longer forms a stacking context in entry/dock.
+- After hydration, the embedded companion portals to `<body>`, so no host z-index, transform or overflow can cover the intro or Skip.
+- The host's `--brain-dock-*` and `--pf-*` values are copied from the mount point to the portaled root.
+
+**Entry:**
+- Server/first paint is the matte-black full-viewport cover with Skip and the Redaction wordmark. There is no dock or loading-box flash.
+- A pre-hydration script hides the cover for returning sessions, so reload stays docked with no intro frame.
+- The host is `inert` and scroll is locked while the intro shows.
+- Skip (real pointer) and Esc work before the mesh loads. WebGL failure falls back to the dock automatically.
+- The intro is five deliberate shots on the same renderer: reveal, lateral glide, dorsal crane, push-in to the superior temporal gyrus (labelled anatomy, not response), and release. Reduced motion uses a static profile with fades.
+
+**Dock:**
+- Quiet idle rotation (0.16 rad/s) continues after the intro or Skip with no backend data. Reduced motion and manual control stop it.
+- No card, border or shadow; the caption is the only text.
+
+**Material:** a display-only interpolating PN subdivision. Original fsaverage5 vertices keep their index and position; edge midpoints show the mean of their two genuine parents. This replaced the facet-normal blend; the material is now matte plaster with filmic tone mapping. No warm colour appears without genuine data.
+
+**Demo data:** the `preflight.demo-bundle.v1` seam (`CanvasBrain demoBundleUrl`) accepts only genuine, precomputed, licensed, hash-matched backend-format bundles; mocks are rejected. None exists. The backend has only `precomputed: false`, and the repository's only video is Meta's motion reference, which is not licensed TRIBE output for our demo. Warm activity is therefore a data blocker.
+
+**Host notes for the Canvas owner:**
+- `.canvas-brain-layer` and its pointer-event rules can be removed; the brain portals itself after hydration.
+- For a stack-safe pre-hydration frame, render `<CanvasBrain/>` with no z-index or transform ancestor, e.g. as a direct child of `main.canvas-app`.
+- Keep the `--brain-dock-*` values (they are carried through the portal).
+- The `/api/projects/launch-draft/draft` 404s in the console are host requests.
+
+**v1.7 open seam:** existing-video input means Original plus A/B/C. The brain still accepts `A`/`B`/`C` and must not relabel Original as A. The Original identifier and source/output time mapping need agreement with Backend and Canvas before the brain adds an `Original` lane.

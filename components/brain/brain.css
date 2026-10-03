@@ -396,3 +396,13 @@
 .bv-entry-caption span:last-child { color: var(--pf-text-secondary, #aba7a2); font-size: 12.5px; line-height: 1.5; }
 /* Docked: the brain floats on the canvas, no surrounding card, border or shadow. */
 .bv-mode-dock .bv-stage, .bv-mode-dock.bv-dock-working .bv-stage, .bv-mode-dock.bv-dock-focus .bv-stage, .bv-mode-dock.bv-dock-pinned .bv-stage { background: transparent !important; border-color: transparent !important; box-shadow: none !important; }
+
+/* Stacking: the hidden layout wrapper must never form a stacking context in entry/dock, or the
+   intro (and Skip) would be trapped below host chrome. Absolute + z-index:auto does not. */
+.bv-mode-dock .bv-layout, .bv-mode-entry .bv-layout { position: absolute; inset: 0 auto auto 0; width: 0; height: 0; overflow: visible; z-index: auto; }
+/* Expanded analysis is a deliberate full overlay above host chrome; dock stays in the canvas layer. */
+.bv-embedded.bv-mode-expanded .bv-layout { z-index: 2147482000; }
+/* Size/position animation only while docking from the intro or resizing in the dock, never on first paint. */
+.bv-mode-dock .bv-stage, .bv-mode-entry .bv-stage { transition: none; }
+.bv-page.bv-docking .bv-stage, .bv-page.bv-mode-dock.bv-dock-settled .bv-stage { transition: top .9s cubic-bezier(.2,.8,.2,1), left .9s cubic-bezier(.2,.8,.2,1), width .9s cubic-bezier(.2,.8,.2,1), height .9s cubic-bezier(.2,.8,.2,1); }
+.bv-page.bv-mode-dock.bv-dock-settled .bv-stage { transition-duration: .35s; }
