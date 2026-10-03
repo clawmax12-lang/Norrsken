@@ -219,8 +219,16 @@ export function useLiveDirector({ onToolCall }: UseLiveDirectorOptions) {
     const session = sessionRef.current;
     sessionRef.current = null;
     if (session) {
-      session.sendRealtimeInput({ audioStreamEnd: true });
-      session.close();
+      try {
+        session.sendRealtimeInput({ audioStreamEnd: true });
+      } catch {
+        // A transport that has already closed must not prevent local audio cleanup.
+      }
+      try {
+        session.close();
+      } catch {
+        // The local queue/context is still released below.
+      }
     }
     await releaseAudio();
     if (mountedRef.current) {
