@@ -8,7 +8,7 @@ Preflight turns a product brief and 3–6 screenshots into three 15-second motio
 
 **[TRIBE v2 by Meta FAIR](https://github.com/facebookresearch/tribev2) is a foundational component of Preflight's planned neural pretesting system.** It supplies the predicted brain responses behind the brain simulation, synchronized activity curves, interactive 3D brain and Preflight sequence. Gemini supplies the complementary viewer panel and the agent's planning/explanations; Preflight coordinates generation, simulation, comparison and export.
 
-**Current approved specification: [PRD v1.5](PRD.md).** It supersedes earlier brainstorming, including editing an existing customer video. The product is a web flow canvas with a cinematic brain entry, persistent brain companion and mandatory two-way female Gemini Live Director, plus the genuine video-generation/pretest/export pipeline. This repository is the shared reference for the hackathon team and its coding agents.
+**Current approved specification: [PRD v1.6](PRD.md).** It supersedes earlier brainstorming, including editing an existing customer video. The product is a minimal FLORA-inspired black dotted web canvas with readable branching cards, a cinematic brain entry, persistent brain companion and mandatory two-way female Gemini Live Director, plus the genuine video-generation/pretest/export pipeline. Redaction and orange-red are our own identity; both orb and prompt-beam effects are required presentation. This repository is the shared reference for the hackathon team and its coding agents.
 
 ## Start here
 
@@ -17,9 +17,12 @@ Preflight turns a product brief and 3–6 screenshots into three 15-second motio
 | [PRD.md](PRD.md) | Product scope, FR-01–FR-16, acceptance criteria, architecture, UI, timeline and decision log. The source of truth for what to build. |
 | [TEAM.md](TEAM.md) | Owners, task status, integration evidence, open blockers and the shared Git/Conductor workflow. |
 | [AGENTS.md](AGENTS.md) | Instructions every coding agent must follow. Claude loads these through [CLAUDE.md](CLAUDE.md). |
-| [Visual baseline](docs/design/README.md) | All four original reference images and the motion clip, shared brain/canvas direction, provenance and existing preview. |
+| [Visual baseline](docs/design/README.md) | All seven original reference images and the motion clip; FLORA is the primary shell reference, original TRIBE images define brain quality. |
+| [Clean-flow design](docs/design/CLEAN_FLOW_DESIGN.md) | FLORA-style layout, readable A/B/C branches, minimal floating controls, shared dark/orange-red tokens and frontend handoff. |
+| [Redaction assets](public/fonts/redaction/README.md) | Five unchanged self-hosted WOFF2 files, license/provenance and selective readable typography. |
+| [Director visuals](docs/design/DIRECTOR_VISUALS.md) | Both requested effects adapted to our palette, verified package API, controlled React example and actual audio/state binding. |
 | [Opus 5.5 brain brief](docs/design/OPUS_BRAIN_BRIEF.md) | Complete interactive browser brain, reuse/data boundaries, A/B synchronization and verification/handoff. |
-| [Canvas and voice brief](docs/design/CANVAS_VOICE_BRIEF.md) | Mandatory two-way Gemini Live, validated storyboard edits, canvas/brain/job integration and standalone orb; optional prompt glow. |
+| [Canvas and voice brief](docs/design/CANVAS_VOICE_BRIEF.md) | Mandatory two-way Gemini Live, validated storyboard edits, canvas/brain/job integration and required orb/prompt glow. |
 | [Canvas integration handoff](docs/design/CANVAS_INTEGRATION_HANDOFF.md) | Relay-ready voice brief, top-left hover/focus brain direction, inspected backend/SSE/data-adapter seams and current merge gaps. |
 | [Build status audit](docs/status/2026-10-03-build-audit.md) | Timestamped evidence from all nine Norrsken workspaces; prototype, implementation and genuine-data gaps are separate. |
 | [Original PDF](docs/source/Preflight-PRD-v1.1.pdf) | Unchanged, 20-page source supplied by the product owner. [Provenance and checksum](docs/source/README.md). |
@@ -28,7 +31,7 @@ Humans: start with PRD §1–§7. Builders: also read §8–§14. Agents: read A
 
 ## How to run
 
-This documentation branch has no application implementation, dependency manifests, start command or test suite. Application/backend work exists in separate team branches/workspaces; the [status audit](docs/status/2026-10-03-build-audit.md) records what was actually observed. No end-to-end acceptance has been verified here. Do not infer that a feature works from its presence in the PRD.
+This documentation/design branch has no runnable application, dependency manifests, start command or application test suite. It contains licensed fonts, opt-in theme CSS and a controlled React presentation example for frontend integration. Application/backend work exists in separate team branches/workspaces; the [status audit](docs/status/2026-10-03-build-audit.md) records what was actually observed. No end-to-end acceptance has been verified here. Do not infer that a feature works from its presence in the PRD or design kit.
 
 ```bash
 git clone https://github.com/clawmax12-lang/Norrsken.git
@@ -43,9 +46,11 @@ An existing Next.js Dashboard implementation is on the team's separate `williu16
 
 On first arrival, the anatomical brain rotates and focuses on regions, then docks in a corner while the flow canvas opens. Sources and the validated brief branch into storyboards/concepts, rendered videos, actual simulation results and a verdict/export. The corner brain follows the selected video's stored predictions; realtime job events update the canvas. Introductory colored response requires a genuine disclosed example, not fabricated waves before a run exists.
 
+**Primary design reference: [FLORA](https://flora.ai/) and the [supplied workspace screenshot](docs/design/README.md#reference-08--flora-primary-product-layout).** Black dots, open space, a narrow floating left tool rail, small corner controls and readable media/storyboard cards; no permanent navigation sidebar, radial tiny-node tree or huge chat panel. The [implementation brief](docs/design/CLEAN_FLOW_DESIGN.md) defines our own source → A/B/C → pretest → verdict layout and typography. Earlier canvas previews are prototypes, not the approved redesign.
+
 **Two-way female Gemini Live is required for the demo (FR-16/P0), explicitly confirmed by William.** After Enable Live/mic permission, talk to the Director, interrupt a reply, select a storyboard/scene and make a source-grounded pre-render edit that visibly updates the actual validated draft/canvas. Confirm the summarized Run before paid jobs. Actual job milestones and verdict answers come from shared persisted events/evidence; transcripts, mute/stop/disconnect and typed fallback remain available. TTS-only narration, prerecorded dialogue or a reactive visual cannot pass P0.
 
-The assistant is a standalone `ThinkingOrb`, no surrounding card, growing during actual speech. Its work states follow actual connection/mic/job state; audio-amplitude binding is our code, not a built-in orb feature. `voice-glow` is an optional prompt effect, not a voice engine. The Voice workspace proposes `gemini-3.8-live` and Kore; model/account/voice access and Condense Live routing remain unverified. No routing exception has been approved. A supplied Gemini key is not proof that Live is configured: long-lived keys remain server-side, with scoped ephemeral tokens or a secure proxy for browser Live. Pre-render editing is P0; editing/retesting a tested winner stays FR-11/P1. See the [integration brief](docs/design/CANVAS_VOICE_BRIEF.md).
+The assistant is a standalone warm-tinted `ThinkingOrb`, no surrounding card, growing during actual audible speech. Its states follow actual connection/mic/job state; playback/amplitude binding is our code, not a built-in orb feature. Both orb and restrained warm `VoiceBeam` prompt effect are required; neither is a voice engine. The current main's mic meter cannot substitute for assistant-output audio. See [Director visuals and example](docs/design/DIRECTOR_VISUALS.md). The Voice workspace proposes `gemini-3.8-live` and Kore; model/account/voice access and Condense Live routing remain unverified. This docs baseline has not approved a routing exception; merged Voice PR #2 separately records one and requires explicit reconciliation. A supplied Gemini key is not proof that Live is configured: long-lived keys remain server-side, with scoped ephemeral tokens or a secure proxy for browser Live. Pre-render editing is P0; editing/retesting a tested winner stays FR-11/P1. See the [integration brief](docs/design/CANVAS_VOICE_BRIEF.md).
 
 The large experiment tree is a design/architecture goal. Proposed nodes are not completed neural tests; today's three-video execution cap remains until the owner approves a batch budget and the backend team measures capacity. Keep prototype/untested states visible.
 

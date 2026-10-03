@@ -1,6 +1,6 @@
 # Opus 5.5 — browser brain implementation brief
 
-**Product:** Preflight, desktop-browser web platform, PRD v1.5. **Requested agent:** Claude Opus 5.5. **Scope:** FR-12 and FR-14; FR-15 only after all applicable P0 acceptance criteria pass. Read [AGENTS.md](../../AGENTS.md), [PRD.md](../../PRD.md) §15/§8/§9/§10/§12, [TEAM.md](../../TEAM.md), the entire [visual reference baseline](README.md) and [canvas/voice integration brief](CANVAS_VOICE_BRIEF.md) before implementing.
+**Product:** Preflight, desktop-browser web platform, PRD v1.6. **Requested agent:** Claude Opus 5.5. **Scope:** FR-12 and FR-14; FR-15 only after all applicable P0 acceptance criteria pass. Read [AGENTS.md](../../AGENTS.md), [PRD.md](../../PRD.md) §15/§8/§9/§10/§12, [TEAM.md](../../TEAM.md), the entire [visual reference baseline](README.md), [canvas/voice integration brief](CANVAS_VOICE_BRIEF.md) and [clean-flow layout](CLEAN_FLOW_DESIGN.md) before implementing.
 
 ## Outcome
 
@@ -11,6 +11,8 @@ Start from the existing Dashboard web branch, inspect its current layout and pre
 **v1.4 handoff:** Dashboard is now building the flow canvas. Your reusable viewer must support entry hero → persistent corner dock → expanded selected-variant analysis/fullscreen with shared selection/time. Quality of anatomy, materials and purposeful cinematic framing is important: match the original brain references, not a generic blob or icon. The new canvas screenshot defines workspace structure, not brain geometry. Preserve Dashboard's canvas work and coordinate the integration seam; do not rebuild its graph or the voice owner's service.
 
 **v1.5 integration update:** two-way female Gemini Live is mandatory FR-16/P0, owned by the existing Voice workspace. Agree selection/project/variant/scene/time and entry/dock events with Dashboard/Voice so validated spoken storyboard changes update shared state. Preserve anatomy quality and exact-video evidence; a changed draft/video cannot keep another artifact's brain response. Keep the standalone voice orb separate from the brain; do not implement a second speech service or scheduler. TTS-only is no longer P0 acceptance.
+
+**v1.6 design update:** FLORA/reference 08 is the owner's exact main-layout target: black dotted open canvas, narrow floating left tools and compact corner actions. Preserve your anatomy/dock/adapter work while coordinating the shell with Dashboard. Use supplied Redaction/warm orange-red identity; no radial universe, lime theme or panel-heavy Director landing. Brain stays top-left below project controls, with hover/keyboard pin; actual milestone → roughly three-second slower camera/text → resume, without changing video/sample time. Voice owner integrates both [orb and prompt beam](DIRECTOR_VISUALS.md), reusing actual Live input/output state; no competing audio service.
 
 ## Build once, bind data repeatedly
 

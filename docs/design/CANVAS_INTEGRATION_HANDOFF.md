@@ -2,6 +2,8 @@
 
 Product-owner direction, 3 Oct 2026: **ElevenLabs is a UI reference only; Gemini Live remains mandatory two-way voice.** This handoff records requested interaction and inspected seams, not completed acceptance or permission to overwrite/merge another branch. [PRD.md](../../PRD.md) remains the specification; [TEAM.md](../../TEAM.md) tracks evidence.
 
+**Latest design direction, PRD v1.6:** [FLORA and reference 08](README.md#reference-08--flora-primary-product-layout) supersede the earlier shell references. Use a black dotted open canvas, narrow floating left tools, compact corner actions, Redaction/warm orange-red identity and readable media/storyboard/pretest branches. Both [standalone orb and prompt beam](DIRECTOR_VISUALS.md) are requested, preserving existing real Gemini Live/audio/tool logic. See [CLEAN_FLOW_DESIGN.md](CLEAN_FLOW_DESIGN.md) for the relay-ready frontend brief. This does not change the backend contracts or authorize automatic merges.
+
 ## Voice brief to relay
 
 > Build the female two-way Gemini Live Director inside the existing Canvas, not as another app. The user can talk, interrupt, ask why, select a storyboard/scene and request a source-backed pre-render edit. Tools update the same validated persisted draft and visible Canvas state. Confirm the bounded run before paid jobs. Use a standalone growing ThinkingOrb, no enclosing card, matched transcripts and accessible mute/stop/disconnect. Long-lived keys stay server-side. Actual backend events and tested evidence drive progress/verdict; never invent brain response or completed tests. ElevenLabs is visual reference only. Agree shared draft/event/data seams with Dashboard, backend and Opus; preserve their working code.
