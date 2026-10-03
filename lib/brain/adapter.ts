@@ -16,7 +16,7 @@ import {
   type CorticalPayloadV0,
   type DisplayScale,
   type SimulationResult,
-} from "./contract.ts";
+} from "./contract";
 
 function invalid(reason: string): AdaptResult {
   return { ok: false, code: "invalid", reason };

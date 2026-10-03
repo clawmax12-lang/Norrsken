@@ -6,11 +6,11 @@
 
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import { getActivityTexture, emptyActivityTexture } from "./activityTexture.ts";
-import type { CameraState, CorticalBinding, DisplayScale, Hemisphere, SurfaceKind } from "./contract.ts";
-import type { BrainGeometry, HemisphereGeometry } from "./geometry.ts";
-import { createCortexMaterial, createInstanceUniforms, createWireMaterial, type InstanceUniforms } from "./materials.ts";
-import { sampleAt } from "./timeline.ts";
+import { getActivityTexture, emptyActivityTexture } from "./activityTexture";
+import type { CameraState, CorticalBinding, DisplayScale, Hemisphere, SurfaceKind } from "./contract";
+import type { BrainGeometry, HemisphereGeometry } from "./geometry";
+import { createCortexMaterial, createInstanceUniforms, createWireMaterial, type InstanceUniforms } from "./materials";
+import { sampleAt } from "./timeline";
 
 export interface PickResult {
   hemi: Hemisphere;

@@ -9,7 +9,7 @@
  * fixture or empty anatomy as the user's tested result.
  */
 
-import type { Hemisphere } from "./contract.ts";
+import type { Hemisphere } from "./contract";
 
 export const BRAIN_EVENT = "preflight:brain";
 

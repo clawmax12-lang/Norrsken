@@ -5,7 +5,7 @@
  * instances may subscribe to one clock (FR-15 groundwork).
  */
 
-import { clampTime, stepSeconds } from "./timeline.ts";
+import { clampTime, stepSeconds } from "./timeline";
 
 export interface ClockState {
   time: number;

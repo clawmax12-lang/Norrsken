@@ -9,8 +9,8 @@
  * behind a development-only guard).
  */
 
-import { CORTICAL_SCHEMA, FSAVERAGE5_VERTEX_ORDER, type SceneRef, type SimulationResult, type VariantId } from "../../../lib/brain/contract.ts";
-import { REGION_INFO, type AtlasLabels, type GroupId } from "../../../lib/brain/atlas.ts";
+import { CORTICAL_SCHEMA, FSAVERAGE5_VERTEX_ORDER, type SceneRef, type SimulationResult, type VariantId } from "../../../lib/brain/contract";
+import { REGION_INFO, type AtlasLabels, type GroupId } from "../../../lib/brain/atlas";
 
 const N_T = 15;
 

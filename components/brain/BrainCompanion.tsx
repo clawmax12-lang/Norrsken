@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ChangeEvent } from "react";
+import Link from "next/link";
 import type * as THREE from "three";
 import { adaptSimulationResult, computeDisplayScale, resolveCorticalValues } from "../../lib/brain/adapter";
 import { METER_GROUPS, REGION_GROUPS, computeRegionStatistics, regionInfo, type RegionStatistics } from "../../lib/brain/atlas";
@@ -12,12 +13,14 @@ import { loadHeadGeometry, type HeadObject } from "../../lib/brain/head";
 import type { BrainScene, PickResult } from "../../lib/brain/scene";
 import { formatTime, sampleAt, samplePeriod, seriesAt, stepSeconds } from "../../lib/brain/timeline";
 import { ANALYSIS_RUN_KEY_PREFIX, BRAIN_COMMAND, ENTRY_SESSION_KEY, dispatchBrainEvent, type BrainCommand, type BrainEvent, type BrainMode, type DataMode, type RegionRef, type SelectionSnapshot } from "../../lib/brain/events";
+import { useLatest } from "../../lib/brain/useLatest";
 import { BrainStage } from "./BrainStage";
 import { EntrySequence } from "./EntrySequence";
 import { PreflightSequence } from "./PreflightSequence";
 import { RegionCard } from "./RegionCard";
 import { Segmented } from "./Segmented";
 import { GROUP_COLORS, Timeline, type CurveData } from "./Timeline";
+import "./brain.css";
 
 const VARIANTS: VariantId[] = ["A", "B", "C"];
 const DEFAULT_DURATION_S = 15;
@@ -134,8 +137,7 @@ export function BrainCompanion(props: BrainCompanionProps) {
   const [demo, setDemo] = useState<DemoExample | null>(null);
   const [eventLog, setEventLog] = useState<BrainEvent[]>([]);
   const [runKey, setRunKey] = useState<string | null>(runId ?? null);
-  const onEventRef = useRef(onEvent);
-  onEventRef.current = onEvent;
+  const onEventRef = useLatest(onEvent);
   const entryChecked = useRef(false);
   const reducedMotion = usePrefersReducedMotion();
   const workspaceRef = useRef<HTMLDivElement>(null);
@@ -148,7 +150,7 @@ export function BrainCompanion(props: BrainCompanionProps) {
       dispatchBrainEvent(event, onEventRef.current);
       if (harness) setEventLog((log) => [event, ...log].slice(0, 8));
     },
-    [harness],
+    [harness, onEventRef],
   );
 
   // ---------------------------------------------------------------- assets
@@ -385,8 +387,7 @@ export function BrainCompanion(props: BrainCompanionProps) {
       : brainSim === "off"
         ? "sim_off"
         : "none";
-  const dataModeRef = useRef<DataMode>(dataMode);
-  dataModeRef.current = dataMode;
+  const dataModeRef = useLatest<DataMode>(dataMode);
   const stats = binding && assets ? statsFor(binding, assets) : null;
 
   const curves: CurveData | null = useMemo(() => {
@@ -487,7 +488,7 @@ export function BrainCompanion(props: BrainCompanionProps) {
       setEntry((e) => ({ run: (e?.run ?? 0) + 1, replay }));
       emit({ type: "entry.started", replay, dataMode: dataModeRef.current });
     },
-    [emit],
+    [emit, dataModeRef],
   );
 
   // First arrival: once per browser session (FR-14); ?entry=replay forces it.
@@ -520,7 +521,7 @@ export function BrainCompanion(props: BrainCompanionProps) {
     if (lastReported.current.variant === variant) return;
     lastReported.current.variant = variant;
     emit({ type: "variant.selected", variant, dataMode: dataModeRef.current });
-  }, [variant, emit]);
+  }, [variant, emit, dataModeRef]);
 
   // ------------------------------------------------------------- sequence
   const startSequence = useCallback(() => {
@@ -562,8 +563,7 @@ export function BrainCompanion(props: BrainCompanionProps) {
   );
 
   // selection.changed: variant/region/mode/data changes, seeks and pauses — not every frame.
-  const snapshotRef = useRef<() => SelectionSnapshot>(() => ({}) as SelectionSnapshot);
-  snapshotRef.current = () => {
+  const snapshotRef = useLatest((): SelectionSnapshot => {
     const t = clock.getSnapshot().time;
     const s = binding ? sampleAt(binding.times, t) : null;
     const scenes = current?.scenes;
@@ -579,8 +579,8 @@ export function BrainCompanion(props: BrainCompanionProps) {
       dataMode,
       mode,
     };
-  };
-  const emitSelection = useCallback(() => emit({ type: "selection.changed", selection: snapshotRef.current() }), [emit]);
+  });
+  const emitSelection = useCallback(() => emit({ type: "selection.changed", selection: snapshotRef.current() }), [emit, snapshotRef]);
   const selectionReady = useRef(false);
   useEffect(() => {
     if (!selectionReady.current) {
@@ -673,7 +673,7 @@ export function BrainCompanion(props: BrainCompanionProps) {
       {harness && (
         <header className="bv-topbar">
           <div className="bv-crumbs">
-            <a href="/" className="bv-brand"><span className="brand-mark" aria-hidden="true" />Preflight</a>
+            <Link href="/" className="bv-brand"><span className="bv-brand-mark" aria-hidden="true" />Preflight</Link>
             <span className="bv-sep">/</span>
             <strong>Brain companion</strong>
             <span className={`bv-chip ${chipClass}`}>{statusLabel}</span>

@@ -6,6 +6,7 @@ import type { Hemisphere } from "../../lib/brain/contract";
 import type { DataMode, RegionRef } from "../../lib/brain/events";
 import type { HeadObject } from "../../lib/brain/head";
 import type { BrainScene } from "../../lib/brain/scene";
+import { useLatest } from "../../lib/brain/useLatest";
 
 /** First-arrival hero (PRD v1.4 §12.2), milliseconds. */
 export const ENTRY_BEATS = { reveal: 900, orbit: 3600, focus: 7600, release: 10200, dock: 10900, end: 12000 } as const;
@@ -38,8 +39,7 @@ export interface EntrySequenceProps {
 export function EntrySequence(props: EntrySequenceProps) {
   const { scene, head, atlasNames, reducedMotion, dataLabel } = props;
   const [phase, setPhase] = useState<Phase>("reveal");
-  const propsRef = useRef(props);
-  propsRef.current = props;
+  const propsRef = useLatest(props);
   const skipRef = useRef<() => void>(() => {});
   const focus = regionInfo(ENTRY_FOCUS_REGION.atlasName);
 
@@ -55,7 +55,7 @@ export function EntrySequence(props: EntrySequenceProps) {
     scene.setSelected(null);
     scene.setAutoRotate(0);
     scene.setAssembly({ reveal: reducedMotion ? 1 : 0, wire: 0, opacity: reducedMotion ? 0 : 1, dim: 0 });
-    if (head) head.opacity.value = 0;
+    if (head) head.setOpacity(0);
     scene.applyCameraPreset(reducedMotion ? "profile" : "intro-start", 0);
 
     const enter = (p: Phase) => {
@@ -83,7 +83,7 @@ export function EntrySequence(props: EntrySequenceProps) {
         last = p;
         enter(p);
       }
-      if (head) head.opacity.value = smooth(0, 1600, ms);
+      if (head) head.setOpacity(smooth(0, 1600, ms));
       if (reducedMotion) {
         scene.setAssembly({ opacity: smooth(300, 2200, ms) });
       } else {
@@ -107,7 +107,7 @@ export function EntrySequence(props: EntrySequenceProps) {
       scene.setAutoRotate(0);
       scene.setSelected(null);
       scene.setAssembly({ reveal: 1, wire: 0, opacity: 1, dim: 0 });
-      if (head) head.opacity.value = 1;
+      if (head) head.setOpacity(1);
       scene.setInteractive(true);
       scene.applyCameraPreset("profile", skipped ? 0 : 600);
       if (!docked) propsRef.current.onDock();

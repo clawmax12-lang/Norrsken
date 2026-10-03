@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { BrainCompanion } from "../../components/brain/BrainCompanion";
-import "./brain.css";
 
 export const metadata: Metadata = {
   title: "Preflight — Brain companion",

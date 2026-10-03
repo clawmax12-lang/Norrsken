@@ -8,8 +8,8 @@
  */
 
 import * as THREE from "three";
-import type { BrainAssets, HemisphereAssets } from "./assets.ts";
-import type { Hemisphere } from "./contract.ts";
+import type { BrainAssets, HemisphereAssets } from "./assets";
+import type { Hemisphere } from "./contract";
 
 export interface HemisphereGeometry {
   hemi: Hemisphere;

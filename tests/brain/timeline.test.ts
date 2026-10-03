@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
-import { test } from "node:test";
-import { PlaybackClock } from "../../lib/brain/clock.ts";
-import { formatTime, sampleAt, sceneAt, seriesAt, stepSeconds } from "../../lib/brain/timeline.ts";
+import { test } from "vitest";
+import { PlaybackClock } from "../../lib/brain/clock";
+import { formatTime, sampleAt, sceneAt, seriesAt, stepSeconds } from "../../lib/brain/timeline";
 
 const times = [0, 1, 2, 3];
 

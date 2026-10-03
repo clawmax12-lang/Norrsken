@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useLatest } from "../../lib/brain/useLatest";
 import type * as THREE from "three";
 import type { CorticalBinding, DisplayScale, Hemisphere, SurfaceKind } from "../../lib/brain/contract";
 import type { BrainGeometry } from "../../lib/brain/geometry";
@@ -34,13 +35,10 @@ export function BrainStage(props: BrainStageProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<BrainScene | null>(null);
   const headRef = useRef<HeadObject | null>(null);
-  const onPickRef = useRef(onPick);
+  const onPickRef = useLatest(onPick);
   const [contextLost, setContextLost] = useState(false);
-  const onReadyRef = useRef(props.onReady);
-  const onHeadRef = useRef(props.onHead);
-  onPickRef.current = onPick;
-  onReadyRef.current = props.onReady;
-  onHeadRef.current = props.onHead;
+  const onReadyRef = useLatest(props.onReady);
+  const onHeadRef = useLatest(props.onHead);
 
   useEffect(() => {
     if (!hostRef.current) return;
@@ -52,12 +50,14 @@ export function BrainStage(props: BrainStageProps) {
     sceneRef.current = scene;
     scene.setTime(clock.getSnapshot().time);
     const unsubscribe = clock.subscribe(() => scene.setTime(clock.getSnapshot().time));
-    onReadyRef.current?.(scene);
+    const onReady = onReadyRef.current;
+    const onHead = onHeadRef.current;
+    onReady?.(scene);
     if (process.env.NODE_ENV !== "production") (window as unknown as { __preflightBrain?: BrainScene }).__preflightBrain = scene;
     return () => {
       unsubscribe();
-      onReadyRef.current?.(null);
-      onHeadRef.current?.(null);
+      onReady?.(null);
+      onHead?.(null);
       headRef.current?.dispose();
       headRef.current = null;
       scene.dispose();
@@ -73,7 +73,7 @@ export function BrainStage(props: BrainStageProps) {
     headRef.current = createHeadObject(headGeometry);
     scene.setHead(headRef.current.group);
     onHeadRef.current?.(headRef.current);
-  }, [headGeometry, geometry, clock]);
+  }, [headGeometry, geometry, clock, onHeadRef]);
 
   useEffect(() => {
     sceneRef.current?.setActivity(binding, scale);

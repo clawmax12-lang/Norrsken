@@ -10,7 +10,7 @@
  * review is still requested before the demo (see README).
  */
 
-import type { CorticalBinding, Hemisphere } from "./contract.ts";
+import type { CorticalBinding, Hemisphere } from "./contract";
 
 export type GroupId = "visual" | "auditory" | "language" | "somatomotor" | "parietal" | "frontal" | "medial_temporal" | "cingulate_insula";
 

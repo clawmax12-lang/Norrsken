@@ -7,7 +7,7 @@
  */
 
 import * as THREE from "three";
-import { ACTIVITY_TEX_WIDTH, emptyActivityTexture } from "./activityTexture.ts";
+import { ACTIVITY_TEX_WIDTH, emptyActivityTexture } from "./activityTexture";
 
 /** Uniforms shared by both hemispheres of one viewer instance. */
 export function createInstanceUniforms() {

@@ -5,7 +5,7 @@
  */
 
 import * as THREE from "three";
-import type { CorticalBinding } from "./contract.ts";
+import type { CorticalBinding } from "./contract";
 
 export const ACTIVITY_TEX_WIDTH = 2048;
 

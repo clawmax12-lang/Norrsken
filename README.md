@@ -28,16 +28,17 @@ Humans: start with PRD §1–§7. Builders: also read §8–§14. Agents: read A
 
 ## How to run
 
-The repository currently includes the responsive TypeScript dashboard shell. It is an entry surface only: brief persistence, rendering, simulation, scoring, and results are not implemented, and no functional requirement acceptance criteria should be inferred from the dashboard.
+The implemented vertical slice is the FR-01 voice-native Preflight Director: interruptible Gemini Live audio, transcripts, typed fallback, a permission-scoped local asset shelf, a six-scene draft storyboard, a visible decision thread and persisted `brief.json`. Planning, rendering, simulation, scoring and export are not implemented yet. The reusable brain companion (FR-12/FR-14) docks in the top-left of that route; see below.
 
 ```bash
 git clone https://github.com/clawmax12-lang/Norrsken.git
 cd Norrsken
+cp .env.example .env.local
 npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). The dashboard does not require environment variables.
+Use Node.js 20.9 or newer. Set `GEMINI_API_KEY` in `.env.local` to an AI Studio key with access to `gemini-3.8-live`, then open `http://localhost:3000` in current desktop Chrome. Click **Start Director** once to grant microphone permission. **Choose folder** grants read access to one folder through the browser; Preflight indexes at most 100 PNG/JPG filenames locally and uploads only the 3–6 screens selected when **Run Preflight** is clicked.
 
 Production build and checks:
 
@@ -56,8 +57,6 @@ Open [http://localhost:3000/brain](http://localhost:3000/brain) (also linked as 
 - `?demo=/same-origin/example.json` loads a genuine precomputed example for first arrival, shown as **Demo example · precomputed**; anything not precomputed or without its video is rejected.
 - `?sim=off` previews the **Brain sim off** fallback; `?entry=replay` forces the intro.
 - `?fixture=mock` (development server only, stripped from production builds) binds a deterministic **MOCK** test fixture with a red banner. It exists to test shaders and controls, not as evidence.
-
-Read the documents above and claim work in TEAM.md before extending the dashboard into the P0 flow. Keep this section current as runtime services are added.
 
 An existing Next.js Dashboard implementation is on the team's separate `williu16/preflight-swiftui-dashboard` branch (the name is historical; its code is web-based). Its **[Vercel canvas preview](https://temporary-instant-flint-xxlx4l9.vercel.app/?demo=1)** was checked on 3 Oct 2026: HTTP 200 and browser inspection. It now shows a branching storyline prototype, not genuine generated/tested batches or an integrated brain/voice pipeline. See the [workspace/preview details](docs/design/README.md#existing-dashboard-and-preview). The brain viewer branch adds the `/brain` route below; the canvas itself lives on the Dashboard branch.
 
@@ -151,13 +150,29 @@ First use downloads model weights and extracts multimodal features. Record both 
 
 The v1.4 fallback applies: if live TRIBE fails the 12:30 gate, keep the Gemini path with **Brain sim off**, the gray anatomical entry/dock and the required voice/canvas. This is a degraded execution path, not equivalent neural evidence. Never replace missing brain activity with generated values. Genuine precomputed examples must be tied to the video they analyzed, visibly disclosed and kept separate from the current run.
 
-## Planned build stack
+The permanent key is read only by `/api/live-token`, which exchanges it for a one-use, short-lived token. It must never be named `NEXT_PUBLIC_GEMINI_API_KEY`, placed in client code or committed. The temporary hackathon account and its project may be deleted after the event, so replace the key for any later deployment.
+
+Verification commands:
+
+```bash
+npm run typecheck
+npm run lint
+npm test
+npm run build
+npm audit --omit=dev
+```
+
+## Build stack
+
+The FR-01 slice uses Next.js 16, React 19, TypeScript, Zod and `@google/genai`. `gemini-3.8-live` provides low-latency native audio, automatic voice activity detection, barge-in, transcripts and function calls; the Director uses the firm `Kore` voice. A Next.js server route mints ephemeral Live tokens, while Live audio flows directly between the browser and Gemini. Later orchestration remains planned for Python/FastAPI, rendering for Remotion and the TRIBE v2 worker for a GPU environment.
+
+The direct Gemini Live WebSocket is the narrow PRD v1.2 exception to Condense routing because the required full-duplex transport is not available through the adopted Condense path. Planning, viewer-panel and explanation calls must still go through Condense and report real token savings when implemented.
 
 The PRD proposes Next.js, TypeScript, Tailwind and three.js for the browser frontend; Python/FastAPI for orchestration; Remotion for rendering; and a GPU worker for TRIBE v2. Gemini provides planning, the viewer panel and explanations, with all LLM calls routed through Condense. Rendering and inference run on backend workers; users access the product through their browser. The current dashboard shell uses Next.js, React and TypeScript and does not yet connect to those services.
 
 The PRD designates **Claude Opus 5.5** as the primary coding agent. This is a build plan, not a claim that the application has already been implemented with it. This documentation bootstrap was prepared with Codex from the supplied PDF.
 
-Required environment variable names from PRD §10.4: `GEMINI_API_KEY`, `CONDENSE_API_KEY`, `TRIBE_ENDPOINT`. Implementation must provide `.env.example` with placeholders; never commit real credentials or model weights.
+Environment variable names from PRD §10.4: `GEMINI_API_KEY`, `CONDENSE_API_KEY`, `TRIBE_ENDPOINT`. Only `GEMINI_API_KEY` is consumed by the current slice. `.env.example` contains placeholders; `.env*` files remain ignored except for that example.
 
 Runtime Opus, if integrated, requires its own server-side provider credentials (for a direct Anthropic integration, `ANTHROPIC_API_KEY`) and verified API model configuration. No customer key has been supplied or embedded by this documentation change. Keep all secrets out of the browser and shared chat/documents.
 
@@ -172,6 +187,8 @@ Runtime Opus, if integrated, requires its own server-side provider credentials (
 Current TRIBE mode in this repository: **none**. The brain companion shows gray anatomy and "No brain data" until a genuine result is bound; no precomputed or demo-example TRIBE output is included, and its activity rendering has only been exercised with the labelled MOCK test fixture.
 
 Current integration evidence: backend adapters/scoring are being implemented in the team's separate workspaces; **live TRIBE inference, Gemini speech, Condense routing and an end-to-end run are not yet verified by this documentation audit**. See the timestamped [status evidence](docs/status/2026-10-03-build-audit.md), rather than treating branch/session activity as product completion.
+
+Current TRIBE mode, scoring implementation and Condense integration: **not yet implemented or verified in this repository**. The Director UI labels its intake advice **Creative rationale · no simulation yet** and cannot call TRIBE. With no configured `GEMINI_API_KEY`, typed intake and folder selection still work, while voice shows a configuration error instead of fake output.
 
 ## Attribution and eligibility
 

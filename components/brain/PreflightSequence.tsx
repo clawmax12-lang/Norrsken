@@ -6,6 +6,7 @@ import type { PlaybackClock } from "../../lib/brain/clock";
 import type { Hemisphere, SceneRef } from "../../lib/brain/contract";
 import type { HeadObject } from "../../lib/brain/head";
 import type { BrainScene } from "../../lib/brain/scene";
+import { useLatest } from "../../lib/brain/useLatest";
 import { formatTime, sceneAt, seriesAt } from "../../lib/brain/timeline";
 import { GROUP_COLORS } from "./Timeline";
 
@@ -56,15 +57,14 @@ function beatAt(ms: number): Beat {
 }
 
 export function PreflightSequence(props: SequenceProps) {
-  const { scene, head, clock, variant, stats, times, scenes, atlasNames, meterMax, reducedMotion, mock, precomputed, onHandOver, onFinish } = props;
+  const { scene, head, clock, variant, stats, times, scenes, atlasNames, meterMax, reducedMotion, mock, precomputed } = props;
   const [beat, setBeat] = useState<Beat>("dim");
   const rootRef = useRef<HTMLDivElement>(null);
   const lineRefs = useRef<Record<string, SVGLineElement | null>>({});
   const meterRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const handedOver = useRef(false);
   const skipRef = useRef<() => void>(() => {});
-  const propsRef = useRef(props);
-  propsRef.current = props;
+  const propsRef = useLatest(props);
   const clockState = useSyncExternalStore(clock.subscribe, clock.getSnapshot, clock.getSnapshot);
   const hasData = Boolean(stats && times);
   const strongest = stats ? strongestMoment(stats) : null;
@@ -84,7 +84,7 @@ export function PreflightSequence(props: SequenceProps) {
     scene.setInteractive(false);
     scene.setSelected(null);
     scene.setAssembly({ reveal: reducedMotion ? 1 : 0, wire: 0, opacity: reducedMotion ? 0 : 1, dim: 0 });
-    if (head) head.opacity.value = 0;
+    if (head) head.setOpacity(0);
     scene.applyCameraPreset(reducedMotion ? "profile" : "intro-start", 0);
 
     const enter = (b: Beat) => {
@@ -122,7 +122,7 @@ export function PreflightSequence(props: SequenceProps) {
       const dim = smooth(0, SEQUENCE_BEATS.assemble, ms) * (1 - smooth(SEQUENCE_BEATS.handOver + 1200, SEQUENCE_BEATS.end, ms));
       rootRef.current?.parentElement?.style.setProperty("--bv-dim", dim.toFixed(3));
       // Beat 2: head fades in, wireframe builds into the shaded mesh (fades when reduced).
-      if (head) head.opacity.value = smooth(1500, 3000, ms);
+      if (head) head.setOpacity(smooth(1500, 3000, ms));
       if (reducedMotion) {
         scene.setAssembly({ opacity: smooth(1500, 3500, ms) });
       } else {
@@ -164,7 +164,7 @@ export function PreflightSequence(props: SequenceProps) {
       clock.pause();
       if (skipped) clock.seek(0);
       scene.setAssembly({ reveal: 1, wire: 0, opacity: 1, dim: 0 });
-      if (head) head.opacity.value = 1;
+      if (head) head.setOpacity(1);
       scene.setInteractive(true);
       if (skipped) {
         scene.setSelected(null);

@@ -8,7 +8,7 @@
  */
 
 import * as THREE from "three";
-import { rasToScene } from "./geometry.ts";
+import { rasToScene } from "./geometry";
 
 export const HEAD_ASSET_BASE = "/brain/head";
 
@@ -96,7 +96,7 @@ void main() {
 
 export interface HeadObject {
   group: THREE.Group;
-  opacity: { value: number };
+  setOpacity(value: number): void;
   dispose(): void;
 }
 
@@ -118,7 +118,9 @@ export function createHeadObject(geometry: THREE.BufferGeometry): HeadObject {
   group.add(body, shell);
   return {
     group,
-    opacity,
+    setOpacity(value: number) {
+      opacity.value = value;
+    },
     dispose() {
       (body.material as THREE.Material).dispose();
       (shell.material as THREE.Material).dispose();

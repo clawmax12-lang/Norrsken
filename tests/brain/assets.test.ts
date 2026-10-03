@@ -1,12 +1,12 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { test } from "node:test";
-import { getActivityTexture, packedCoord, ACTIVITY_TEX_WIDTH } from "../../lib/brain/activityTexture.ts";
-import { adaptSimulationResult } from "../../lib/brain/adapter.ts";
-import { computeRegionStatistics, REGION_GROUPS, REGION_INFO, regionSeries, strongestMoment } from "../../lib/brain/atlas.ts";
-import { brainAssetLoadCount, loadBrainAssets, resetBrainAssetCacheForTests, type BrainAssets } from "../../lib/brain/assets.ts";
-import { brainGeometryBuildCount, getBrainGeometry } from "../../lib/brain/geometry.ts";
-import { buildMockResult } from "./fixtures/mockCortical.ts";
+import { test } from "vitest";
+import { getActivityTexture, packedCoord, ACTIVITY_TEX_WIDTH } from "../../lib/brain/activityTexture";
+import { adaptSimulationResult } from "../../lib/brain/adapter";
+import { computeRegionStatistics, REGION_GROUPS, REGION_INFO, regionSeries, strongestMoment } from "../../lib/brain/atlas";
+import { brainAssetLoadCount, loadBrainAssets, resetBrainAssetCacheForTests, type BrainAssets } from "../../lib/brain/assets";
+import { brainGeometryBuildCount, getBrainGeometry } from "../../lib/brain/geometry";
+import { buildMockResult } from "./fixtures/mockCortical";
 
 const ROOT = new URL("../../public", import.meta.url);
 

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
-import { test } from "node:test";
-import { adaptSimulationResult, canDifference, computeDisplayScale, resolveCorticalValues, THRESHOLD_FRACTION } from "../../lib/brain/adapter.ts";
-import { CORTICAL_SCHEMA, FSAVERAGE5_VERTEX_ORDER, FSAVERAGE5_VERTICES, type CorticalBinding, type SimulationResult } from "../../lib/brain/contract.ts";
+import { test } from "vitest";
+import { adaptSimulationResult, canDifference, computeDisplayScale, resolveCorticalValues, THRESHOLD_FRACTION } from "../../lib/brain/adapter";
+import { CORTICAL_SCHEMA, FSAVERAGE5_VERTEX_ORDER, FSAVERAGE5_VERTICES, type CorticalBinding, type SimulationResult } from "../../lib/brain/contract";
 
 const NV = FSAVERAGE5_VERTICES;
 

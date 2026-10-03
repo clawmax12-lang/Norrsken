@@ -18,6 +18,8 @@
 
 **What changed in 1.1:** new §12 UI with the analysis intro (the "Preflight sequence") and the interactive 3D brain viewer; brain viewer and intro moved to P0 (conditional on TRIBE running); A/B compare mode added; repo and build info added; timeline and owners updated.
 
+**What changed in 1.2 (PR #2 on main; version number collides with the docs-branch 1.2 note above — docs owner to reconcile):** FR-01 intake is now led by an interruptible, voice-native Preflight Director powered by Gemini Live, with visible transcripts, explicit folder permission and a complete text fallback. The Director can retrieve approved screenshots and challenge creative choices, but all claims remain source-backed and all TRIBE evidence must come from a completed simulation. Direct Gemini Live transport is the only exception to the Condense routing rule because no compatible Live WebSocket proxy is available in the adopted architecture; planning, viewer-panel and explanation calls remain routed through Condense.
+
 ## 0. How to read this document
 
 - **Humans:** read §1 to §7 (why, who, journey). Builders continue with §8 to §14.
@@ -180,7 +182,9 @@ The frontend uses web technology as proposed in §10.1. Orchestration, video ren
 
 **Inputs:** product name; one line description (max 140 chars); 3 to 6 screenshots (PNG or JPG); goal (sign ups / downloads / understand the product / purchase, plus optional free text); audience (free text); optional brand color and logo.
 
-**AC:** form validates required fields; brief saved as `brief.json` matching schema §10.3; a fixture brief for tablehopp exists in `/fixtures`.
+**Experience:** the default intake is an interruptible, voice-native conversation with the Preflight Director. The Director displays input and output transcripts, updates the visible brief as fields are confirmed, can search only files inside a folder the user explicitly grants, and gives concise creative pushback grounded in the brief or visible assets. A complete typed fallback remains available. Microphone and folder access always require explicit browser permission. Starting generation requires an explicit spoken or clicked confirmation.
+
+**AC:** voice and typed paths validate the same required fields; interrupting the Director stops queued playback and continues the same session; every confirmed field shows its source; folder access is limited to the user-approved directory; brief saved as `brief.json` matching schema §10.3; a fixture brief for tablehopp exists in `/fixtures`.
 
 #### FR-02 Creative plan
 
@@ -232,7 +236,7 @@ Visible step by step log: plan, render, simulate, score, explain, each with stat
 
 #### FR-10 Partner tech
 
-Gemini for planning, viewer panel and explanations. All LLM calls go through Condense. Show token savings in the UI.
+Gemini for the live Director, planning, viewer panel and explanations. Planning, viewer-panel and explanation calls go through Condense. Gemini Live uses a direct, ephemeral-token WebSocket because no compatible Condense full-duplex Live proxy has been demonstrated for FR-01; this exception does not apply to non-Live calls. Show Condense token savings in the UI.
 
 **AC:** savings number visible on the results screen. This is required for eligibility (at least two partner technologies).
 
@@ -342,7 +346,7 @@ Large visual trees may use viewport virtualization/level-of-detail and staged la
 
 | Component | Responsibility | Suggested tech |
 | --- | --- | --- |
-| Web frontend (desktop browser) | Flow canvas, brief, job events, entry/analysis sequence, persistent brain, results, voice dock, export | Next.js, TypeScript, Tailwind, three.js; project-compatible graph rendering |
+| Web frontend (desktop browser) | Flow canvas, brief, job events, entry/analysis sequence, persistent brain, results, voice dock, export | Next.js, TypeScript, Tailwind, three.js, Gemini Live client with ephemeral tokens (voice Director, PR #2); project-compatible graph rendering |
 | API and orchestrator | State machine, tools, storage | Python, FastAPI |
 | Renderer | Motion graphics template driven by concept JSON | Remotion (check its license for commercial use later) |
 | TRIBE worker | Runs TRIBE v2 on a GPU and returns `SimulationResult` | Python on a GPU with 40 GB+ VRAM |
@@ -434,7 +438,7 @@ Every simulator implements one function: video in, `SimulationResult` out. Scori
 
 ### 10.4 Secrets and repo
 
-- Keys in environment variables only (`GEMINI_API_KEY`, `CONDENSE_API_KEY`, `TRIBE_ENDPOINT`). Commit `.env.example`, never `.env`.
+- Keys in environment variables only (`GEMINI_API_KEY`, `CONDENSE_API_KEY`, `TRIBE_ENDPOINT`). The server may exchange `GEMINI_API_KEY` for a short-lived, one-use Live token; the permanent key never reaches browser code. Commit `.env.example`, never `.env`.
 - No model weights in the repo. README credits TRIBE v2 (Meta FAIR) and states its CC BY-NC license.
 - Repo must be public (hackathon rule). URL: https://github.com/clawmax12-lang/Norrsken.
 - The README states the build stack, including that the code was written with Claude Opus 5.5 as the coding agent.
@@ -531,7 +535,7 @@ Bottom controls, as segmented pills like the reference:
 ### 12.4 Screens
 
 1. **Entry hero:** rotating brain intro and female-voice welcome, then the brain docks and reveals the workspace.
-2. **Canvas intake:** centered prompt/brief and source uploads; completed brief becomes the root node. Keep FR-01 validation, not prompt text alone.
+2. **Canvas intake:** centered prompt/brief and source uploads; completed brief becomes the root node. Keep FR-01 validation, not prompt text alone. The merged PR #2 intake is a voice-native Director with live captions, a visible structured brief, an approved-folder asset shelf and a typed fallback; the user explicitly says or clicks "Run Preflight" after the required fields validate.
 3. **Canvas at work:** connected storyboard/hook branches, rendered-video nodes and actual test states; selected path highlighted. Persistent corner brain, voice dock and accessible persisted activity log.
 4. **Canvas results:** recommendation node plus leaderboard/evidence inspector; selected video, time-aligned curves and expanded brain; actual Condense savings; verdict reachable at 1440 px without canvas hunting.
 5. **Compare (P1):** inspect two variant nodes with synchronized video/brain/difference view; return without losing canvas position.
@@ -706,6 +710,8 @@ The original entries below are retained from the supplied v1.1 PRD; later decisi
 | 3 Oct, v1.4 | Female Gemini voice is mandatory demo P0, explicitly confirmed by William. Add FR-16; event-grounded TTS welcome/progress/verdict plus captions/mute. Orb-first direction: standalone `ThinkingOrb`, no enclosing card, grows during actual speech; prompt `voice-glow` is optional. Move narration out of P2; full two-way Live is a separate P1 extension. | Product owner's explicit wow-moment and visual direction, aligned with Gemini sponsor use. This is our requirement, not a verified event rule that voice is compulsory; an animation is not a voice engine. |
 | 3 Oct, v1.4 | Keep “realtime” as real job events plus synchronized presentation of stored predictions. Large-scale branching is an architecture direction; three full videos/one P1 revision remain the default until batch budget/GPU throughput are approved. Separate proposed nodes from rendered/tested artifacts. | Prevents visual prototype scale from being mistaken for 125,000 genuine neural tests and prevents unapproved exponential cost. |
 | 3 Oct, v1.4 implementation | **Proposed, pending owner agreement** (brain ↔ TRIBE worker/canvas/voice): routine FR-12/FR-14 choices on `conductor/3d-brain-opus-55`. Cortical data travels in `SimulationResult.meta.cortical` (`preflight.cortical.v0`: fsaverage5, nilearn left-then-right order, `times_s`, `hemodynamic_alignment`, one value source), leaving §10.3 top-level keys unchanged; demo examples add `meta.demo_example` and must be precomputed. Desikan-Killiany regions with fixed Visual/Auditory/Language groups; one display scale per compared set (p99 of positive values, 35 % threshold); linear interpolation with a one-period edge hold; entry/dock/expanded modes on one renderer; `preflight:brain` events and `preflight:brain-command` commands as the canvas/voice seam; original procedural head silhouette. Details: docs/design/BRAIN_COMPANION.md. | §15 rule 8: simplest option, logged. Keeps simulator/UI boundary intact and genuine/demo/MOCK states explicit; not a scientific scoring rule and not yet agreed by the worker/canvas/voice owners. |
+| 3 Oct, 2026 | Make the Preflight Director the default FR-01 intake, using Gemini Live for interruption-capable voice and typed input as a full fallback | The founder should ideate the launch video with an opinionated creative director that can pull approved product screens into view, rather than complete a static form |
+| 3 Oct, 2026 | Permit direct Gemini Live WebSocket calls authenticated by server-minted ephemeral tokens; keep all non-Live planning, panel and explanation calls through Condense | Full-duplex audio and barge-in require Gemini Live transport, while the permanent API key must remain server-side and Condense eligibility remains required for the existing LLM stages |
 
 ## 17. Open questions
 

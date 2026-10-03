@@ -3,8 +3,8 @@
  * Every viewer instance shares the returned object; it is never mutated.
  */
 
-import type { Hemisphere } from "./contract.ts";
-import type { AtlasLabels, AtlasRegionRecord } from "./atlas.ts";
+import type { Hemisphere } from "./contract";
+import type { AtlasLabels, AtlasRegionRecord } from "./atlas";
 
 export const BRAIN_ASSET_BASE = "/brain/fsaverage5";
 

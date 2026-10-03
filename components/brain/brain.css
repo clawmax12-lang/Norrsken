@@ -280,3 +280,4 @@
 .bv-entry-focus .bv-entry-title, .bv-entry-release .bv-entry-title { opacity: .35; }
 .bv-entry-card { right: 7vw; }
 .bv-entry-reveal .bv-entry-title { animation: bv-fade 1.6s ease both; }
+.bv-brand-mark { width: 0; height: 0; border-left: 7px solid transparent; border-right: 7px solid transparent; border-bottom: 13px solid #fff; }
