@@ -1,6 +1,7 @@
 "use client";
 
 import type { FunctionCall } from "@google/genai";
+import Link from "next/link";
 import { FormEvent, PointerEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ThinkingOrb } from "thinking-orbs";
 import { VoiceBeam } from "voice-glow";
@@ -688,6 +689,7 @@ export function CanvasWorkspace() {
         <div className="project-identity"><span className="preflight-mark">P</span><div><strong>Preflight</strong><small>{brief.product_name || "Untitled launch"} · storyboard</small></div></div>
         <div className="header-actions">
           <span className={`draft-state ${draftState}`}>{draftState === "saving" ? "Saving…" : draftState === "error" ? "Saved in browser" : `Draft r${draft.revision}`}</span>
+          <Link href="/admin">Dashboard</Link>
           <button onClick={() => { setShowResults(false); setShowBrief((current) => !current); }}>Brief</button>
           {backendProjectId && <button onClick={() => { setShowBrief(false); setShowResults((current) => !current); }}>Results</button>}
           <button className="run-top" onClick={() => { try { requestRunConfirmation(); } catch (error) { addNotice("system", error instanceof Error ? error.message : "Run unavailable."); } }}>Run</button>
