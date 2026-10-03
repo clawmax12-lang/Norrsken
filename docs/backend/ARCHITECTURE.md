@@ -16,18 +16,24 @@ The orchestrator (`preflight.orchestrator`) is a deterministic, resumable state 
 | --- | --- | --- |
 | `backend/src/preflight/contracts/` | Frozen Pydantic models: Brief, CreativeConcept, CompositionSpec, SimulationResult, Ranking, Report, run/log | §10.3 |
 | `backend/src/preflight/ports.py` | Protocols between components | §10.2 |
+| `backend/src/preflight/wiring.py` | Composition root: binds the real adapter behind every port for one run | §10.2 |
+| `backend/src/preflight/config.py`, `errors.py` | Environment settings; shared `PreflightError` hierarchy | §10.4 |
 | `backend/src/preflight/storage/` | Atomic per-project JSON/JSONL persistence | §9 |
+| `backend/src/preflight/intake/` | Brief form and uploads into a saved project; screenshot checks; fixture loading | FR-01 |
 | `backend/src/preflight/llm/` | Condense-routed Gemini client, usage metering | FR-10 |
-| `backend/src/preflight/planning/` | `plan_variants`, grounding checks | FR-02 |
-| `backend/src/preflight/generation/` | Asset generation, composition, Remotion invocation | FR-03, §9.2 |
+| `backend/src/preflight/planning/` | Gemini planner, archetypes, grounding checks, mapping the model's draft onto `CreativeConcept` | FR-02 |
+| `backend/src/preflight/generation/` | Template backdrops, theme/colour and `CompositionSpec` composition | FR-03, §9.2 |
+| `backend/src/preflight/rendering/` | Remotion adapter behind `ports.Renderer` | FR-03 |
 | `backend/src/preflight/simulators/` | TRIBE client, Gemini viewer panel | FR-04 |
 | `backend/src/preflight/scoring/` | Deterministic score, rank, confidence | FR-05 |
 | `backend/src/preflight/explain/` | Timestamped reasons | FR-06 |
 | `backend/src/preflight/export/` | Winner/runner-up MP4, `report.json`, launch brief | FR-08 |
-| `backend/src/preflight/orchestrator/` | State machine, retries, activity log, resume | FR-09 |
+| `backend/src/preflight/orchestrator/` | State machine, one module per stage, retries, activity log, resume | FR-09 |
 | `backend/src/preflight/api/` | FastAPI app: briefs, runs, SSE log, results, downloads | FR-01, FR-07 |
 | `workers/tribe/` | GPU worker wrapping `vendor/tribev2`; speaks `SimulationResult` over HTTP | FR-04, FR-12 |
 | `workers/renderer/` | Remotion project rendering `CompositionSpec` | FR-03 |
+
+The browser app sits beside this: `app/` (Next.js routes and API proxies), `components/` (canvas, results, brain), `hooks/` (Gemini Live session), `lib/` (pure, unit-tested logic and Zod contracts). Every subproject is checked in CI (`.github/workflows/ci.yml`).
 
 ## Scoring rule (FR-05, implementation choice logged in PRD §16)
 

@@ -19,7 +19,9 @@ from tribe_worker.predictor import Prediction
 GROUPS = fake_groups()
 
 
-def prediction(rows: int, *, fill: float = 0.0, starts: tuple[float, ...] | None = None) -> Prediction:
+def prediction(
+    rows: int, *, fill: float = 0.0, starts: tuple[float, ...] | None = None
+) -> Prediction:
     activity = np.full((rows, N_VERTICES), fill, dtype=np.float32)
     return Prediction(
         activity=activity,

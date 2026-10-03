@@ -11,6 +11,7 @@ import { DirectorConsole, type ConsoleEvent, type ConsoleEventKind, type Journey
 import { RunResults, type PlannedVariant, type RunState } from "@/components/run-results";
 import { useLiveDirector } from "@/hooks/use-live-director";
 import { briefSchema, emptyBrief, type BriefDraft, type BriefField, type SourceMap } from "@/lib/brief";
+import { isGroundedCopy, normalizeGoal, parseTypedCommand, type TypedBriefField } from "@/lib/canvas-commands";
 import {
   canvasDraftSchema,
   createCanvasDraft,
@@ -63,27 +64,15 @@ function cleanString(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
 }
 
-function normalizeGoal(value: string): BriefDraft["goal"] | null {
-  const normalized = value.toLowerCase().replace(/[\s_-]+/g, "");
-  if (normalized.includes("signup")) return "signups";
-  if (normalized.includes("download")) return "downloads";
-  if (normalized.includes("understand") || normalized.includes("awareness")) return "understand";
-  if (normalized.includes("purchase") || normalized.includes("buy")) return "purchase";
-  return null;
-}
+const typedFieldSaved: Record<TypedBriefField, string> = {
+  product_name: "Product name saved from typed input.",
+  one_liner: "Description saved and available as a copy source.",
+  audience: "Audience saved from typed input.",
+  goal: "Launch goal saved from typed input.",
+};
 
 function valueForSource(brief: BriefDraft, field: SourceField) {
   return String(brief[field] ?? "").trim();
-}
-
-function isGroundedCopy(text: string, source: string) {
-  const normalize = (value: string) => value.toLocaleLowerCase().replace(/[^\p{L}\p{N}\s]/gu, " ").replace(/\s+/g, " ").trim();
-  const candidate = normalize(text);
-  const evidence = normalize(source);
-  if (!candidate || !evidence) return false;
-  if (evidence.includes(candidate)) return true;
-  const evidenceWords = new Set(evidence.split(" "));
-  return candidate.split(" ").filter((word) => word.length > 2).every((word) => evidenceWords.has(word));
 }
 
 function touchDraft(draft: CanvasDraft) {
@@ -485,54 +474,34 @@ export function CanvasWorkspace() {
   }, []);
 
   const runTypedFallback = useCallback(async (message: string) => {
-    const text = message.trim();
-    let match: RegExpMatchArray | null;
-    if ((match = text.match(/^(?:product|product name)\s*(?:is|to|:)\s*(.+)$/i))) {
-      updateField("product_name", match[1], "typed");
-      addNotice("director", "Product name saved from typed input.");
-      return;
+    const command = parseTypedCommand(message);
+    switch (command?.kind) {
+      case "brief":
+        updateField(command.field, command.value, "typed");
+        addNotice("director", typedFieldSaved[command.field]);
+        return;
+      case "select":
+        await selectScene(command.variant, `${command.variant}-scene-${command.scene}`);
+        addNotice("director", `Selected ${command.variant}, scene ${command.scene}.`);
+        return;
+      case "use-copy":
+        await editSceneCopy(draftRef.current.selected_scene_id, valueForSource(briefRef.current, command.field), command.field);
+        addNotice("director", `Applied the confirmed ${sourceLabel[command.field]} to ${draftRef.current.selected_scene_id}.`);
+        return;
+      case "move": {
+        assertEditableScene(draftRef.current, draftRef.current.selected_scene_id, ["saving", "queued"].includes(jobRef.current.status));
+        const next = reorderScenes(draftRef.current, draftRef.current.selected_variant_id, command.from, command.to);
+        await persistDraft(next);
+        addNotice("director", `Reordered concept ${next.selected_variant_id} and saved revision ${next.revision}.`);
+        return;
+      }
+      case "run":
+        requestRunConfirmation();
+        addNotice("director", "I opened the run confirmation. Nothing has started yet.");
+        return;
+      default:
+        addNotice("director", "Typed fallback understands brief fields, scene selection, source-backed copy, reordering, and Run. Enable Live for open-ended creative conversation.");
     }
-    if ((match = text.match(/^(?:description|one[- ]?liner)\s*(?:is|to|:)\s*(.+)$/i))) {
-      updateField("one_liner", match[1], "typed");
-      addNotice("director", "Description saved and available as a copy source.");
-      return;
-    }
-    if ((match = text.match(/^audience\s*(?:is|to|:)\s*(.+)$/i))) {
-      updateField("audience", match[1], "typed");
-      addNotice("director", "Audience saved from typed input.");
-      return;
-    }
-    if ((match = text.match(/^goal\s*(?:is|to|:)\s*(.+)$/i))) {
-      updateField("goal", match[1], "typed");
-      addNotice("director", "Launch goal saved from typed input.");
-      return;
-    }
-    if ((match = text.match(/^select\s+(?:concept\s+)?([abc])(?:\s+scene)?\s+(\d)$/i))) {
-      const variant = match[1].toUpperCase() as VariantId;
-      await selectScene(variant, `${variant}-scene-${Number(match[2])}`);
-      addNotice("director", `Selected ${variant}, scene ${Number(match[2])}.`);
-      return;
-    }
-    if ((match = text.match(/^use\s+(product name|description|goal|goal detail|audience)(?:\s+as|\s+for)?\s+(?:the\s+)?copy$/i))) {
-      const map: Record<string, SourceField> = { "product name": "product_name", description: "one_liner", goal: "goal", "goal detail": "goal_note", audience: "audience" };
-      const field = map[match[1].toLowerCase()];
-      await editSceneCopy(draftRef.current.selected_scene_id, valueForSource(briefRef.current, field), field);
-      addNotice("director", `Applied the confirmed ${sourceLabel[field]} to ${draftRef.current.selected_scene_id}.`);
-      return;
-    }
-    if ((match = text.match(/^move\s+scene\s+(\d)\s+(?:to|before)\s+(\d)$/i))) {
-      assertEditableScene(draftRef.current, draftRef.current.selected_scene_id, ["saving", "queued"].includes(jobRef.current.status));
-      const next = reorderScenes(draftRef.current, draftRef.current.selected_variant_id, Number(match[1]), Number(match[2]));
-      await persistDraft(next);
-      addNotice("director", `Reordered concept ${next.selected_variant_id} and saved revision ${next.revision}.`);
-      return;
-    }
-    if (/^(?:run|run preflight|start run)$/i.test(text)) {
-      requestRunConfirmation();
-      addNotice("director", "I opened the run confirmation. Nothing has started yet.");
-      return;
-    }
-    addNotice("director", "Typed fallback understands brief fields, scene selection, source-backed copy, reordering, and Run. Enable Live for open-ended creative conversation.");
   }, [addNotice, editSceneCopy, persistDraft, requestRunConfirmation, selectScene, updateField]);
 
   const submitComposer = useCallback(async (event: FormEvent) => {

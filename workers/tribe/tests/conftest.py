@@ -19,7 +19,7 @@ def make_video(path: Path, *, seconds: int = 3, with_audio: bool = False) -> Pat
     if with_audio:
         command += ["-f", "lavfi", "-i", f"sine=duration={seconds}", "-c:a", "aac"]
     command += ["-pix_fmt", "yuv420p", "-shortest", str(path)]
-    subprocess.run(command, check=True)  # noqa: S603
+    subprocess.run(command, check=True)
     return path
 
 
