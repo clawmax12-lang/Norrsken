@@ -36,6 +36,8 @@ export interface SequenceProps {
   precomputed: boolean;
   /** Called when the hand-over begins, so the Results layout can slide in. */
   onHandOver: () => void;
+  /** The lock-on beat chose this genuine strongest region/time. */
+  onLockOn?: (hemi: Hemisphere, atlasName: string, time_s: number) => void;
   /** `locked` is the lock-on region left selected for the Results view. */
   onFinish: (skipped: boolean, locked: { hemi: Hemisphere; label: number } | null) => void;
 }
@@ -101,6 +103,7 @@ export function PreflightSequence(props: SequenceProps) {
           const label = labelOf(strongestRegion.name);
           locked = { hemi: strongestRegion.hemi, label };
           scene.setSelected(locked);
+          propsRef.current.onLockOn?.(strongestRegion.hemi, strongestRegion.name, strongestTime);
           if (!reducedMotion) scene.focusRegion(strongestRegion.hemi, label, 1600);
         }
       } else if (b === "handOver") {

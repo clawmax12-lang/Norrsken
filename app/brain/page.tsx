@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
-import { BrainExperience } from "../../components/brain/BrainExperience";
+import { BrainCompanion } from "../../components/brain/BrainCompanion";
 import "./brain.css";
 
 export const metadata: Metadata = {
-  title: "Preflight — Brain viewer",
-  description: "Interactive fsaverage5 cortex for Preflight's predicted brain response (FR-12/FR-14).",
+  title: "Preflight — Brain companion",
+  description: "Reusable fsaverage5 brain: entry, corner dock and analysis view (FR-12/FR-14).",
 };
 
 export default function BrainPage() {
-  return <BrainExperience />;
+  return <BrainCompanion harness />;
 }

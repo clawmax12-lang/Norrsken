@@ -233,3 +233,50 @@
 @media (prefers-reduced-motion: reduce) {
   .bv-video { transition: none; }
 }
+
+/* ---- Presentation modes (PRD v1.4): entry hero → corner dock ⇄ expanded analysis.
+   One mounted stage/BrainScene moves between them; anatomy is never rebuilt. ---- */
+.bv-chip-demo { color: #ffe2b0; background: #3a2a12; border-color: #8a6326; }
+.bv-canvas-slot { position: fixed; inset: 56px 0 0 0; z-index: 1; display: grid; place-items: center; padding: 24px; background-color: #0b0b0b; background-image: radial-gradient(#262626 1px, transparent 1px); background-size: 22px 22px; }
+.bv-canvas-note { width: min(620px, 100%); padding: 22px; border: 1px dashed #333; border-radius: 14px; background: rgba(13,13,13,.92); }
+.bv-canvas-note h2 { margin: 8px 0; font-size: 18px; letter-spacing: -.02em; }
+.bv-canvas-note p { margin: 0 0 14px; color: var(--bv-text-2); font-size: 13px; line-height: 1.55; }
+.bv-canvas-note code { font-family: var(--bv-mono); font-size: 12px; color: #f0f0f0; }
+.bv-harness-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.bv-harness-active { background: #e9e9e9 !important; color: #0a0a0a !important; }
+.bv-event-log { margin: 8px 0 0; padding: 0; list-style: none; display: grid; gap: 4px; max-height: 210px; overflow: auto; font-size: 10.5px; color: var(--bv-text-2); }
+.bv-event-log li { padding: 5px 8px; border-radius: 6px; background: #151515; overflow-wrap: anywhere; }
+
+.bv-mode-dock .bv-layout, .bv-mode-entry .bv-layout { position: fixed; inset: 0; z-index: 30; padding: 0; visibility: hidden; pointer-events: none; }
+.bv-mode-dock .bv-stage, .bv-mode-entry .bv-stage { position: fixed; min-height: 0; visibility: visible; pointer-events: auto; transition: top .9s cubic-bezier(.2,.8,.2,1), left .9s cubic-bezier(.2,.8,.2,1), width .9s cubic-bezier(.2,.8,.2,1), height .9s cubic-bezier(.2,.8,.2,1), border-radius .9s ease; }
+.bv-mode-entry .bv-stage { top: 0; left: 0; width: 100vw; height: 100vh; z-index: 90; border: 0; border-radius: 0; }
+.bv-mode-dock .bv-stage { top: calc(100vh - 286px); left: calc(100vw - 396px); width: 372px; height: 266px; z-index: 40; border-color: #2c2c2c; border-radius: 14px; box-shadow: 0 24px 60px rgba(0,0,0,.65); }
+.bv-mode-dock .bv-controls, .bv-mode-dock .bv-legend, .bv-mode-dock .bv-meters, .bv-mode-dock .bv-video, .bv-mode-dock .bv-stage-tools, .bv-mode-dock .bv-hud, .bv-mode-dock .bv-empty, .bv-mode-dock .bv-mock-banner, .bv-mode-dock .bv-entry,
+.bv-mode-entry .bv-controls, .bv-mode-entry .bv-legend, .bv-mode-entry .bv-meters, .bv-mode-entry .bv-video, .bv-mode-entry .bv-stage-tools, .bv-mode-entry .bv-hud, .bv-mode-entry .bv-empty { display: none; }
+.bv-dock-bar { display: none; }
+.bv-mode-dock .bv-dock-bar { position: absolute; z-index: 6; left: 0; right: 0; bottom: 0; padding: 10px 12px; display: grid; grid-template-columns: 1fr auto; grid-template-rows: auto auto; gap: 8px 10px; align-items: center; background: linear-gradient(0deg, rgba(0,0,0,.92), rgba(0,0,0,.55) 70%, transparent); }
+.bv-dock-meta { display: grid; gap: 2px; min-width: 0; }
+.bv-dock-meta strong { font-size: 13px; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bv-dock-meta span { color: var(--bv-text-2); font-size: 11px; }
+.bv-dock-actions { grid-column: 1 / -1; display: flex; gap: 6px; }
+.bv-dock-actions .bv-icon-button { height: 28px; padding: 0 11px; font-size: 11px; }
+.bv-mode-dock .bv-dock-bar .bv-chip { justify-self: end; }
+.bv-embedded.bv-mode-expanded .bv-layout { position: fixed; inset: 0; z-index: 50; background: var(--bv-bg); overflow: auto; }
+
+/* Analysis focus always takes the full screen, whatever the current mode. */
+.bv-page.bv-seq-running .bv-stage { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 80; border: 0; border-radius: 0; visibility: visible; pointer-events: auto; }
+.bv-page.bv-seq-running .bv-video { display: block; }
+.bv-page.bv-seq-running .bv-dock-bar, .bv-page.bv-seq-running .bv-mock-banner { display: none; }
+.bv-page.bv-seq-running.bv-mode-dock .bv-mock-banner { display: block; }
+
+/* Entry hero overlay */
+.bv-entry { position: absolute; inset: 0; z-index: 10; pointer-events: none; }
+.bv-entry > * { pointer-events: auto; }
+.bv-entry .bv-skip { top: 28px; }
+.bv-entry-title { position: absolute; left: 6vw; bottom: 10vh; display: grid; gap: 10px; justify-items: start; transition: opacity .8s ease; }
+.bv-entry-title h1 { margin: 0; font-size: clamp(40px, 5.2vw, 76px); font-weight: 600; letter-spacing: -.045em; line-height: 1; }
+.bv-entry-title p { margin: 0; color: #cfcfcf; font-size: 13px; letter-spacing: .18em; text-transform: uppercase; }
+.bv-entry-mark { width: 0; height: 0; border-left: 13px solid transparent; border-right: 13px solid transparent; border-bottom: 23px solid #fff; }
+.bv-entry-focus .bv-entry-title, .bv-entry-release .bv-entry-title { opacity: .35; }
+.bv-entry-card { right: 7vw; }
+.bv-entry-reveal .bv-entry-title { animation: bv-fade 1.6s ease both; }

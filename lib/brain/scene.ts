@@ -501,6 +501,8 @@ export class BrainScene {
     this.camera.aspect = w / h;
     // Keep the brain framed on narrow/tall stages.
     this.camera.fov = w / h < 1 ? 28 / Math.max(0.55, w / h) : 28;
+    // Small viewports (the corner dock) frame the brain tighter.
+    this.camera.zoom = w < 520 ? 1.1 : 1;
     this.camera.updateProjectionMatrix();
     // setSize clears the drawing buffer; repaint now to avoid a blank frame.
     if (!this.disposed) this.renderer.render(this.scene, this.camera);

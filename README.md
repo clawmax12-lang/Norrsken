@@ -18,6 +18,7 @@ Preflight turns a product brief and 3–6 screenshots into three 15-second motio
 | [TEAM.md](TEAM.md) | Owners, task status, integration evidence, open blockers and the shared Git/Conductor workflow. |
 | [AGENTS.md](AGENTS.md) | Instructions every coding agent must follow. Claude loads these through [CLAUDE.md](CLAUDE.md). |
 | [Visual baseline](docs/design/README.md) | All four original reference images and the motion clip, shared brain/canvas direction, provenance and existing preview. |
+| [Brain companion implementation](docs/design/BRAIN_COMPANION.md) | What the reusable brain does today, its embedding API, events/commands, proposed cortical payload and verification status. |
 | [Opus 5.5 brain brief](docs/design/OPUS_BRAIN_BRIEF.md) | Complete interactive browser brain, reuse/data boundaries, A/B synchronization and verification/handoff. |
 | [Canvas and voice brief](docs/design/CANVAS_VOICE_BRIEF.md) | Integration of canvas, docked brain, actual job events and mandatory female Gemini TTS with voice glow. |
 | [Build status audit](docs/status/2026-10-03-build-audit.md) | Timestamped evidence from all nine Norrsken workspaces; prototype, implementation and genuine-data gaps are separate. |
@@ -38,11 +39,23 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000). The dashboard does not require environment variables.
 
-Production build verification:
+Production build and checks:
 
 ```bash
 npm run build
+npm test        # brain adapter, timing, clock and asset/geometry-reuse tests (Node's built-in runner)
 ```
+
+### Brain companion (`/brain`, FR-12/FR-14)
+
+Open [http://localhost:3000/brain](http://localhost:3000/brain) (also linked as **Brain viewer** in the dashboard sidebar). It needs no environment variables, GPU or model calls; the fsaverage5 mesh, atlas and head silhouette are committed static assets ([provenance and licences](public/brain/ATTRIBUTION.md)).
+
+- First visit in a browser session plays the entry intro (Skip, reduced motion respected), then docks the brain in the corner over a placeholder canvas slot. **Expand brain** opens the analysis view; F toggles fullscreen, Esc returns to the dock. **Replay intro** and **Play/Preview analysis focus** are explicit.
+- With no bound result the cortex is gray and labelled **No brain data**. There is no genuine TRIBE output or demo example in the repository today, so this is the default state.
+- `?result=/same-origin/result.json` binds stored `SimulationResult` JSON (one object or an array; cortical payload `meta.cortical`, proposed in [BRAIN_COMPANION.md](docs/design/BRAIN_COMPANION.md)). The Data panel accepts the same files plus CreativeConcept JSON and the analyzed MP4 locally; nothing is uploaded.
+- `?demo=/same-origin/example.json` loads a genuine precomputed example for first arrival, shown as **Demo example · precomputed**; anything not precomputed or without its video is rejected.
+- `?sim=off` previews the **Brain sim off** fallback; `?entry=replay` forces the intro.
+- `?fixture=mock` (development server only, stripped from production builds) binds a deterministic **MOCK** test fixture with a red banner. It exists to test shaders and controls, not as evidence.
 
 Read the documents above and claim work in TEAM.md before extending the dashboard into the P0 flow. Keep this section current as runtime services are added.
 
@@ -155,6 +168,8 @@ Runtime Opus, if integrated, requires its own server-side provider credentials (
 - Without TRIBE, finish with Gemini and show **Brain sim off**. Without brain data, show **No brain data**. Record the actual go/no-go result in TEAM.md.
 - Document the implemented scoring/confidence rule here when FR-05 lands. Simulator agreement is not a demonstrated probability of real-world success.
 - Do not claim that neural response predicts retention, virality, emotions or sales. Live A/B testing is the eventual validation.
+
+Current TRIBE mode in this repository: **none**. The brain companion shows gray anatomy and "No brain data" until a genuine result is bound; no precomputed or demo-example TRIBE output is included, and its activity rendering has only been exercised with the labelled MOCK test fixture.
 
 Current integration evidence: backend adapters/scoring are being implemented in the team's separate workspaces; **live TRIBE inference, Gemini speech, Condense routing and an end-to-end run are not yet verified by this documentation audit**. See the timestamped [status evidence](docs/status/2026-10-03-build-audit.md), rather than treating branch/session activity as product completion.
 
