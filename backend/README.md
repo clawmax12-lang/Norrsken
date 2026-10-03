@@ -14,7 +14,7 @@ cd backend && uv sync && make run          # API on http://localhost:8000
 
 | Step | Component | Notes |
 | --- | --- | --- |
-| Plan (FR-02) | `GeminiPlanner` | Calls Gemini directly (see "Condense proxy" below). |
+| Plan (FR-02) | `GeminiPlanner` | Gemini through the Condense proxy. |
 | Backgrounds (§9.2) | `TemplateBackdrops` | Template-only for now; the template draws its own backgrounds. |
 | Compose and render (FR-03) | `TemplateComposer`, `RemotionRenderer` | Runs `node workers/renderer/render.mjs` per variant; 1080x1920, 30 fps, 15 s H.264. About 50-60 s per video, two at a time. |
 | Simulate (FR-04) | `GeminiViewerPanel`, `TribeSimulator` | The panel goes through Condense. TRIBE runs only when `TRIBE_ENDPOINT` points at our worker (`workers/tribe`); otherwise the run completes with the panel only and the report says `brain_sim: false` ("Brain sim off"). |
@@ -50,7 +50,7 @@ With `CONDENSE_API_KEY` set, `CondenseProxyBackend` sends each generation to `PO
 
 - Each project gets a stable `X-Condense-Session-Id` (uuid5 of the project id), so one run's requests are grouped in the Condense dashboard.
 - Condense rewrites the user message: it merges all text parts without separators and moves every image or video after the text. We send the message pre-merged, with `[Attachment N: ...]` references in the text and the media in the same order, so nothing is lost in the rewrite. It also adds its own system message.
-- Even so, the planner (many labelled screenshots plus a strict storyboard schema) needed one repair per run through the proxy and none directly, so `build_gemini_client(..., proxy=False)` builds the planner's client; the viewer panel and the explanations go through the proxy. All clients of a run share one `TokenLedger` (see `preflight/wiring.py`).
+- Every generation (planner, viewer panel, explanations) goes through the proxy. The planner's one repair per proxied run came from Gemini's scene lengths not summing to 15 s; code now scales them to exactly 15 s, and over-long panel labels are shortened at a word boundary, so neither costs a repair call. Only the free `countTokens` calls that measure the savings go to Gemini directly. All clients of a run share one `TokenLedger` (see `preflight/wiring.py`).
 - Any proxy failure (timeout, 4xx/5xx, malformed answer) and media over 20 MB go to Gemini directly and are logged without keys; Condense never stops a run.
 - Large *text* marked `compressible` (for example a previous answer sent back for repair) is additionally compressed with `POST {CONDENSE_BASE_URL}/v1/compress`. Instructions and schemas are never marked compressible.
 

@@ -1,9 +1,9 @@
 """Composition root: the real components behind every port, built once per run.
 
 Each run gets its own ``TokenLedger`` (so ``report.json`` shows that run's Condense savings)
-and its own Condense session id (so the run is grouped in the Condense dashboard). The
-planner calls Gemini directly because the Condense proxy rewrites its multi-screenshot
-message; the viewer panel and the explanations go through the proxy (FR-10).
+and its own Condense session id (so the run is grouped in the Condense dashboard). Every
+Gemini generation (planner, viewer panel, explanations) goes through the Condense proxy
+(FR-10); only the free ``countTokens`` calls that measure the savings go to Gemini directly.
 """
 
 import httpx
@@ -54,9 +54,6 @@ class ProductionRunService:
         client = build_gemini_client(
             settings, ledger=ledger, http_client=http, project_id=project_id
         )
-        planner_client = build_gemini_client(
-            settings, ledger=ledger, http_client=http, project_id=project_id, proxy=False
-        )
         root = self._store.paths(project_id).root
         simulators: list[Simulator] = [GeminiViewerPanel(client)]
         if settings.tribe_endpoint:
@@ -69,7 +66,7 @@ class ProductionRunService:
         )
         return Pipeline(
             self._store,
-            GeminiPlanner(planner_client, self._store),
+            GeminiPlanner(client, self._store),
             TemplateBackdrops(),
             TemplateComposer(),
             renderer,
