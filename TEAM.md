@@ -29,7 +29,7 @@ Fill in real people rather than assigning all work to an unnamed agent. Record a
 | TRIBE worker | FR-04 (TRIBE) | Unassigned | — |
 | Agent, Gemini, Condense | FR-02, FR-04 (panel), FR-05, FR-06, FR-10 | Unassigned | — |
 | Web app, results, export and log | FR-07, FR-08, FR-09 | Unassigned | — |
-| Brain viewer and Preflight sequence | FR-12, FR-14, FR-15 | Claude Opus 5.5 (implementation); William (product review) | Dedicated workspace pending launch; see docs/design/OPUS_BRAIN_BRIEF.md. FR-15 remains gated P1. |
+| Brain viewer and Preflight sequence | FR-12, FR-14, FR-15 | Claude Opus 5.5 (implementation); William (product review) | [3D Brain — Opus 5.5](conductor://workspace?id=e14af4c4-eada-4c17-bc3b-42cd2ef08dcd) / `conductor/3d-brain-opus-55`; reusable viewer/scene and minimal web integration. See docs/design/OPUS_BRAIN_BRIEF.md. FR-15 remains gated P1. |
 | Integration and release | Shared contracts, clean-clone run, final demo path | Unassigned | — |
 | Demo video and pitch | PRD §14.4–§14.6 | William | — |
 
@@ -51,10 +51,10 @@ Statuses: `unclaimed` → `in_progress` → `in_review` → `done`. Use `blocked
 | FR-08 | Four export files | P0 | — | unclaimed | — |
 | FR-09 | Live persisted activity log | P0 | — | unclaimed | — |
 | FR-10 | Gemini via Condense, measured savings | P0 | — | unclaimed | — |
-| FR-12 | Interactive 3D brain | Conditional P0: TRIBE go/no-go | — | unclaimed | — |
-| FR-14 | Preflight sequence | Conditional P0: FR-12 | — | unclaimed | — |
+| FR-12 | Interactive 3D brain | Conditional P0: TRIBE go/no-go | Opus 5.5 | in_progress | `conductor/3d-brain-opus-55`; assignment started, no acceptance evidence yet |
+| FR-14 | Preflight sequence | Conditional P0: FR-12 | Opus 5.5 | in_progress | Same isolated assignment; genuine-data/intro AC not yet verified |
 | FR-11 | One revision of the winner | P1: all applicable P0 pass | — | unclaimed | — |
-| FR-15 | A/B and brain difference view | P1: all applicable P0 pass | — | unclaimed | — |
+| FR-15 | A/B and brain difference view | P1: all applicable P0 pass | Opus 5.5 (queued) | unclaimed | Shared component/time/camera groundwork in FR-12; P1 implementation awaits gate |
 | FR-13 | Historical backtest | P1: P0 pass and real historical data exists | — | unclaimed | — |
 
 P2 stays outside today's build. The broader validation programme also has the explicit prerequisite in PRD §13; do not silently start it as part of the MVP.
@@ -66,6 +66,8 @@ Documentation task **DOC-WEB** (clarifies FR-01, FR-07, FR-08, FR-09, FR-12 and 
 Documentation task **DOC-TRIBE** (supports FR-04, FR-12 and FR-14): Codex owns the README explanation and upstream quickstart on branch `docs/tribe-foundation`. Status: `in_review` (not yet integrated). Files: `README.md` and this handoff entry. Verified against upstream commit `af58661791a351a448a489042a28f6c37e1c14b7`; local links, Python/shell example syntax and whitespace checks pass. GPU installation/inference was not run. This does not claim ownership or completion of the TRIBE worker or brain-viewer implementation.
 
 Documentation task **DOC-BRAIN** (supports FR-12/FR-14/FR-15 and model roles in §9.1): Codex owns the tracked visual-reference package and Opus implementation brief on `docs/tribe-foundation`, [PR #1](https://github.com/clawmax12-lang/Norrsken/pull/1). Status: `in_review` (not yet integrated). Files: `docs/design/`, `PRD.md`, `README.md`, `AGENTS.md`, `TEAM.md`, `docs/source/README.md`. All three original images and the MP4 are copied without modification; byte comparisons and SHA-256 checks pass. PRD v1.3 adopts the visual/reuse decisions; all 15 FR IDs and original sections remain, 42 local document/media links and anchors pass, whitespace checks pass, and the original v1.1 PDF checksum is unchanged. Dashboard's temporary Vercel preview is recorded and checked (HTTP 200 plus browser screenshot); it is not a completed brain feature. Opus's code implementation is a separate assignment, not completed by this documentation work. No application tests or GPU inference were run on this documentation branch.
+
+Implementation task **BRAIN-WEB** (FR-12/FR-14; FR-15 queued P1): product-owner-requested Claude Opus 5.5 is running in [its isolated Conductor workspace](conductor://workspace?id=e14af4c4-eada-4c17-bc3b-42cd2ef08dcd&session=be40ac16-08d6-4ce4-999f-7e69ea8d4912), branch `conductor/3d-brain-opus-55`, based on the existing Dashboard web implementation. Launch verified on 3 Oct 2026: workspace ready, session working, model `opus-5-5-1m` resolved to `claude-opus-5-5[1m]`; initial task delivered and current docs/references being read/integrated. Scope: reusable mesh/materials/controls, data adapter, sync/fullscreen and conditional intro; no runtime video-generation API integration or replacement of the GPU worker. No brain PR, preview or implementation AC has passed yet. Opus must preserve Dashboard run instructions/ownership while integrating PR #1, then record its own build/browser evidence and handoff here. Do not mark the feature done merely because the agent has started.
 
 For each task, record:
 
