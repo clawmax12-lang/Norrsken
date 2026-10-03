@@ -39,7 +39,7 @@ npm install
 npm run dev
 ```
 
-Use Node.js 20.9 or newer. Set `GOOGLE_API_KEY` in `.env.local` to an AI Studio key with access to `gemini-3.8-live` (`GEMINI_API_KEY` remains a fallback), then open `http://localhost:3000` in current desktop Chrome. Click the mic in the bottom composer once to grant microphone permission. The Director uses the female-sounding `Kore` preset. The folder tool grants read access to one folder; Preflight indexes at most 100 PNG/JPG filenames locally and uploads only the 3–6 selected screens after explicit Run confirmation.
+Use Node.js 20.9 or newer. Set `GOOGLE_API_KEY` in `.env.local` to an AI Studio key with access to `gemini-3.8-live` (`GEMINI_API_KEY` and the existing lowercase Vercel variable `google` remain fallbacks), then open `http://localhost:3000` in current desktop Chrome. Click the mic in the bottom composer once to grant microphone permission. The Director uses the female-sounding `Kore` preset. The folder tool grants read access to one folder; Preflight indexes at most 100 PNG/JPG filenames locally and uploads only the 3–6 selected screens after explicit Run confirmation.
 
 Typed fallback works without a Live connection. It accepts natural structured phrases such as `product is …`, `description is …`, `audience is …`, `goal is downloads`, `select A scene 2`, `use description as copy`, `move scene 2 to 1`, and `run preflight`.
 

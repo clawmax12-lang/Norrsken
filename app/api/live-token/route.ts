@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
   const apiKey = getGoogleApiKey();
   if (!apiKey) {
     return NextResponse.json(
-      { error: "Voice is not configured. Set GOOGLE_API_KEY on the server." },
+      { error: "Voice is not configured. Set GOOGLE_API_KEY or google on the server." },
       { status: 503, headers: { "Cache-Control": "no-store" } },
     );
   }

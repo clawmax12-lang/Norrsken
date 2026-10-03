@@ -11,7 +11,21 @@ describe("Google API key configuration", () => {
     expect(getGoogleApiKey({ GEMINI_API_KEY: "legacy-key" })).toBe("legacy-key");
   });
 
+  it("accepts the existing lowercase google Vercel variable", () => {
+    expect(getGoogleApiKey({ google: "vercel-key" })).toBe("vercel-key");
+  });
+
+  it("prefers the documented variables over the lowercase alias", () => {
+    expect(
+      getGoogleApiKey({
+        GOOGLE_API_KEY: "preferred-key",
+        GEMINI_API_KEY: "legacy-key",
+        google: "vercel-key",
+      }),
+    ).toBe("preferred-key");
+  });
+
   it("ignores empty values", () => {
-    expect(getGoogleApiKey({ GOOGLE_API_KEY: " ", GEMINI_API_KEY: "" })).toBeUndefined();
+    expect(getGoogleApiKey({ GOOGLE_API_KEY: " ", GEMINI_API_KEY: "", google: " " })).toBeUndefined();
   });
 });
