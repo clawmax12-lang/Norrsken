@@ -239,6 +239,7 @@ export function useLiveDirector({ onToolCall, getProjectContext }: UseLiveDirect
     captureNodeRef.current = capture;
     const encoder = new Pcm16StreamEncoder(context.sampleRate);
     let displayedInputLevel = 0;
+    let lastVisualUpdate = -Infinity;
     const outputSamples = new Float32Array(analyser.fftSize);
     capture.port.onmessage = (event: MessageEvent<ArrayBuffer>) => {
       if (generation !== generationRef.current || session !== sessionRef.current) return;
@@ -252,11 +253,15 @@ export function useLiveDirector({ onToolCall, getProjectContext }: UseLiveDirect
     };
     const updateLevel = () => {
       if (!mountedRef.current || generation !== generationRef.current) return;
-      setInputLevel(micPausedRef.current ? 0 : displayedInputLevel);
       displayedInputLevel *= 0.86;
-      analyser.getFloatTimeDomainData(outputSamples);
-      const visual = outputVisualState(outputSamples, playbackSourcesRef.current.size, mutedRef.current);
-      setOutputLevel(visual.level); setIsSpeaking(visual.isSpeaking);
+      const now = performance.now();
+      if (now - lastVisualUpdate >= 50) {
+        lastVisualUpdate = now;
+        setInputLevel(micPausedRef.current ? 0 : displayedInputLevel);
+        analyser.getFloatTimeDomainData(outputSamples);
+        const visual = outputVisualState(outputSamples, playbackSourcesRef.current.size, mutedRef.current);
+        setOutputLevel(visual.level); setIsSpeaking(visual.isSpeaking);
+      }
       levelFrameRef.current = requestAnimationFrame(updateLevel);
     };
     updateLevel();

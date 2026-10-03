@@ -116,6 +116,20 @@ describe("Live session/audio regressions (MOCK)", () => {
     expect(sessions[1].close).not.toHaveBeenCalled();
   });
 
+  it("a cancelled permission request cannot attach its stream to a newer session", async () => {
+    const old = mockStream(); const next = mockStream();
+    let resolve!: (stream: MediaStream) => void;
+    getUserMedia.mockImplementationOnce(() => new Promise<MediaStream>((done) => { resolve = done; }));
+    getUserMedia.mockResolvedValueOnce(next.stream);
+    const { result } = renderHook(() => useLiveDirector({ onToolCall: async () => ({}) }));
+    let oldStart!: Promise<void>;
+    await act(async () => { oldStart = result.current.start(); });
+    await act(async () => { await result.current.stop(); await result.current.start(); });
+    await act(async () => { resolve(old.stream); await oldStart; });
+    expect(old.track.stop).toHaveBeenCalled(); expect(next.track.stop).not.toHaveBeenCalled();
+    expect(result.current.state).toBe("listening"); expect(contexts[1].close).not.toHaveBeenCalled();
+  });
+
   it("denied permission and server configuration failures stay visible, not a silent idle state", async () => {
     getUserMedia.mockRejectedValueOnce(new DOMException("denied", "NotAllowedError"));
     const { result } = renderHook(() => useLiveDirector({ onToolCall: async () => ({}) }));

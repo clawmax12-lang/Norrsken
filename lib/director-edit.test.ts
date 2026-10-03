@@ -3,6 +3,9 @@ import { createCanvasDraft } from "./canvas-draft";
 import { assertEditableScene } from "./director-edit";
 
 describe("pre-render edit boundary", () => {
+  it("locks confirmed/queued content even before a backend concept status arrives", () => {
+    expect(() => assertEditableScene(createCanvasDraft("test"), "A-scene-1", true)).toThrow("confirmed run");
+  });
   it("requires the real selected scene", () => {
     const draft = createCanvasDraft("test");
     expect(() => assertEditableScene(draft, "B-scene-1")).toThrow("Select");

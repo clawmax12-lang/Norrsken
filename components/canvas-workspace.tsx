@@ -275,7 +275,7 @@ export function CanvasWorkspace() {
   }, [persistDraft]);
 
   const editSceneCopy = useCallback(async (sceneId: string, text: string, sourceField: SourceField) => {
-    assertEditableScene(draftRef.current, sceneId);
+    assertEditableScene(draftRef.current, sceneId, ["saving", "queued"].includes(jobRef.current.status));
     if (!sourcesRef.current[sourceField]) throw new Error("That brief field has not been confirmed by the user.");
     const sourceValue = valueForSource(briefRef.current, sourceField);
     if (!sourceValue) throw new Error(`The ${sourceLabel[sourceField]} field is empty.`);
@@ -340,7 +340,7 @@ export function CanvasWorkspace() {
       }
       case "set_scene_asset": {
         const sceneId = cleanString(args.scene_id);
-        assertEditableScene(draftRef.current, sceneId);
+        assertEditableScene(draftRef.current, sceneId, ["saving", "queued"].includes(jobRef.current.status));
         const assetId = cleanString(args.asset_id);
         if (!selectedAssetsRef.current.includes(assetId)) throw new Error("Select the approved asset before placing it.");
         const next = replaceScene(draftRef.current, sceneId, { asset_id: assetId });
@@ -350,7 +350,7 @@ export function CanvasWorkspace() {
         return { saved: true, scene_id: sceneId, asset_id: assetId, revision: next.revision };
       }
       case "reorder_scene": {
-        assertEditableScene(draftRef.current, draftRef.current.selected_scene_id);
+        assertEditableScene(draftRef.current, draftRef.current.selected_scene_id, ["saving", "queued"].includes(jobRef.current.status));
         if (cleanString(args.variant_id) !== draftRef.current.selected_variant_id) throw new Error("Select this concept before reordering its scenes.");
         const next = reorderScenes(draftRef.current, cleanString(args.variant_id) as VariantId, Number(args.from), Number(args.to));
         await persistDraft(next);
@@ -467,7 +467,7 @@ export function CanvasWorkspace() {
       return;
     }
     if ((match = text.match(/^move\s+scene\s+(\d)\s+(?:to|before)\s+(\d)$/i))) {
-      assertEditableScene(draftRef.current, draftRef.current.selected_scene_id);
+      assertEditableScene(draftRef.current, draftRef.current.selected_scene_id, ["saving", "queued"].includes(jobRef.current.status));
       const next = reorderScenes(draftRef.current, draftRef.current.selected_variant_id, Number(match[1]), Number(match[2]));
       await persistDraft(next);
       addNotice("director", `Reordered concept ${next.selected_variant_id} and saved revision ${next.revision}.`);
@@ -497,6 +497,7 @@ export function CanvasWorkspace() {
     setConfirmSummary(null);
     setJobState("saving");
     setJobMessage("Validating and saving the approved draft…");
+    jobRef.current = { ...jobRef.current, status: "saving", message: "Validating and saving the approved draft…" };
     try {
       const selected = selectedAssetIds.map((id) => assets.find((asset) => asset.id === id)).filter(Boolean) as LocalAsset[];
       const form = new FormData();
@@ -530,6 +531,7 @@ export function CanvasWorkspace() {
       setBackendProjectId(acceptedProjectId);
       localStorage.setItem(BACKEND_PROJECT_STORAGE, acceptedProjectId);
       setJobState("queued");
+      jobRef.current = { status: "queued", message: "Backend accepted the run; awaiting genuine events", project_id: acceptedProjectId };
       setJobMessage(`Run ${run.run_id ?? "queued"} · waiting for genuine backend events`);
       addNotice("system", "Run accepted by the connected pipeline. Progress will only follow persisted backend events.");
       return { accepted: true, status: run.status ?? "queued", run_id: run.run_id, project_id: acceptedProjectId };

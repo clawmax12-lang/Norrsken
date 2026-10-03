@@ -1,6 +1,7 @@
 import type { CanvasDraft } from "./canvas-draft";
 
-export function assertEditableScene(draft: CanvasDraft, sceneId: string) {
+export function assertEditableScene(draft: CanvasDraft, sceneId: string, jobActive = false) {
+  if (jobActive) throw new Error("The confirmed run is saving or queued. Its approved content is locked; no edit was applied.");
   if (draft.selected_scene_id !== sceneId) throw new Error("Select this scene before editing it.");
   const concept = draft.concepts.find((item) => item.variant_id === draft.selected_variant_id);
   if (!concept?.scenes.some((scene) => scene.id === sceneId)) throw new Error("That scene is not in the selected concept.");

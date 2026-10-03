@@ -15,7 +15,7 @@ export function DirectorOrb({ state, paused, label }: { state: OrbState; paused:
     let frameId = 0;
     let alive = true;
     const paint = (time: number) => {
-      const pixels = Math.round(canvas.getBoundingClientRect().width * Math.min(2, window.devicePixelRatio || 1));
+      const pixels = Math.round(canvas.clientWidth * Math.min(2, window.devicePixelRatio || 1));
       if (canvas.width !== pixels) { canvas.width = pixels; canvas.height = pixels; }
       context.setTransform(pixels / 64, 0, 0, pixels / 64, 0, 0);
       context.clearRect(0, 0, 64, 64);

@@ -14,6 +14,8 @@ The owner wants an e-commerce brand's **existing video** analyzed, improved and 
 
 Improve the implemented Live path now: current project context, concise language-matched conversation, ordered/deduplicated validated tools, source-grounded edits, truthful persistence failures, explicit spoken run confirmation using the same command as the button, accumulated captions, interrupt/reconnect cleanup and a microphone gate for the noisy venue. Do not add a second mic, pretend audio fixtures pass live acceptance, or change provider routing as a side effect.
 
+Latest visual clarification: **voice button inside the text bar**. Explicit click opens a large central orb, End/Escape returns it to the button. `ThinkingOrb` uses its supported 20 preset in the active button; the expanded orb uses the package's public engine with the tuned 64 geometry painted at native resolution. No unsupported size prop, stretched low-resolution bitmap, avatar card or permanent side orb. `VoiceBeam` remains on the real input/output graph. The Live SDK explicitly requires `v1alpha` for ephemeral-token connections; this corrects transport configuration, not the unresolved Condense routing policy.
+
 ## Live acceptance: unplug the keyboard
 
 With a real headset in the authenticated HTTPS deployment:
