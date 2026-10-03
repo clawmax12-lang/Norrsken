@@ -46,6 +46,20 @@ async def test_a_finished_run_can_be_started_again(client, store, run_service):
     assert run_service.calls == [PROJECT_ID, PROJECT_ID]
 
 
+async def test_a_project_saved_by_the_web_app_without_run_json_can_start(
+    client, store, run_service
+):
+    seed_project(store, finished=False, state=RunState.BRIEF_RECEIVED)
+    store.paths(PROJECT_ID).run.unlink()
+
+    response = await client.post(start_url())
+
+    assert response.status_code == 202
+    assert response.json()["state"] == "BRIEF_RECEIVED"
+    await asyncio.wait_for(run_service.started.wait(), timeout=2)
+    run_service.release.set()
+
+
 async def test_unknown_project_is_404(client):
     response = await client.post(start_url("nope"))
 

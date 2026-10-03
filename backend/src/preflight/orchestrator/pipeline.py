@@ -9,7 +9,7 @@ Nothing here knows about HTTP; the API layer reads the log and ``run.json`` from
 from collections.abc import Sequence
 
 from preflight.config import Settings
-from preflight.contracts import Brief, RunRecord, RunState
+from preflight.contracts import RunRecord, RunState
 from preflight.errors import PreflightError
 from preflight.explain import next_time_suggestions
 from preflight.ports import (
@@ -98,7 +98,7 @@ class Pipeline:
         return RunContext(
             store=self._store,
             paths=paths,
-            brief=self._store.read(paths.brief, Brief),
+            brief=self._store.read_brief(project_id),
             log=ActivityLog(self._store, project_id, self._clock),
             tracker=RunTracker.open(self._store, project_id, self._clock),
             archive=SimulationArchive(self._store, paths, self._simulator_names),
