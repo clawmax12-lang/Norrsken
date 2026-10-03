@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from "react";
 
-type IconName = "dashboard" | "brief" | "activity" | "export" | "settings";
+type IconName = "dashboard" | "brief" | "activity" | "brain" | "export" | "settings";
 
 const navigation: Array<{ label: string; href: string; icon: IconName; active?: boolean }> = [
   { label: "Overview", href: "#overview", icon: "dashboard", active: true },
   { label: "Briefs", href: "#briefs", icon: "brief" },
   { label: "Activity", href: "#workflow", icon: "activity" },
   { label: "Exports", href: "#briefs", icon: "export" },
+  { label: "Brain viewer", href: "/brain", icon: "brain" },
 ];
 
 const priorities = [
@@ -36,6 +37,9 @@ function NavIcon({ name }: { name: IconName }) {
   }
   if (name === "activity") {
     return <svg viewBox="0 0 18 18" aria-hidden="true"><path d="M2.5 9h3l1.6-4 3 8 1.5-4h3.9" {...common} /></svg>;
+  }
+  if (name === "brain") {
+    return <svg viewBox="0 0 18 18" aria-hidden="true"><path d="M9 3.2c-1-1.1-3.4-.9-4 .9-1.6.2-2.4 1.9-1.7 3.2-1 1-.8 2.9.6 3.5 0 1.8 1.9 3 3.5 2.2.5.8 1 1.2 1.6 1.2M9 3.2c1-1.1 3.4-.9 4 .9 1.6.2 2.4 1.9 1.7 3.2 1 1 .8 2.9-.6 3.5 0 1.8-1.9 3-3.5 2.2-.5.8-1 1.2-1.6 1.2M9 3.2v11" {...common} /></svg>;
   }
   if (name === "export") {
     return <svg viewBox="0 0 18 18" aria-hidden="true"><path d="M9 2.5v9M5.8 8.5 9 11.7l3.2-3.2M3 14.5h12" {...common} /></svg>;

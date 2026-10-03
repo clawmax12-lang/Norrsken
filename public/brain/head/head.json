@@ -1,0 +1,16 @@
+{
+  "coordinate_space": "fsaverage RAS (mm)",
+  "vertices": 18000,
+  "faces": 36000,
+  "layout": {
+    "positions": {
+      "offset": 0,
+      "dtype": "float32"
+    },
+    "faces": {
+      "offset": 216000,
+      "dtype": "uint16"
+    }
+  },
+  "source": "Original procedural SDF artwork, scripts/brain/build_head_mesh.py"
+}
