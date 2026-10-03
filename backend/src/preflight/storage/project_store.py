@@ -79,6 +79,19 @@ class ProjectPaths:
         """Rendered MP4 for a variant."""
         return self.root / "videos" / f"{variant_id}.mp4"
 
+    def final_video(self, variant_id: str) -> Path:
+        """Rendered MP4 with narration, music and sound effects added after the pretest."""
+        return self.root / "videos" / f"{variant_id}.final.mp4"
+
+    def sound(self, variant_id: str) -> Path:
+        """What was added to a variant's final video (``SoundRecord``)."""
+        return self.root / "sound" / f"{variant_id}.json"
+
+    @property
+    def sound_work(self) -> Path:
+        """Scratch and cache for sound: synthesized narration lines and the mixed WAV."""
+        return self.root / "sound" / "work"
+
     def simulation(self, variant_id: str, simulator: str) -> Path:
         """One simulator's result for a variant."""
         return self.root / "simulations" / f"{variant_id}.{simulator}.json"

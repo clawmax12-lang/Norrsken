@@ -5,7 +5,17 @@ confidence and the rule behind it, and sends the reader to a live A/B test to co
 It never promises reach, revenue or any other outcome.
 """
 
-from preflight.contracts import Brief, Confidence, CreativeConcept, Ranking, Reason, Report
+from collections.abc import Mapping
+
+from preflight.contracts import (
+    Brief,
+    Confidence,
+    CreativeConcept,
+    Ranking,
+    Reason,
+    Report,
+    SoundRecord,
+)
 from preflight.errors import PreflightValidationError
 
 _CONFIDENCE_LABEL = {Confidence.HIGH: "High", Confidence.LOW: "Low"}
@@ -28,6 +38,7 @@ def render_launch_brief(
     concept_runner_up: CreativeConcept | None,
     ranking: Ranking,
     report: Report,
+    sounds: Mapping[str, SoundRecord] | None = None,
 ) -> str:
     """Return the launch brief as Markdown.
 
@@ -38,12 +49,14 @@ def render_launch_brief(
             finished the pretest.
         ranking: The scored ranking with its confidence label and rule.
         report: Reasons, next-time advice, token savings and whether the brain sim ran.
+        sounds: Sound added to the exported videos, by variant; ``None`` or empty when they
+            are the silent renders that were pretested.
 
     Raises:
         PreflightValidationError: The concepts do not match the report's winner and runner-up.
     """
     _require_matching_concepts(concept_winner, concept_runner_up, report)
-    sections = [
+    sections: list[str] = [
         f"# Launch brief: {brief.product_name}",
         f"Preflight pretested {len(ranking.order)} video variant"
         f"{'' if len(ranking.order) == 1 else 's'} for {brief.product_name} with simulated "
@@ -54,8 +67,10 @@ def render_launch_brief(
         _next_time_section(report),
         _trust_section(ranking, report),
         _token_savings_section(report),
-        f"## Before you launch\n\n{_DISCLAIMER}",
     ]
+    if sounds:
+        sections.append(_sound_section(sounds))
+    sections.append(f"## Before you launch\n\n{_DISCLAIMER}")
     return "\n\n".join(sections) + "\n"
 
 
@@ -143,6 +158,29 @@ def _trust_section(ranking: Ranking, report: Report) -> str:
     ]
     lines.append(f"- {_BRAIN_SIM_ON if report.brain_sim else _BRAIN_SIM_OFF}")
     return "\n".join(lines)
+
+
+def _sound_section(sounds: Mapping[str, SoundRecord]) -> str:
+    lines = [
+        "## Sound in the exported videos",
+        "",
+        "Narration, music and sound effects were added after the pretest. The simulated "
+        "viewers watched the silent renders, so the ranking above does not cover the audio.",
+        "",
+    ]
+    for variant, record in sorted(sounds.items()):
+        lines.append(f"- Variant {variant}: {_sound_line(record)}")
+    return "\n".join(lines)
+
+
+def _sound_line(record: SoundRecord) -> str:
+    if record.narrated:
+        spoken = "; ".join(f'"{line.text}"' for line in record.narration)
+        return (
+            f"narrated by the Gemini voice {record.voice}, reading only the on-screen text "
+            f"({spoken}), with music and sound effects."
+        )
+    return f"music and sound effects only. {record.note or ''}".strip()
 
 
 def _token_savings_section(report: Report) -> str:

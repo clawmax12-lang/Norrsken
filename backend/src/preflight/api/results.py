@@ -12,6 +12,7 @@ from preflight.contracts import (
     RunRecord,
     SimulationResult,
     SimulatorName,
+    SoundRecord,
     VariantId,
 )
 from preflight.storage import ProjectPaths, ProjectStore
@@ -54,6 +55,7 @@ def _variant_results(
             for kind in FileKind
             if locate_file(store, paths, kind, variant) is not None
         },
+        sound=_read_if_present(store, paths.sound(variant), SoundRecord),
     )
 
 

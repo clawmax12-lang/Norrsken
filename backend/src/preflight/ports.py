@@ -21,6 +21,7 @@ from preflight.contracts import (
     RenderResult,
     SimulationResult,
     SimulatorName,
+    SoundRecord,
     TokenSavings,
 )
 
@@ -90,3 +91,39 @@ class UsageMeter(Protocol):
     """Reports measured Condense usage accumulated so far (FR-10)."""
 
     def snapshot(self) -> TokenSavings: ...
+
+
+@dataclass(frozen=True)
+class SpeechClip:
+    """Mono 16-bit PCM speech. Token counts are zero when the clip came from the cache."""
+
+    pcm: bytes
+    sample_rate: int
+    input_tokens: int = 0
+    output_tokens: int = 0
+
+
+class SpeechSynthesizer(Protocol):
+    """Text to speech. The text is on-screen copy, so narration never adds a claim."""
+
+    async def synthesize(self, text: str) -> SpeechClip: ...
+
+
+@dataclass(frozen=True)
+class SoundRequest:
+    """One rendered variant to give sound to."""
+
+    spec: CompositionSpec
+    video_path: Path
+    video_sha256: str
+    output_path: Path
+    work_dir: Path
+
+
+class SoundFinisher(Protocol):
+    """``add_sound``: a silent render in, the same picture with narration, music and effects out.
+
+    The video stream is copied unchanged, so the tested picture is exactly what is exported.
+    """
+
+    async def finish(self, request: SoundRequest) -> SoundRecord: ...

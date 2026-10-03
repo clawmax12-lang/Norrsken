@@ -6,7 +6,7 @@ from pydantic import SecretStr
 
 from preflight.config import Settings
 from preflight.errors import ProviderError
-from preflight.llm import CondenseProxyBackend, GenAIBackend
+from preflight.llm import CondenseProxyBackend
 from preflight.storage import ProjectStore
 from preflight.wiring import ProductionRunService
 
@@ -29,13 +29,13 @@ def stage(pipeline, name):
     return next(s for s in pipeline._stages if type(s).__name__ == name)
 
 
-def test_planner_calls_gemini_directly_and_the_rest_goes_through_condense(tmp_path) -> None:
+def test_every_generation_goes_through_condense(tmp_path) -> None:
     pipeline = build(tmp_path)
 
     planner = stage(pipeline, "PlanStage")._planner
     panel = stage(pipeline, "SimulateStage")._simulators[0]
     explainer = stage(pipeline, "ExplainStage")._explainer
-    assert isinstance(planner._client._backend, GenAIBackend)
+    assert isinstance(planner._client._backend, CondenseProxyBackend)
     assert isinstance(panel._client._backend, CondenseProxyBackend)
     assert isinstance(explainer._client._backend, CondenseProxyBackend)
 
@@ -65,3 +65,22 @@ def test_missing_gemini_key_is_an_explicit_error(tmp_path) -> None:
 
     with pytest.raises(ProviderError, match="GEMINI_API_KEY"):
         service.build_pipeline("proj-1")
+
+
+def test_exported_videos_get_sound_with_a_gemini_voice_by_default(tmp_path) -> None:
+    studio = stage(build(tmp_path), "SoundStage")._finisher
+
+    assert studio._speech is not None
+    assert (studio._voice, studio._tts_model) == ("Kore", "gemini-3.8-flash-tts")
+
+
+def test_narration_can_be_switched_off_while_music_and_effects_stay(tmp_path) -> None:
+    studio = stage(build(tmp_path, narration_enabled=False), "SoundStage")._finisher
+
+    assert studio._speech is None
+
+
+def test_sound_can_be_switched_off_entirely(tmp_path) -> None:
+    pipeline = build(tmp_path, sound_enabled=False)
+
+    assert all(type(s).__name__ != "SoundStage" for s in pipeline._stages)

@@ -1,7 +1,7 @@
 import json
 
 from preflight.planning.archetypes import archetypes_for
-from preflight.planning.draft import PlanDraft
+from preflight.planning.draft import PlanDraft, fit_durations
 from preflight.planning.validation import _set_problems, plan_problems
 from tests.factories import make_brief, make_concept
 from tests.planning.helpers import OUTCOME, concept_json, plan_json, scene
@@ -65,15 +65,19 @@ def test_set_invariants_accept_a_valid_plan() -> None:
     assert _set_problems(concepts) == []
 
 
-def test_scene_durations_must_fill_the_video() -> None:
-    short = concept_json(scenes=[scene(0, 3), scene(1, 3), scene(2, 3), scene(0, 3)])
+def test_scene_durations_are_scaled_to_fill_the_video() -> None:
+    short = concept_json(scenes=[scene(0, 2), scene(1, 4), scene(2, 3), scene(0, 3)])
 
-    try:
-        PlanDraft.model_validate_json(plan_json(short, short, short))
-    except ValueError as exc:
-        assert "add up to 15 seconds, got 12" in str(exc)
-    else:
-        raise AssertionError("expected a validation error")
+    draft = PlanDraft.model_validate_json(plan_json(short, short, short))
+
+    for concept in draft.concepts:
+        assert [s.duration_s for s in concept.scenes] == [2, 5, 4, 4]
+
+
+def test_fit_durations_keeps_exact_lengths_and_handles_long_plans() -> None:
+    assert fit_durations([3, 3, 3, 3, 3], 15) == [3, 3, 3, 3, 3]
+    assert sum(fit_durations([5, 5, 5, 5, 5, 5], 15)) == 15
+    assert min(fit_durations([1, 1, 1, 12], 15)) >= 1
 
 
 def test_helper_scene_text_is_grounded_in_the_brief() -> None:

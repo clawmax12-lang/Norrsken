@@ -1,4 +1,4 @@
-"""The five stages of the state machine, one module each."""
+"""The stages of the state machine, one module each."""
 
 from .base import Stage
 from .explain import ExplainStage, NextTimeSuggester
@@ -6,6 +6,7 @@ from .plan import PlanStage
 from .render import RenderStage
 from .score import Ranker, ScoreStage
 from .simulate import SimulateStage
+from .sound import SoundStage
 
 __all__ = [
     "ExplainStage",
@@ -15,5 +16,6 @@ __all__ = [
     "RenderStage",
     "ScoreStage",
     "SimulateStage",
+    "SoundStage",
     "Stage",
 ]

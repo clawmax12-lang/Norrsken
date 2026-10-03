@@ -6,7 +6,7 @@ directly on any proxy failure. Large text context marked ``compressible`` is als
 with ``/v1/compress``; see :mod:`preflight.llm.condense`.
 """
 
-from .backend import GeminiBackend
+from .backend import GeminiBackend, SpeechAudio, SpeechBackend
 from .client import GeminiClient, Measured
 from .condense import CondenseCompressor, ContextCompressor
 from .condense_proxy import CondenseProxyBackend, condense_session_id
@@ -26,6 +26,8 @@ __all__ = [
     "Measured",
     "MediaPart",
     "Part",
+    "SpeechAudio",
+    "SpeechBackend",
     "TextPart",
     "TokenLedger",
     "build_gemini_client",

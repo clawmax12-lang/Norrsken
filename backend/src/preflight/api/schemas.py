@@ -12,6 +12,7 @@ from preflight.contracts import (
     RunRecord,
     RunState,
     SimulationResult,
+    SoundRecord,
     VariantId,
     VariantRecord,
 )
@@ -28,6 +29,8 @@ class VariantResults(BaseModel):
     """Everything known so far about one variant.
 
     ``files`` maps each downloadable file kind to its URL; only files that exist are listed.
+    ``sound`` says what narration, music and effects were added to ``video-final`` after the
+    pretest (the simulations describe the silent ``video``).
     Simulation results carry series and events and point at brain data by file, never inline.
     """
 
@@ -36,6 +39,7 @@ class VariantResults(BaseModel):
     render: VariantRecord | None
     simulations: tuple[SimulationResult, ...]
     files: dict[str, str]
+    sound: SoundRecord | None = None
 
 
 class ResultsResponse(BaseModel):
