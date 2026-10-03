@@ -4,6 +4,8 @@ Launch videos that are tested before anyone sees them.
 
 Preflight turns a product brief and 3–6 screenshots into three 15-second motion graphics videos, pretests them with simulated viewers, and exports a recommended winner, a runner up and a launch brief. The first customer is a founder launching an app or SaaS product. E-commerce is a later audience.
 
+**[TRIBE v2 by Meta FAIR](https://github.com/facebookresearch/tribev2) is a foundational component of Preflight's planned neural pretesting system.** It supplies the predicted brain responses behind the brain simulation, synchronized activity curves, interactive 3D brain and Preflight sequence. Gemini supplies the complementary viewer panel and the agent's planning/explanations; Preflight coordinates generation, simulation, comparison and export.
+
 **Current approved specification: [PRD v1.1](PRD.md).** It supersedes earlier brainstorming, including editing an existing customer video. This repository is the shared reference for the hackathon team and its coding agents.
 
 ## Start here
@@ -27,6 +29,82 @@ cd Norrsken
 ```
 
 Read the documents above and claim work in TEAM.md. The first implementation change must replace this section with the actual installation, environment, development and verification commands, checked from a clean clone. Keep it current with subsequent changes.
+
+## TRIBE v2: role in Preflight
+
+Upstream repository: **https://github.com/facebookresearch/tribev2.git**. Start with its [README](https://github.com/facebookresearch/tribev2#readme), [official Colab walkthrough](https://colab.research.google.com/github/facebookresearch/tribev2/blob/main/tribe_demo.ipynb), [model weights](https://huggingface.co/facebook/tribev2) and [paper](https://arxiv.org/abs/2605.04326).
+
+TRIBE maps video, audio and language to predicted fMRI responses for an average subject. The released demo produces approximately 20,484 cortical values per time step on the `fsaverage5` mesh, at one time step per second. These are the scientific input to Preflight's brain simulation, not decorative animation data.
+
+The planned integration follows PRD §9–§12:
+
+```mermaid
+flowchart LR
+    V[Three rendered MP4 variants] --> T[TRIBE v2 GPU worker]
+    V --> G[Gemini viewer panel via Condense]
+    T --> N[SimulationResult: tribe_v2]
+    G --> P[SimulationResult: gemini_panel]
+    N --> S[Goal-aligned scoring and explanations]
+    P --> S
+    N --> B[3D brain, activity curves and Preflight sequence]
+    S --> E[Winner, runner up and launch brief]
+```
+
+| Preflight requirement | How TRIBE contributes |
+| --- | --- |
+| FR-04 — pretest | `simulate_tribe` runs each rendered variant and returns a normalized `SimulationResult`, alongside the Gemini panel result. |
+| FR-05/FR-06 — rank and explain | The scoring/explanation layer can use the simulation evidence through the common interface. The goal mapping and scoring rule still need implementation and documentation. Raw activation is not automatically an attention, retention or sales score. |
+| FR-07/FR-12 — results and brain viewer | Real cortical samples and atlas-backed region series drive the brain surface and curves in sync with video playback and scrubbing. |
+| FR-14 — Preflight sequence | The cinematic introduction visualizes genuine stored TRIBE predictions. Smooth interpolation does not create additional measured or predicted samples. |
+
+TRIBE does not generate the product videos. Its worker consumes the renderer's MP4s; our adapter translates its arrays and timing into the shared contract. UI and scoring consume `SimulationResult`, not a provider-specific response. Keep this boundary so the product remains usable with other simulators while TRIBE powers the neural experience.
+
+### Run a first TRIBE inference on the GPU worker
+
+**Status:** this is an upstream-based setup guide, not a verified Preflight deployment. These commands and API names were checked against upstream commit [`af58661791a351a448a489042a28f6c37e1c14b7`](https://github.com/facebookresearch/tribev2/tree/af58661791a351a448a489042a28f6c37e1c14b7). We have not installed or run GPU inference as part of this documentation change.
+
+Prerequisites: Python **3.11+** per upstream `pyproject.toml`, Git, a CUDA-capable GPU environment, and approved Hugging Face access to [Llama-3.2-3B](https://huggingface.co/meta-llama/Llama-3.2-3B), required by the text encoder. The PRD recommends a worker with **40 GB+ VRAM**; treat its memory estimates as planning guidance until the owner records an actual run. Confirm the dependency versions and CUDA compatibility in the upstream project. Web-app or LLM credits alone do not provide this GPU worker.
+
+On that GPU machine, from a Preflight checkout, create an isolated environment and install the pinned upstream source:
+
+```bash
+python3.11 -m venv .context/tribe-env
+source .context/tribe-env/bin/activate
+python -m pip install "tribev2 @ git+https://github.com/facebookresearch/tribev2.git@af58661791a351a448a489042a28f6c37e1c14b7"
+hf auth login
+```
+
+Authenticate with a Hugging Face account that has the required model access. Keep tokens out of source files and commits. The official notebook provides a Colab route; choose a GPU runtime that meets the actual memory requirements. Upstream also provides the optional `plotting` extra for its own visualizations.
+
+Run the following Python example after replacing the video path with a real rendered variant:
+
+```python
+from tribev2 import TribeModel
+
+model = TribeModel.from_pretrained(
+    "facebook/tribev2",
+    cache_folder=".context/tribe-cache",
+    device="cuda",
+)
+events = model.get_events_dataframe(video_path="path/to/rendered-variant-A.mp4")
+preds, segments = model.predict(events=events)
+
+assert preds.ndim == 2
+assert preds.shape[0] == len(segments)
+print(preds.shape)  # (n_timesteps, n_cortical_vertices)
+```
+
+First use downloads model weights and extracts multimodal features. Record both first-run and warm-run duration before promising an end-to-end runtime. The setup example pins the code, not every transitive dependency or the model weights; record the actual checkpoint/config revision and environment with the run.
+
+### Connect the worker to Preflight
+
+1. Implement `simulate_tribe` around the upstream inference call and the `SimulationResult` contract in PRD §10.3. Agree the cortical-data and atlas/timestamp representation with the viewer owner; the simplified PRD has not specified that payload yet.
+2. Save the genuine predictions, corresponding segment timing and reproducibility metadata with the run. Reduce cortical samples to visual/auditory/language curves using an agreed standard atlas, preserving vertex ordering for the mesh.
+3. Align video, curves and mesh through the returned segments. Upstream documents a five-second compensation for hemodynamic lag; verify that mapping rather than automatically shifting an already-compensated result again. Do not assume a 15-second clip always returns exactly 15 usable segments.
+4. Expose the worker to the orchestrator and configure `TRIBE_ENDPOINT` with **our deployed worker's address**. It is not the GitHub URL or a hosted Meta inference API supplied by the upstream project. The Preflight endpoint and request/response transport still need implementation; this guide does not define a ready-made HTTP route.
+5. Verify one real clip for the go/no-go, then the actual 15-second rendered variants, including any silent/no-speech case produced by the template. Record output, timing, GPU environment and failures in TEAM.md before marking FR-04 complete.
+
+The PRD's hackathon fallback still applies: if TRIBE fails the 12:30 gate, keep the Gemini path with **Brain sim off** and drop the conditional brain viewer/intro as specified. This is a degraded execution path, not equivalent neural evidence. Never replace missing brain activity with generated values. Genuine precomputed results must be tied to the video they analyzed and visibly disclosed.
 
 ## Planned build stack
 

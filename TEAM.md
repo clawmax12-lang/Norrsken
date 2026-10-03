@@ -61,6 +61,8 @@ P2 stays outside today's build. The broader validation programme also has the ex
 
 ## Integration and acceptance handoff
 
+Documentation task **DOC-TRIBE** (supports FR-04, FR-12 and FR-14): Codex owns the README explanation and upstream quickstart on branch `docs/tribe-foundation`. Status: `in_review` (not yet integrated). Files: `README.md` and this handoff entry. Verified against upstream commit `af58661791a351a448a489042a28f6c37e1c14b7`; local links, Python/shell example syntax and whitespace checks pass. GPU installation/inference was not run. This does not claim ownership or completion of the TRIBE worker or brain-viewer implementation.
+
 For each task, record:
 
 - Requirement IDs, owner, branch/PR and changed components.
