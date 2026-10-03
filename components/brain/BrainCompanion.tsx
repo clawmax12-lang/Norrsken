@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ChangeEvent } from "react";
 import Link from "next/link";
+import { createPortal } from "react-dom";
 import type * as THREE from "three";
 import { adaptSimulationResult, computeDisplayScale, resolveCorticalValues } from "../../lib/brain/adapter";
 import { METER_GROUPS, REGION_GROUPS, computeRegionStatistics, regionInfo, strongestMoment, type RegionStatistics } from "../../lib/brain/atlas";
@@ -14,6 +15,7 @@ import type { BrainScene, PickResult } from "../../lib/brain/scene";
 import { formatTime, sampleAt, samplePeriod, stepSeconds } from "../../lib/brain/timeline";
 import { ANALYSIS_RUN_KEY_PREFIX, BRAIN_COMMAND, ENTRY_SESSION_KEY, dispatchBrainEvent, type BrainCommand, type BrainEvent, type BrainMode, type DataMode, type RegionRef, type SelectionSnapshot } from "../../lib/brain/events";
 import { useLatest } from "../../lib/brain/useLatest";
+import type { DemoBundle } from "../../lib/brain/backend";
 import { STEP_LABELS, statusLine, isWorking, RESULT_STEPS, type Milestone, type WorkloadState } from "../../lib/brain/workload";
 import { BrainStage } from "./BrainStage";
 import { useDockChoreography, type BeatRegion } from "./useDockChoreography";
@@ -90,6 +92,29 @@ function usePrefersReducedMotion(): boolean {
   );
 }
 
+const noopSubscribe = () => () => {};
+
+/** Entry decision made on the client only (server snapshot is null = still booting). */
+function readEntryDecision(): "fresh" | "replay" | "played" | "off" {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("entry") === "off") return "off";
+  if (params.get("entry") === "replay") return "replay";
+  try {
+    return window.sessionStorage.getItem(ENTRY_SESSION_KEY) ? "played" : "fresh";
+  } catch {
+    return "fresh";
+  }
+}
+
+/**
+ * Runs during HTML parse, before hydration: a returning session (or ?entry=off) marks the
+ * document so the server-rendered entry cover never flashes. No React-managed node is touched.
+ */
+const BOOT_SCRIPT = `try{var q=location.search;if(/[?&]entry=off/.test(q)||(!/[?&]entry=replay/.test(q)&&sessionStorage.getItem(${JSON.stringify(ENTRY_SESSION_KEY)}))){var m=document.createElement("meta");m.id="bv-played-flag";document.head.appendChild(m)}}catch(e){}`;
+
+/** Scroll lock while the full-viewport intro is showing (removed with the intro). */
+const ENTRY_LOCK_CSS = ":root:not(:has(#bv-played-flag)),:root:not(:has(#bv-played-flag)) body{overflow:hidden!important;overscroll-behavior:none}";
+
 function isConcept(value: unknown): value is { variant_id: string; scenes: SceneRef[] } {
   const v = value as { variant_id?: unknown; scenes?: unknown; hook?: unknown };
   return Boolean(v && typeof v === "object" && typeof v.variant_id === "string" && Array.isArray(v.scenes));
@@ -135,12 +160,14 @@ export interface BrainCompanionProps {
   dockCorner?: "top-left" | "bottom-right";
   /** Play the once-per-session entry intro on this surface. */
   entry?: boolean;
+  /** Validated genuine demo bundle (see lib/brain/backend.ts loadDemoBundle). */
+  demoBundle?: DemoBundle;
   /** Extra honest notices from the host (e.g. backend artifact problems). */
   hostNotices?: string[];
 }
 
 export function BrainCompanion(props: BrainCompanionProps) {
-  const { brainSim: brainSimProp = "available", projectId, results, concepts, videos, runId, demoExample, selectedVariant, onSelectVariant, onEvent, initialMode = "dock", harness = false, bindings, scenesByVariant, workload, consumeMilestone, dockCorner = "bottom-right", entry: entryEnabled = true, hostNotices } = props;
+  const { brainSim: brainSimProp = "available", projectId, results, concepts, videos, runId, demoExample, selectedVariant, onSelectVariant, onEvent, initialMode = "dock", harness = false, bindings, scenesByVariant, workload, consumeMilestone, dockCorner = "bottom-right", entry: entryEnabled = true, hostNotices, demoBundle } = props;
   const [assets, setAssets] = useState<BrainAssets | null>(null);
   const [geometry, setGeometry] = useState<BrainGeometry | null>(null);
   const [headGeometry, setHeadGeometry] = useState<THREE.BufferGeometry | null>(null);
@@ -157,9 +184,15 @@ export function BrainCompanion(props: BrainCompanionProps) {
   const [scene, setScene] = useState<BrainScene | null>(null);
   const [head, setHead] = useState<HeadObject | null>(null);
   const [handoverAnim, setHandoverAnim] = useState(false);
-  const [mode, setMode] = useState<BrainMode>(initialMode);
+  // Server and first paint render the entry cover (matte black) when entry is enabled, never a dock flash.
+  const [mode, setMode] = useState<BrainMode>(entryEnabled ? "entry" : initialMode);
+  const entryDecision = useSyncExternalStore(noopSubscribe, readEntryDecision, () => null);
+  const booting = entryDecision === null;
+  const pageRef = useRef<HTMLDivElement>(null);
+  const entrySkipRef = useRef<(() => void) | null>(null);
+  const skipEntryRef = useRef<() => void>(() => {});
   const [entry, setEntry] = useState<{ run: number; replay: boolean } | null>(null);
-  const [demo, setDemo] = useState<DemoExample | null>(null);
+  const [urlDemo, setDemo] = useState<DemoExample | null>(null);
   const [eventLog, setEventLog] = useState<BrainEvent[]>([]);
   const [runKey, setRunKey] = useState<string | null>(runId ?? null);
   const onEventRef = useLatest(onEvent);
@@ -283,6 +316,16 @@ export function BrainCompanion(props: BrainCompanionProps) {
   useEffect(() => {
     if (demoExample) void ingestDemo(demoExample);
   }, [demoExample, ingestDemo]);
+
+  const [bundleDemo, setBundleDemo] = useState<DemoExample | null>(null);
+  useEffect(() => {
+    if (!demoBundle || !demoBundle.binding.precomputed || demoBundle.binding.mock) return;
+    let live = true;
+    queueMicrotask(() => live && setBundleDemo({ binding: demoBundle.binding, title: demoBundle.title, videoUrl: demoBundle.videoUrl, scenes: demoBundle.scenes }));
+    return () => {
+      live = false;
+    };
+  }, [demoBundle]);
 
   // URL parameters (harness only): ?result=, ?demo=, ?sim=off, ?entry=replay, ?fixture=mock (development only).
   useEffect(() => {
@@ -409,6 +452,8 @@ export function BrainCompanion(props: BrainCompanionProps) {
   // ------------------------------------------------------------ derivations
   const runBindings = useMemo(() => VARIANTS.map((v) => data[v]?.binding).filter((b): b is CorticalBinding => Boolean(b)), [data]);
   // A disclosed demo example is shown only until the run has any cortical data of its own.
+  // Host-supplied bundle (CanvasBrain demoBundleUrl) or the harness ?demo= example.
+  const demo = urlDemo ?? bundleDemo;
   const demoActive = Boolean(demo) && runBindings.length === 0;
   const runData = data[variant];
   const current: VariantData | undefined = demoActive && demo ? { binding: demo.binding, scenes: demo.scenes, videoUrl: demo.videoUrl } : runData;
@@ -491,6 +536,10 @@ export function BrainCompanion(props: BrainCompanionProps) {
       const tag = target.tagName;
       const isRange = tag === "INPUT" && (target as HTMLInputElement).type === "range";
       if ((tag === "INPUT" && !isRange) || tag === "TEXTAREA" || tag === "SELECT" || target.isContentEditable) return;
+      if (mode === "entry" && e.key === "Escape") {
+        skipEntryRef.current();
+        return;
+      }
       if (sequence === "running" || entry) return;
       // Playback/fullscreen keys belong to the expanded analysis view only. In the dock they would
       // steal the host canvas's keys (e.g. space-drag pan); the focused dock has its own Enter/Space/Esc.
@@ -530,16 +579,15 @@ export function BrainCompanion(props: BrainCompanionProps) {
     [emit, dataModeRef],
   );
 
-  // First arrival: once per browser session (FR-14); ?entry=replay forces it.
-  // The hero frame shows immediately; the sequence itself starts once the mesh is ready.
+  // First arrival: once per browser session (FR-14); ?entry=replay forces it, ?entry=off skips it.
+  const settleWithoutEntry = useCallback(() => setMode((m) => (m === "entry" ? initialMode : m)), [initialMode]);
   useEffect(() => {
-    if (entryChecked.current) return;
+    if (entryDecision === null || entryChecked.current) return;
     entryChecked.current = true;
-    const params = new URLSearchParams(window.location.search);
-    const forced = params.get("entry") === "replay";
-    if (!entryEnabled || params.get("entry") === "off") return;
-    if (forced || !window.sessionStorage.getItem(ENTRY_SESSION_KEY)) startEntry(forced);
-  }, [entryEnabled, startEntry]);
+    document.getElementById("bv-played-flag")?.remove();
+    if (entryEnabled && (entryDecision === "fresh" || entryDecision === "replay")) startEntry(entryDecision === "replay");
+    else settleWithoutEntry();
+  }, [entryDecision, entryEnabled, startEntry, settleWithoutEntry]);
 
   const finishEntry = useCallback(
     (skipped: boolean) => {
@@ -550,6 +598,42 @@ export function BrainCompanion(props: BrainCompanionProps) {
     },
     [emit],
   );
+
+  /** Skip works before the mesh loads and even if WebGL fails. */
+  const skipEntry = useCallback(() => {
+    if (entrySkipRef.current) entrySkipRef.current();
+    else finishEntry(true);
+  }, [finishEntry]);
+  useEffect(() => {
+    skipEntryRef.current = skipEntry;
+  }, [skipEntry]);
+
+  // While the intro covers the viewport, the host behind it is inert (no focus, no clicks, no AT).
+  useEffect(() => {
+    if (mode !== "entry") return;
+    const root = pageRef.current;
+    if (!root) return;
+    const changed: Element[] = [];
+    for (let node: Element | null = root; node && node !== document.body; node = node.parentElement) {
+      const parent: Element | null = node.parentElement;
+      if (!parent) break;
+      for (const sibling of Array.from(parent.children)) {
+        if (sibling === node || sibling.tagName === "SCRIPT" || sibling.tagName === "STYLE" || sibling.hasAttribute("inert")) continue;
+        sibling.setAttribute("inert", "");
+        changed.push(sibling);
+      }
+    }
+    window.scrollTo(0, 0);
+    return () => changed.forEach((el) => el.removeAttribute("inert"));
+  }, [mode]);
+
+  // A failed mesh/WebGL load must not trap the user in the intro.
+  useEffect(() => {
+    if (mode !== "entry" || !entry) return;
+    const t = window.setTimeout(skipEntry, loadError ? 500 : 15000);
+    return () => window.clearTimeout(t);
+  }, [mode, entry, loadError, scene, skipEntry]);
+
 
   // Expanding is a deliberate reveal: frame the reference profile instead of wherever the dock's
   // idle spin happened to stop (the scene itself skips the move under reduced motion).
@@ -795,6 +879,7 @@ export function BrainCompanion(props: BrainCompanionProps) {
   const pageClass = [
     "bv-page",
     `bv-mode-${mode}`,
+    booting ? "bv-booting" : "",
     harness ? "bv-harness" : "bv-embedded",
     `bv-dock-${dockCorner}`,
     dockLarge ? "bv-dock-large" : "",
@@ -807,8 +892,9 @@ export function BrainCompanion(props: BrainCompanionProps) {
     .filter(Boolean)
     .join(" ");
 
-  return (
-    <div className={pageClass}>
+  const content = (
+    <div className={pageClass} ref={pageRef}>
+      {booting && entryEnabled && <script dangerouslySetInnerHTML={{ __html: BOOT_SCRIPT }} />}
       {harness && (
         <header className="bv-topbar">
           <div className="bv-crumbs">
@@ -928,8 +1014,8 @@ export function BrainCompanion(props: BrainCompanionProps) {
                 <strong>MOCK</strong> Synthetic test fixture · not a simulation result · do not use as evidence
               </div>
             )}
-            {loadError && <p className="bv-stage-error">Brain mesh failed to load: {loadError}</p>}
-            {!geometry && !loadError && <p className="bv-stage-loading bv-mono">Loading fsaverage5 cortex…</p>}
+            {loadError && mode === "expanded" && <p className="bv-stage-error">3D brain unavailable: {loadError}</p>}
+            {!geometry && !loadError && mode === "expanded" && <p className="bv-stage-loading bv-mono">Loading cortex…</p>}
             {geometry && (
               <BrainStage
                 geometry={geometry}
@@ -945,6 +1031,7 @@ export function BrainCompanion(props: BrainCompanionProps) {
                 onReady={setScene}
                 onHead={setHead}
                 onUserInteract={() => mode === "dock" && setManual(true)}
+                onError={(message) => setLoadError(message)}
                 label={`Interactive 3D cortex, variant ${variant}, ${statusLabel}. Drag to orbit, scroll to zoom, double-click to reset.`}
               />
             )}
@@ -1049,6 +1136,22 @@ export function BrainCompanion(props: BrainCompanionProps) {
               {pinned && <button type="button" className="bv-ghost-button" onClick={() => setPinned(false)}>Unpin</button>}
             </div>
 
+            {mode === "entry" && (
+              <div className="bv-entry-overlay" role="dialog" aria-modal="true" aria-label="Preflight intro">
+                <style>{ENTRY_LOCK_CSS}</style>
+                <button type="button" className="bv-skip" onClick={skipEntry} autoFocus>
+                  Skip <span aria-hidden="true">→</span>
+                </button>
+                <div className="bv-entry-title">
+                  <h1>Preflight</h1>
+                  <p>Pretest a video before it ships</p>
+                  <span className="bv-entry-data">
+                    {dataMode === "demo_example" ? DATA_LABELS.demo_example : binding ? statusLabel : brainSim === "off" ? "Brain sim off" : "No brain data"}
+                  </span>
+                </div>
+              </div>
+            )}
+
             {entry && scene && (
               <EntrySequence
                 key={entry.run}
@@ -1056,12 +1159,12 @@ export function BrainCompanion(props: BrainCompanionProps) {
                 head={head}
                 atlasNames={assets?.atlas.names ?? []}
                 reducedMotion={reducedMotion}
-                dataMode={dataMode}
-                dataLabel={dataMode === "demo_example" ? DATA_LABELS.demo_example : binding ? statusLabel : brainSim === "off" ? "Anatomy only · Brain sim off" : "Anatomy only · No brain data"}
-                replay={entry.replay}
                 onRegionFocus={(region) => emit({ type: "entry.region_focus", region, dataMode })}
                 onDock={() => setMode("dock")}
                 onFinish={finishEntry}
+                registerSkip={(fn) => {
+                  entrySkipRef.current = fn;
+                }}
               />
             )}
           </div>
@@ -1127,6 +1230,11 @@ export function BrainCompanion(props: BrainCompanionProps) {
       </div>
     </div>
   );
+  // Embedded: after hydration the companion lives directly under <body>, so no host stacking
+  // context, transform or overflow can cover the intro or clip the dock. The server/pre-hydration
+  // frame renders in place (the matte-black cover paints before any script runs).
+  if (!harness && !booting && typeof document !== "undefined") return createPortal(content, document.body);
+  return content;
 }
 
 /** @deprecated Use BrainCompanion. */

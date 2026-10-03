@@ -43,6 +43,7 @@ attribute float aCurv;
 attribute float aLabel;
 attribute float aBoundary;
 attribute float aVid;
+attribute float aVid2;
 
 uniform float uInflate;
 uniform sampler2D uActivity;
@@ -66,11 +67,16 @@ varying float vBoundary;
 varying float vReveal;
 varying float vUnknown;
 
-float fetchActivity(int frame) {
-  int idx = int(aVid + 0.5);
+float fetchVertex(int frame, float vid) {
+  int idx = int(vid + 0.5);
   int row = frame * uRowsPerFrame + idx / ${ACTIVITY_TEX_WIDTH};
   int col = idx - (idx / ${ACTIVITY_TEX_WIDTH}) * ${ACTIVITY_TEX_WIDTH};
   return texelFetch(uActivity, ivec2(col, row), 0).r;
+}
+
+// Subdivision midpoints show the mean of their two parent fsaverage5 vertices (equal for originals).
+float fetchActivity(int frame) {
+  return 0.5 * (fetchVertex(frame, aVid) + fetchVertex(frame, aVid2));
 }
 
 void main() {
@@ -142,17 +148,14 @@ void main() {
   vec3 N = normalize(vNormalV);
   if (!gl_FrontFacing) N = -N;
   vec3 V = normalize(-vViewPos);
-  // Blend in the true facet normal for the sculpted, chiselled look of the references.
-  vec3 flatN = normalize(cross(dFdx(vViewPos), dFdy(vViewPos)));
-  if (dot(flatN, N) < 0.0) flatN = -flatN;
-  N = normalize(mix(N, flatN, 0.38));
 
   // Sculptural gray: gyral crowns light, sulcal fundi darker (FreeSurfer sulc > 0 is deep).
   float deep = smoothstep(-1.0, 1.4, vSulc);
-  vec3 albedo = mix(toLinear(vec3(0.76)), toLinear(vec3(0.34)), deep);
+  // Matte plaster rather than plastic: warm neutral gray, crowns lighter, fundi deeper.
+  vec3 albedo = mix(toLinear(vec3(0.76, 0.75, 0.73)), toLinear(vec3(0.34, 0.335, 0.33)), deep);
   // Cavity occlusion from sulcal depth and local concavity (FreeSurfer curv > 0 is concave).
-  float cavity = mix(1.0, 0.42, deep * deep) * (1.0 - 0.55 * smoothstep(0.0, 0.22, vCurv));
-  cavity *= 1.0 + 0.12 * smoothstep(0.0, -0.25, vCurv);
+  float cavity = mix(1.0, 0.38, deep * deep) * (1.0 - 0.5 * smoothstep(0.0, 0.2, vCurv));
+  cavity *= 1.0 + 0.1 * smoothstep(0.0, -0.25, vCurv);
   albedo = mix(albedo, toLinear(vec3(0.24)), vUnknown * 0.55);
 
   float act = 0.0;
@@ -168,18 +171,20 @@ void main() {
   vec3 keyDir = normalize(vec3(-0.55, 0.65, 0.55));
   vec3 fillDir = normalize(vec3(0.75, -0.10, 0.45));
   vec3 backDir = normalize(vec3(0.2, 0.4, -0.9));
-  float key = wrapDiffuse(N, keyDir, 0.12);
-  float fill = wrapDiffuse(N, fillDir, 0.4);
-  float back = max(dot(N, backDir), 0.0);
+  float key = wrapDiffuse(N, keyDir, 0.18);
+  key = key * key * (3.0 - 2.0 * key); // soft terminator, like a large diffuse source
+  float fill = wrapDiffuse(N, fillDir, 0.5);
+  float back = pow(max(dot(N, backDir), 0.0), 2.0);
   float hemi = 0.5 + 0.5 * N.y;
-  vec3 ambient = mix(vec3(0.035, 0.035, 0.04), vec3(0.11, 0.11, 0.115), hemi);
+  vec3 ambient = mix(vec3(0.03, 0.03, 0.032), vec3(0.095, 0.094, 0.092), hemi);
   vec3 H = normalize(keyDir + V);
-  float spec = pow(max(dot(N, H), 0.0), 36.0) * 0.10 * (1.0 - deep * 0.7);
-  float fres = pow(1.0 - max(dot(N, V), 0.0), 3.0);
+  // Broad, faint sheen only (no tight white highlight that reads as plastic).
+  float sheen = pow(max(dot(N, H), 0.0), 10.0) * 0.045 * (1.0 - deep);
+  float fres = pow(1.0 - max(dot(N, V), 0.0), 3.5);
 
-  vec3 color = albedo * cavity * (ambient + key * vec3(1.04, 1.0, 0.95) * 0.95 + fill * vec3(0.55, 0.6, 0.7) * 0.28 + back * 0.10);
-  color += spec * vec3(1.0);
-  color += fres * vec3(0.10, 0.11, 0.13) * (1.0 - act);
+  vec3 color = albedo * cavity * (ambient + key * vec3(1.06, 1.0, 0.93) * 1.0 + fill * vec3(0.52, 0.56, 0.62) * 0.22 + back * 0.12);
+  color += sheen * vec3(1.0, 0.98, 0.95);
+  color += fres * vec3(0.07, 0.075, 0.085) * (1.0 - act);
   color += heatColor * act * 0.28;
 
   // Region selection and hover (atlas boundaries outline the selected region).

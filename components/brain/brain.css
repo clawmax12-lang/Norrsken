@@ -378,3 +378,21 @@
 .bv-embedded.bv-mode-expanded .bv-workspace { height: calc(100vh - 28px); grid-template-rows: minmax(0, 1fr) auto; }
 .bv-embedded.bv-mode-expanded .bv-stage { min-height: 0; }
 .bv-timeline { align-self: start; }
+
+/* ---- Entry isolation and quiet dock (owner correction, 3 Oct) ----
+   The intro is a seamless full-viewport field above any host chrome; nothing of the host shows. */
+.bv-mode-entry .bv-stage { z-index: 2147483000; border: 0; border-radius: 0; background: radial-gradient(ellipse 70% 70% at 55% 46%, #0c0c0d 0%, #040404 62%, #020202 100%); }
+/* Returning session: the pre-hydration script marks the document; the server-rendered cover never paints. */
+:root:has(#bv-played-flag) .bv-page.bv-booting .bv-stage { display: none !important; }
+.bv-entry-overlay { position: absolute; inset: 0; z-index: 10; pointer-events: none; }
+.bv-entry-overlay > * { pointer-events: auto; }
+.bv-entry-overlay .bv-skip { top: 28px; right: 28px; background: rgba(0,0,0,.35); border-color: rgba(243,239,233,.28); color: var(--pf-text, #f3efe9); }
+.bv-entry-overlay .bv-entry-title { position: absolute; left: 6vw; bottom: 9vh; display: grid; gap: 8px; justify-items: start; }
+.bv-entry-overlay .bv-entry-title h1 { margin: 0; font-family: var(--pf-font-display, Georgia, "Times New Roman", serif); font-weight: 400; font-size: clamp(44px, 5.4vw, 82px); letter-spacing: -.02em; line-height: 1; color: var(--pf-text, #f3efe9); }
+.bv-entry-overlay .bv-entry-title p { margin: 0; color: var(--pf-text-secondary, #aba7a2); font-size: 14px; }
+.bv-entry-data { color: var(--pf-text-secondary, #8f8b86); font: 500 11px/1.4 var(--bv-mono); letter-spacing: .06em; text-transform: uppercase; }
+.bv-entry-caption { position: absolute; z-index: 9; right: 7vw; bottom: 11vh; max-width: 300px; display: grid; gap: 5px; color: var(--pf-text, #f3efe9); animation: bv-fade .6s ease both; }
+.bv-entry-caption strong { font-family: var(--pf-font-display, Georgia, serif); font-weight: 400; font-size: 22px; }
+.bv-entry-caption span:last-child { color: var(--pf-text-secondary, #aba7a2); font-size: 12.5px; line-height: 1.5; }
+/* Docked: the brain floats on the canvas, no surrounding card, border or shadow. */
+.bv-mode-dock .bv-stage, .bv-mode-dock.bv-dock-working .bv-stage, .bv-mode-dock.bv-dock-focus .bv-stage, .bv-mode-dock.bv-dock-pinned .bv-stage { background: transparent !important; border-color: transparent !important; box-shadow: none !important; }
