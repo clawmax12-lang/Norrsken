@@ -24,7 +24,7 @@ Fill in real people rather than assigning all work to an unnamed agent. Record a
 | Area | Requirement IDs | Owner | Workspace / branch / owned files |
 | --- | --- | --- | --- |
 | Product decisions | Scope, priority, PRD changes | William | — |
-| Brief intake and tablehopp fixture | FR-01 | Unassigned | — |
+| Brief intake and tablehopp fixture | FR-01 | William / Codex | `williu16/voice-hackathon-brainstorming` · voice Director UI, brief contracts, Gemini Live session route, package/README/PRD/TEAM |
 | Template and renderer | FR-03 | Unassigned | — |
 | TRIBE worker | FR-04 (TRIBE) | Unassigned | — |
 | Agent, Gemini, Condense | FR-02, FR-04 (panel), FR-05, FR-06, FR-10 | Unassigned | — |
@@ -41,7 +41,7 @@ Statuses: `unclaimed` → `in_progress` → `in_review` → `done`. Use `blocked
 
 | ID | Requirement | Priority / gate | Owner | Status | Branch / PR / acceptance evidence |
 | --- | --- | --- | --- | --- | --- |
-| FR-01 | Brief intake and fixture | P0 | — | unclaimed | — |
+| FR-01 | Brief intake and fixture | P0 | William / Codex | in_review | `williu16/voice-hackathon-brainstorming` · [PR #2](https://github.com/clawmax12-lang/Norrsken/pull/2) — voice-native intake, typed fallback, approved-folder shelf, storyboard and persisted brief implemented. `npm run typecheck`, `npm run lint`, 6 tests and production build pass; API smoke test persisted 3 PNGs + `brief.json`; 1440 px browser screenshot in `.context/preflight-director.png`. Live call remains unverified because `GEMINI_API_KEY` is not configured in this workspace. |
 | FR-02 | Three creative concepts | P0 | — | unclaimed | — |
 | FR-03 | Three rendered MP4s | P0 | — | unclaimed | — |
 | FR-04 | Simulators and Gemini fallback | P0 | — | unclaimed | — |
@@ -119,3 +119,9 @@ These are gaps to clarify during implementation, not changes to the supplied req
 ## Changes to this baseline
 
 Update product requirements in PRD.md and append the decision to §16. Update this board for owners/status/evidence and README for actual run instructions. Keep the original PDF unchanged. Earlier advisor briefs under `.context/` are historical and are not team requirements.
+
+## Current handoff
+
+- **FR-01 / [PR #2](https://github.com/clawmax12-lang/Norrsken/pull/2) on `williu16/voice-hackathon-brainstorming`:** Next.js vertical slice adds secure ephemeral Gemini Live sessions (`gemini-3.8-live`, `Kore`), interruptible PCM audio, transcripts, typed fields, explicit local-folder selection, five inspectable Director tools, screenshot upload and schema-validated `data/projects/{project_id}/brief.json` persistence.
+- **Verification:** `npm run typecheck`; `npm run lint`; `npm test` (6/6); `npm run build`; `npm audit --omit=dev` (0 vulnerabilities); browser GET and 1440 px screenshot; API upload/save smoke test. No real Gemini request was claimed because the server has no `GEMINI_API_KEY`.
+- **Next owner:** configure a Tier 3 AI Studio key in `.env.local`, verify microphone permission, barge-in, input/output transcripts and all five tool calls in current desktop Chrome. Planning/render/TRIBE remain separate unclaimed requirements; no simulated output is present in this slice.
