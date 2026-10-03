@@ -213,3 +213,8 @@ Everything works by click and keyboard, not hover only.
 - The `/api/projects/launch-draft/draft` 404s in the console are host requests.
 
 **v1.7 open seam:** existing-video input means Original plus A/B/C. The brain still accepts `A`/`B`/`C` and must not relabel Original as A. The Original identifier and source/output time mapping need agreement with Backend and Canvas before the brain adds an `Original` lane.
+
+**Owner request, 3 Oct.**
+- **Brain only:** the stylized head silhouette is off by default (`headSilhouette` prop, opt-in).
+- **Activity colours:** a TRIBE v2-style red → orange scale, with yellow only near the maximum. It is shown only from genuine exact-video predictions (or the labelled MOCK test page); with no data the cortex stays gray.
+- **Pointing at a region** (entry focus, clicks, milestone beats): a crisp TRIBE orange-red atlas outline with a very faint tint. This is UI, not response.

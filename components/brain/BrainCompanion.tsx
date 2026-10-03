@@ -162,12 +162,14 @@ export interface BrainCompanionProps {
   entry?: boolean;
   /** Validated genuine demo bundle (see lib/brain/backend.ts loadDemoBundle). */
   demoBundle?: DemoBundle;
+  /** Show the stylized head silhouette around the brain (off by default: brain only). */
+  headSilhouette?: boolean;
   /** Extra honest notices from the host (e.g. backend artifact problems). */
   hostNotices?: string[];
 }
 
 export function BrainCompanion(props: BrainCompanionProps) {
-  const { brainSim: brainSimProp = "available", projectId, results, concepts, videos, runId, demoExample, selectedVariant, onSelectVariant, onEvent, initialMode = "dock", harness = false, bindings, scenesByVariant, workload, consumeMilestone, dockCorner = "bottom-right", entry: entryEnabled = true, hostNotices, demoBundle } = props;
+  const { brainSim: brainSimProp = "available", projectId, results, concepts, videos, runId, demoExample, selectedVariant, onSelectVariant, onEvent, initialMode = "dock", harness = false, bindings, scenesByVariant, workload, consumeMilestone, dockCorner = "bottom-right", entry: entryEnabled = true, hostNotices, demoBundle, headSilhouette = false } = props;
   const [assets, setAssets] = useState<BrainAssets | null>(null);
   const [geometry, setGeometry] = useState<BrainGeometry | null>(null);
   const [headGeometry, setHeadGeometry] = useState<THREE.BufferGeometry | null>(null);
@@ -227,14 +229,17 @@ export function BrainCompanion(props: BrainCompanionProps) {
         const g = getBrainGeometry(a);
         setAssets(a);
         setGeometry(g);
-        loadHeadGeometry(g.center)
-          .then((h) => !cancelled && setHeadGeometry(h))
+        if (headSilhouette)
+          loadHeadGeometry(g.center)
+            .then((h) => !cancelled && setHeadGeometry(h))
           .catch(() => setNotices((n) => [...n, "Head silhouette failed to load; the brain is unaffected."]));
       })
       .catch((e: Error) => !cancelled && setLoadError(e.message));
     return () => {
       cancelled = true;
     };
+    // Asset load runs once; the silhouette preference is read at mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => () => clock.dispose(), [clock]);

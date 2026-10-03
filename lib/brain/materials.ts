@@ -127,15 +127,16 @@ vec3 toLinear(vec3 c) { return pow(c, vec3(2.2)); }
 
 // Thresholded heat scale: dark red -> red -> orange -> yellow -> pale yellow.
 vec3 heat(float x) {
-  vec3 c0 = toLinear(vec3(0.42, 0.03, 0.02));
-  vec3 c1 = toLinear(vec3(0.80, 0.10, 0.03));
-  vec3 c2 = toLinear(vec3(0.98, 0.42, 0.04));
-  vec3 c3 = toLinear(vec3(1.00, 0.78, 0.18));
-  vec3 c4 = toLinear(vec3(1.00, 0.96, 0.72));
-  if (x < 0.30) return mix(c0, c1, x / 0.30);
-  if (x < 0.60) return mix(c1, c2, (x - 0.30) / 0.30);
-  if (x < 0.85) return mix(c2, c3, (x - 0.60) / 0.25);
-  return mix(c3, c4, (x - 0.85) / 0.15);
+  // TRIBE v2-style contrast: most of the range is red -> orange; yellow only near the maximum.
+  vec3 c0 = toLinear(vec3(0.45, 0.03, 0.02));
+  vec3 c1 = toLinear(vec3(0.86, 0.12, 0.04));
+  vec3 c2 = toLinear(vec3(1.00, 0.42, 0.06));
+  vec3 c3 = toLinear(vec3(1.00, 0.68, 0.16));
+  vec3 c4 = toLinear(vec3(1.00, 0.90, 0.55));
+  if (x < 0.35) return mix(c0, c1, x / 0.35);
+  if (x < 0.70) return mix(c1, c2, (x - 0.35) / 0.35);
+  if (x < 0.90) return mix(c2, c3, (x - 0.70) / 0.20);
+  return mix(c3, c4, (x - 0.90) / 0.10);
 }
 
 float wrapDiffuse(vec3 n, vec3 l, float w) {
@@ -188,8 +189,9 @@ void main() {
   color += heatColor * act * 0.28;
 
   // Region selection and hover (atlas boundaries outline the selected region).
-  color = mix(color, color * 1.12 + vec3(0.03, 0.04, 0.05), vSel * 0.6);
-  color = mix(color, vec3(0.92, 0.95, 1.0), vSel * smoothstep(0.55, 0.95, vBoundary) * 0.85);
+  // Pointing at a region: a crisp TRIBE orange-red atlas outline (UI, not response) and a neutral lift.
+  color = mix(color, color * 1.06 + toLinear(vec3(1.0, 0.36, 0.14)) * 0.05, vSel * 0.6);
+  color = mix(color, toLinear(vec3(1.0, 0.36, 0.14)) * 1.6, vSel * smoothstep(0.22, 0.7, vBoundary) * 0.95);
   color = mix(color, color * 1.18 + vec3(0.02), vHover * uHoverActive * (1.0 - vSel) * 0.5);
 
   // Glowing front of the assembly sweep.
