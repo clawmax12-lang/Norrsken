@@ -1,6 +1,8 @@
 # Opus 5.5 — browser brain implementation brief
 
-**Product:** Preflight, desktop-browser web platform, PRD v1.6. **Requested agent:** Claude Opus 5.5. **Scope:** FR-12 and FR-14; FR-15 only after all applicable P0 acceptance criteria pass. Read [AGENTS.md](../../AGENTS.md), [PRD.md](../../PRD.md) §15/§8/§9/§10/§12, [TEAM.md](../../TEAM.md), the entire [visual reference baseline](README.md), [canvas/voice integration brief](CANVAS_VOICE_BRIEF.md) and [clean-flow layout](CLEAN_FLOW_DESIGN.md) before implementing.
+**Release reconciliation:** PRD v1.7.1 adopts the existing-company-video target from PR #1; the currently implemented intake remains screenshots/brief until the original-video migration is built. Later owner corrections govern voice: bottom prompt → transparent composing orb plus warm bottom-border beam → prompt on End/Escape. Do not restore older central/full-screen or white-background interpretations.
+
+**Product:** Preflight, desktop-browser web platform, PRD v1.7.1. **Requested agent:** Claude Opus 5.5. **Scope:** FR-12 and FR-14; FR-15 only after all applicable P0 acceptance criteria pass. Read [AGENTS.md](../../AGENTS.md), [PRD.md](../../PRD.md) §15/§8/§9/§10/§12, [TEAM.md](../../TEAM.md), the entire [visual reference baseline](README.md), [canvas/voice integration brief](CANVAS_VOICE_BRIEF.md) and [clean-flow layout](CLEAN_FLOW_DESIGN.md) before implementing.
 
 ## Outcome
 

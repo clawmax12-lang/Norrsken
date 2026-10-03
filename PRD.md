@@ -1,6 +1,6 @@
 # Preflight · Product Requirements Document
 
-**Version:** 1.6.3 · **Date:** 3 Oct 2026 · **Status:** Hackathon build ({Tech: Europe} Agentic AI Hack, Norrsken Stockholm)
+**Version:** 1.7.1 · **Date:** 3 Oct 2026 · **Status:** Hackathon build ({Tech: Europe} Agentic AI Hack, Norrsken Stockholm)
 
 **Owner:** William (product) · **Tech owners:** see §14.3 and [TEAM.md](TEAM.md)
 
@@ -8,13 +8,11 @@
 
 **Built with (PRD plan):** Claude Opus 5.5 as the coding agent · Gemini · Condense · TRIBE v2 (Meta FAIR, research use)
 
-**What changed in 1.6.3:** William explicitly prioritizes runtime Opus at the last selected-video step before the GitHub release. Add FR-17: after the initial run finishes, explicitly approve one winner finalization. Opus directs motion/pacing within the existing template; source copy/assets/branding stay immutable. Remotion renders, optional local music/SFX is added, then Gemini and available TRIBE re-simulate the exact final bytes. Preserve the original A/B/C ranking and four downloads; final MP4/evidence are separate. Use the documented `claude-opus-5-5` API through Condense's Anthropic route, server-only backend credentials, bounded output and resumable checkpoints. Account access/live latency are not yet verified. This is not unlimited experimentation, a new template, FR-11 creative revision or a direct-routing exception. Voice/design remain v1.6.2; the pending video-first migration is unchanged.
+> This is the team's canonical, editable product specification. It supersedes earlier brainstorming and advisor briefs. The baseline was imported from the complete, 20-page [Preflight PRD v1.1.pdf](docs/source/Preflight-PRD-v1.1.pdf), which is preserved unchanged; see [source provenance](docs/source/README.md). Versions 1.2–1.7.1 incorporate subsequent product-owner decisions in §16. Actual implementation progress lives in [TEAM.md](TEAM.md), not in these requirements.
 
-**What changed in 1.6.2:** reference 10 is the Libraries.dev **composing** dotted sash, not the breathing ring. Preserve that orb silhouette through all connection states, paused with an honest label when disconnected. Its growth and wave deformation follow actual post-gain assistant amplitude, not merely a boolean speech flag. In voice mode the required warm `VoiceBeam` sits on the **viewport's bottom border, like a floor beneath the orb**, not around the controls. Both react simultaneously to the existing audio graph. The owner withdrew the briefly requested white circular background: orb stays transparent on black. Bottom-only placement, captions, privacy/mute/end, reduced motion, Gemini Live and all backend/brain contracts are unchanged. See §16.
+**What changed in 1.7.1 — integrated release:** preserve v1.7’s approved existing-video product direction while adopting the owner’s later bottom-only voice correction and FR-17 Opus finalization. Voice replaces the bottom prompt with the transparent composing orb and warm viewport-border glow; no central/full-screen voice takeover or white circle. Opus finishes one explicitly confirmed tested winner and retests the exact final MP4. The currently implemented intake remains screenshots/brief, not original-video analysis; the v1.7 schema/pipeline migration is a target, not a deployed capability. See TEAM.md for deployment and provider acceptance evidence. Historical change notes do not override this correction.
 
-**What changed in 1.6.1:** the owner corrects FR-16's placement: the voice button stays inside the bottom text bar; enabling voice **replaces that bar with a fairly large standalone orb at the bottom**, not a central/full-screen surface. No canvas dimming, backdrop, card or modal. Keep the canvas usable, compact captions/mute/end and the real-audio beam; closing restores the prompt and keyboard focus. The latest supplied gray Libraries.dev orb is [reference 10](docs/design/references/10-voice-orb-bottom.png). This supersedes the earlier central-orb implementation clarification without changing Gemini Live, jobs, the brain or the separate video-first migration.
-
-> This is the team's canonical, editable product specification. It supersedes earlier brainstorming and advisor briefs. The baseline was imported from the complete, 20-page [Preflight PRD v1.1.pdf](docs/source/Preflight-PRD-v1.1.pdf), which is preserved unchanged; see [source provenance](docs/source/README.md). Versions 1.2–1.6 incorporate the product owner's web-platform, reusable-brain, canvas, voice and clean-flow design decisions, documented below and in §16. Actual implementation progress lives in [TEAM.md](TEAM.md), not in these requirements.
+**What changed in 1.7 — existing video first:** William explicitly clarifies that a company uploads its **current video**. Preflight pretests the original, connects its video/audio/text/timing and genuine predicted neural response to edit hypotheses, creates bounded improved candidates, retests those exact outputs and recommends the best-ranked asset with an original comparison. This supersedes the screenshots-first launch-founder MVP and the historical decision not to edit existing videos. Companies/e-commerce marketers are primary; screenshots are optional supporting evidence. Today's existing three-candidate, single-template, 15-second export limits remain, plus one source baseline; additional tested-winner iteration stays P1. Entry is full-viewport cinema without host panels/scrolling, then the same brain docks top-left. The Gemini Live orb is bottom-docked while voice replaces the prompt, returning to the prompt when disabled; a localized multicolor voice beam is permitted. Predicted cortical response is not EEG frequency, proof of buying intent or guaranteed retention. Shared backend/Voice contracts require migration; this is an approved target, **not deployed acceptance**. See §8–§12 and the [implementation correction handoff](docs/design/PRODUCT_RESET_HANDOFF.md). Older change notes below are historical.
 
 **What changed in 1.6:** William selects **[FLORA](https://flora.ai/) and the supplied FLORA workspace screenshot as the primary product design reference**, replacing the radial tiny-node prototype and panel-heavy interface with a minimal black dotted canvas and spacious left-to-right card-based branching flows. Use a narrow floating left tool rail, small top-left project identity, compact top-right actions and bottom prompt/Director presence; no permanent navigation sidebar or large idle chat panel. Earlier ElevenLabs-style images remain supporting flow references. Redaction is the shared identity font; orange-red is the restrained UI accent. Both requested Libraries.dev effects are required presentation: standalone speaking-growth `ThinkingOrb` plus audio-reactive prompt `VoiceBeam`, adapted to Preflight, not new speech services. High-tech mission control comes from purposeful brain/job/voice interaction, not dense HUD decoration. The existing hover/pin brain and roughly three-second milestone focus are clarified without changing the video/neural clock. See §8/§12, the [clean-flow design brief](docs/design/CLEAN_FLOW_DESIGN.md), [Director visuals](docs/design/DIRECTOR_VISUALS.md) and §16. Three videos, source traceability, real evidence, mandatory two-way Live and P1 comparison/revision gates are unchanged. This is an approved target, not a claim that it is already deployed; historical notes below remain intact.
 
@@ -37,28 +35,28 @@
 
 ## 1. TL;DR
 
-**Preflight is a web platform accessed through a URL in a desktop browser.** Users do not install an iOS app or any other native client. The web platform is the product; customers' apps and screenshots are input material.
+**Preflight is a web platform accessed through a URL in a desktop browser.** No native app is installed. Existing company videos are the main input; confirmed product facts and optional assets ground the edits.
 
-Startups need a demo video for every launch, but agencies take weeks and nobody knows which version will actually work until after they have posted and paid for ads. Preflight's agent turns your product into several motion graphics demo videos, pretests them on simulated viewers (TRIBE v2 brain simulation plus a Gemini viewer panel), and hands you the winner, why it won, and the runner up for a live A/B test.
+Companies have videos but do not know which moments to improve before spending on distribution. Preflight pretests the original with TRIBE v2 and a Gemini viewer panel, proposes timestamped edit hypotheses, renders three improved candidate cuts and pretests them again. It delivers a recommended tested cut, comparison to the original, reasons and a runner-up for real audience testing. “Improved” is the creative objective, not a guaranteed measured outcome.
 
-The product feels like a creative mission-control workspace: a cinematic brain on entry, an explorable storyboard/experiment canvas, a persistent brain companion and a two-way female Gemini Live Director. Talk to her to select/refine the storyboard and ask about actual progress and the verdict; confirmed tool changes are visible on the canvas. These make the generation → pretest → decision loop understandable; they do not replace the finished-video outcome.
+The product feels like a creative mission-control workspace: full-viewport brain cinema → FLORA-like black dotted experiment canvas, with the same rotating brain top-left and a two-way female Gemini Live Director. Her standalone orb is bottom-docked while enabled and replaced by the prompt when disabled. Spoken and typed edits share validated canvas state. The original → analyze → edit → retest → recommend loop delivers the finished-video outcome.
 
 ## 2. Working backwards
 
 ### 2.1 Press release (the day we launch)
 
-**Preflight: launch videos that are tested before anyone sees them**
+**Preflight: test the video you have, create the next cut with evidence**
 
-Startups launching a product today either pay an agency and wait weeks, or make a video themselves. Either way they only find out if it works after it is posted and the ad budget is spent.
+Companies change hooks, reveal order and pacing by intuition, then spend on distribution to find out whether the new cut works.
 
-Preflight changes that. Upload a few screenshots of your product, say what you want viewers to do, and in minutes Preflight's agent produces three motion graphics demo videos, each built on a different idea of what will make viewers act. It plays every version to simulated viewers, including a simulation of the human brain's response, and tells you which one to launch, why, and which one to A/B test against it.
+Upload your existing video, confirm product facts, audience and goal. Preflight analyzes the original, proposes three grounded editing hypotheses, creates and retests candidate videos, then recommends a cut with timestamped evidence and the original baseline. Target latency remains unverified; recommendations need real-world validation.
 
 > "I was about to pay for my app's launch video and had no way of knowing which style would work. I wanted to know before I paid, not after." (William, founder of tablehopp and Preflight)
 
 ### 2.2 Customer FAQ
 
 - **Where do I use Preflight?** Open the web platform in your desktop browser. No iOS app, App Store installation or native client is required.
-- **What do I need?** 3 to 6 screenshots of your product, one sentence on what it does, your goal (for example sign ups), and who it is for.
+- **What do I need?** Your existing video, confirmed product facts, your goal (for example purchases), and your audience. Screenshots/product images are optional supporting sources.
 - **How long does it take?** Target under 10 minutes for three tested videos.
 - **Does it guarantee results?** No. It ranks versions by simulated viewer response so you only spend real money testing the strongest ones. Confirm with a live A/B test.
 - **What is the brain view?** A research model (TRIBE v2 from Meta FAIR) that predicts the average human brain response to video, audio and language, second by second. It is one of several simulated viewers.
@@ -66,7 +64,7 @@ Preflight changes that. Upload a few screenshots of your product, say what you w
 
 ### 2.3 Internal FAQ
 
-- **Why generate videos at all?** `[DECISION]` Customers pay for a finished asset, not a report. Polishing a weak existing video does not fix it, so we generate from the product itself.
+- **Why generate videos at all?** `[DECISION — v1.7]` Customers need an actionable new cut, not only a report. The original is baseline/source material; edited candidates must be retested.
 - **Why not only generate?** Generation is becoming a commodity. Knowing which version works is the scarce part. Generation plus pretest is the product.
 - **TRIBE v2 is non commercial. How is this a business?** `[FACT]` TRIBE v2 is CC BY-NC 4.0. We use it for research and this hackathon. The commercial path is our own audience model trained on outcome data (simulated response paired with real A/B results).
 - **What must be true for this company to exist?** Simulated pretesting must pick the real winner more often than chance and more often than an LLM alone. See §13 and the validation plan.
@@ -75,7 +73,7 @@ Preflight changes that. Upload a few screenshots of your product, say what you w
 
 ### 3.1 Problem statement
 
-When a startup launches something, it needs a video that makes people understand the product and act. Today it cannot afford agency quality for every launch, and it has no way of knowing which version works before posting and paying. So it ships one video based on gut feeling and learns nothing for next time.
+When a company has a video ready, it needs to know what to change and which alternative deserves a real audience test. Editing and evaluation are disconnected: it changes hooks, order or pacing by intuition, then spends to learn whether that helped. There is no quick, traceable loop from an observed moment to an edit hypothesis, new artifact and comparable pretest.
 
 ### 3.2 Evidence
 
@@ -99,13 +97,13 @@ When a startup launches something, it needs a video that makes people understand
 
 ## 4. Users
 
-**Primary persona: the launch week founder.** Founder or first marketer at a 1 to 20 person startup (app or SaaS). No motion designer. Launches on LinkedIn, X, Instagram, TikTok, often with a small paid boost. Success means sign ups or downloads from the launch.
+**Primary persona: the company / e-commerce marketer with an existing video.** A small brand's founder, marketer or creative team wants to improve an ad/product video before the next spend. Success is a useful tested candidate and a defensible real-world experiment, not a neural-metric promise of purchases.
 
-**Secondary (later):** e-commerce marketers, small agencies producing for several clients.
+**Secondary:** agencies and app/SaaS founders with an existing product/demo video. Screenshots-only generation is a supporting/later path, not the primary intake.
 
 **Anti personas (we do not design for them):** big brands with research departments, creators chasing entertainment virality, anyone who wants a guarantee.
 
-**Job to be done:** "When I am about to launch, help me ship a demo video I am confident in, so the launch brings users and I do not waste the launch moment or ad money."
+**Job to be done:** "When I already have a video, help me understand what to change, create a stronger candidate and show the pretest evidence so I can choose what to test with real customers."
 
 ## 5. User journey
 
@@ -113,9 +111,9 @@ When a startup launches something, it needs a video that makes people understand
 
 | Stage | What they do | Pain |
 | --- | --- | --- |
-| 1. Trigger | Launch date is set | "We need a video" panic |
-| 2. Find a style | Scroll reference videos | Most references feel wrong, hours lost |
-| 3. Make it | Agency (weeks, cost) or DIY (amateur) | Time, money, quality |
+| 1. Trigger | Existing video needs improvement | "What should we change?" |
+| 2. Diagnose | Retention/ad data or opinions | Symptoms without a concrete editing experiment |
+| 3. Re-edit | Agency or DIY changes hook/order/pacing | Time, money and uncertain rationale |
 | 4. Choose | Gut feeling, ask friends | No real signal |
 | 5. Publish and boost | Pay for ads, wait days | Money spent before knowing |
 | 6. Learn | Rarely | Next launch starts from zero |
@@ -124,10 +122,10 @@ When a startup launches something, it needs a video that makes people understand
 
 | Stage | What happens | User sees |
 | --- | --- | --- |
-| 1. Trigger | "We launch Wednesday" | Cinematic brain entry, then the brain docks; explicit Enable Live action starts the female Director |
-| 2. Brief (2 min) | Uploads screenshots, one sentence, goal, audience; talks with the Director to select/refine the storyboard | Validated brief and actual storyboard changes on the canvas; listening/responding, interruption and transcripts |
-| 3. Agent at work (under 8 min) | Agent plans 3 hypotheses, renders 3 videos, runs simulated viewers | Branching storyboard/experiment nodes, live job status, captions/voice and persistent brain |
-| 4. Verdict | Winner, why, where other variants differ in the simulation | Verdict/leaderboard on the canvas, synced video/curves/brain and optional focus sequence using genuine data |
+| 1. Trigger | "Improve this video" | Full-viewport brain entry → same brain docks top-left; explicit Enable Live |
+| 2. Intake | Upload existing video; confirm facts, goal and audience | Playable Original, validated intake, large central conversation orb, interruption/transcripts |
+| 3. Agent at work (target under 8 min) | Pretest original → 3 grounded edit hypotheses → render candidates → retest exact outputs | Readable original/analysis/A-B-C branches, real jobs and brain; inactive voice docks near bottom |
+| 4. Verdict | Best-ranked candidate, reasons and comparison to original | Timestamped evidence, synced video/curves/brain; no invented uplift |
 | 5. Export | Winner plus runner up plus launch brief | Downloads |
 | 6. Launch and learn (V1) | Live A/B results flow back | Model gets better per launch |
 
@@ -152,7 +150,7 @@ Journey rule: the user never sees "TRIBE output". They see: which video, why, wh
 
 ### 7.1 Hackathon MVP (today)
 
-Brain entry → flow canvas + brief → agent plans 3 variants → two-way female Gemini Live Director selects/refines the storyboard with the user → confirmed render of 3 motion graphics videos (one template) → pretest with TRIBE v2 and Gemini panel → ranking with reasons → export, with a persistent reusable brain and Live conversation throughout. Neural animation requires genuine data. P1: synchronized A/B/difference view and one iteration on the tested winner. Scalable branching experiments are the longer-term architecture; today's number of actual rendered/tested videos is still bounded.
+Full-viewport brain entry → FLORA canvas + existing-video intake → confirmed original pretest → 3 edit hypotheses → Gemini Live storyboarding/refinement → confirmed render of 3 candidates from source clips/assets using one template family → retest → ranking, original comparison and export. The same brain docks top-left; voice is central during conversation and bottom-docked when inactive. Cortical animation requires genuine data. P1: synchronized dual-brain/difference view and an additional tested-winner iteration. Execution remains bounded: one original plus three generated candidates, not unlimited edits.
 
 ### 7.2 V1 (only after validation, see §13)
 
@@ -164,8 +162,8 @@ A simulated audience for all content: every launch video, ad, trailer and landin
 
 ### 7.4 Non goals (today)
 
-- Editing customers' existing videos `[DECISION]`
-- Text to video generative models (no generated footage, only motion graphics from real screens)
+- Screenshots-only generation as a second primary onboarding path (v1.7 supersedes the historical exclusion of existing-video editing)
+- Text-to-video footage generation (use original video clips/audio and real supporting assets within the one-template composition family)
 - Accounts, auth, payments, teams
 - Publishing to social platforms
 - More than one template family
@@ -188,55 +186,55 @@ The frontend uses web technology as proposed in §10.1. Orchestration, video ren
 
 #### FR-01 Brief intake
 
-**Inputs:** product name; one line description (max 140 chars); 3 to 6 screenshots (PNG or JPG); goal (sign ups / downloads / understand the product / purchase, plus optional free text); audience (free text); optional brand color and logo.
+**Inputs:** one existing company video (MP4 for the demo); product name; one-line description (max 140 chars); goal (sign ups / downloads / understand the product / purchase, plus optional free text); audience; optional supporting images/screenshots, brand color and logo. A screenshot folder is not mandatory.
 
-**AC:** form validates required fields; brief saved as `brief.json` matching schema §10.3; a fixture brief for tablehopp exists in `/fixtures`.
+**AC:** upload/drop yields a playable Original node; server validates container/file and configured size/duration limits, records stable artifact ID, SHA-256, actual duration/dimensions/fps and canonical project ID. Invalid input has a clear error. Brief/source metadata persist against §10.3's migrated schema. Provide a genuine existing-video fixture with rights/provenance; the tablehopp screenshot fixture is supporting/historical, not video-intake acceptance. Confirm Run before billable analysis/render/test jobs.
 
 #### FR-02 Creative plan
 
-The agent produces exactly 3 concepts. Each concept has: a hypothesis (for example problem first, outcome first, product first), hook text (max 8 words), 4 to 6 scenes, screenshot per scene, on screen text per scene, CTA, duration 15 s.
+After the original pretest, produce exactly 3 candidate-edit concepts. Each has a distinct hypothesis about a timestamped original moment (hook/reveal order/pacing), hook text (max 8 words), 4 to 6 scenes with source-video clip or optional asset references, grounded on-screen text, CTA and 15-second target duration. Clearly separate creative rationale, Gemini observations and genuine TRIBE evidence.
 
-**AC:** output validates against `CreativeConcept` schema; the 3 hypotheses are different; every text claim can be traced to the brief (agent stores the source field for each claim).
+**AC:** concepts validate against the migrated schema; hypotheses differ; edits link to real source moments and label actual evidence used. Clip in/out ranges are valid and map to candidate output times. Every claim traces to confirmed facts or a verified source transcript/asset. No invented neural rationale if TRIBE is unavailable.
 
 #### FR-03 Render
 
-Each concept renders to MP4, 1080x1920, 15 s, 30 fps, using one motion graphics template driven by the concept data.
+Each candidate renders to MP4, 1080x1920, 15 s, 30 fps, using original-video clips/audio and optional supporting assets within one composition/template family. Keep today's output target without falsely relabeling the original duration or silently destroying source framing/audio.
 
 **AC:** 3 MP4s render with no manual step; render time logged per video; a failed render is retried once, then marked failed without stopping the run.
 
 #### FR-04 Pretest (simulate)
 
-Every variant runs through the simulators: TRIBE v2 (brain sim) and Gemini viewer panel (3 personas derived from the audience field).
+Pretest the original baseline first, then every rendered candidate with TRIBE v2 and a Gemini viewer panel (3 personas from the audience). Keep evidence against each artifact's exact bytes/model/config and original/candidate role.
 
-**AC:** one `SimulationResult` per variant per simulator, matching schema; TRIBE results in the demo are real model output (live or precomputed, and if precomputed, disclosed in UI and README); if TRIBE is unavailable the run still completes with Gemini only and the UI shows "Brain sim off".
+**AC:** one `SimulationResult` per original/candidate per simulator, matching migrated schema and actual hash/duration. Never reuse the original prediction for an edited video. TRIBE output is genuine live or visibly disclosed precomputed exact-video data. If unavailable, complete with Gemini only and "Brain sim off"; edits are labeled Gemini/creative hypotheses, not neural optimization.
 
 #### FR-05 Score and rank
 
 A goal aligned score per variant, a ranking, and a confidence label (High if simulators agree on the winner, Low if they disagree).
 
-**AC:** same inputs give the same ranking; confidence rule documented in code and README.
+**AC:** same inputs give the same ranking; scoring/confidence and baseline comparison rules are documented in code/README, including duration/time-normalization. More activation is not a quality score. Report no improvement if no candidate improves the documented pretest objective; never invent uplift or guarantee real-world performance.
 
 #### FR-06 Explain
 
 For each variant, 2 to 4 reasons, each tied to a timestamp and to what is on screen at that moment (hold moments and drop moments).
 
-**AC:** every reason has a timestamp inside the video length and references a real scene from the concept.
+**AC:** every reason references a real scene/source clip within the actual artifact duration. Original moment → edit hypothesis → candidate outcome is traceable; source and output timestamps stay distinct after cuts/reordering.
 
 #### FR-07 Flow canvas and results UI
 
-Browser-based flow canvas: brief/source nodes → storyboard/concept branches → rendered variants → simulation/result nodes → recommendation/export. Use spacious, readable media/storyboard cards with left-to-right curved tree branches on a near-black dotted canvas, not a radial cloud of tiny dots. Selecting a node opens its evidence without losing the graph; an on-demand results inspector contains the leaderboard, video player, per-second synced curves and verdict card ("Launch C. A/B test it against A."). No permanent sidebar or oversized idle chat panels. See §12.4 and §12.10.
+Browser-based flow canvas: playable Original + brief → baseline analysis → edit-hypothesis/storyboard branches → rendered candidates → retests → original comparison/recommendation/export. Use readable media cards with left-to-right curved branches on a near-black dotted canvas. Empty state shows a short video-upload invitation, not a prepopulated wall of empty scenes. Selection reveals an on-demand evidence inspector, player, synced curves and recommendation. No permanent sidebar, raw brain box or oversized idle chat panel. See §12.4/§12.10.
 
 **AC:** canvas pan/zoom, fit-to-flow and node selection work in the desktop browser; the default view shows readable source/storyboard/media cards and A/B/C lineage with minimal floating controls on the black dotted canvas; rendered/tested nodes have real artifact/result links and visible status; graph branches show lineage and the selected storyline; curves follow scrubbing; verdict accessible without scrolling on a 1440 px wide screen; corner brain and voice dock do not obscure core controls. Typography/accent follow §12.6, dense evidence appears on demand and keyboard focus remains visible. Prototype-only or untested nodes are explicitly labeled and never counted as completed tests. No native client is required.
 
 #### FR-08 Export
 
-Download winner MP4, runner up MP4, `report.json`, and a Markdown launch brief (which to post, which to A/B test, what to change next time).
+Download recommended candidate MP4, runner-up MP4, `report.json`, and a Markdown launch brief. Report/brief include the original baseline, edit lineage and genuine before/after evidence; unsupported improvement is stated, not invented.
 
 **AC:** all four files download and open.
 
 #### FR-09 Agent activity log
 
-Visible step by step log: plan, render, simulate, score, explain, each with status and duration.
+Visible persisted steps: source intake/baseline pretest, plan edits, render, retest, score, explain, each with actual status/duration. Canvas, brain choreography and Live context use these same events.
 
 **AC:** log updates live during a run and is saved with the project; the canvas and voice use this same source of job truth, including retry/failure/unavailable states. A reconnect does not duplicate completed nodes or narration, and no progress percentage/completed-test count is invented.
 
@@ -254,9 +252,9 @@ Gemini for planning, viewer panel and explanations. All LLM calls go through Con
 
 #### FR-14 Entry intro and analysis focus, the "Preflight sequence"
 
-**P0 entry intro, depends on FR-12's reusable renderer.** First arrival opens a 10–15 second rotating brain/camera sequence, then docks the brain and reveals the canvas. When genuine pretest results are ready, the same renderer may run the data-grounded analysis focus sequence from §12.2, once per run.
+**P0 entry intro, depends on FR-12.** First arrival opens seamless full-viewport 10–15 second rotating brain cinema, with deliberate region camera shots; no scroll-controlled reveal, host panel overlay or raw viewer box. Then the same renderer docks top-left and reveals the canvas. Genuine results can drive the analysis focus §12.2, once per run.
 
-**AC:** entry plays once per browser session (explicit Replay permitted); Skip is always visible; reduced motion uses fades/static framing; completion/Skip reaches the canvas and leaves the brain docked with its state preserved. Before the user's first run, any colored response must come from a genuine video-matched example labeled "Demo example · precomputed"; no example means gray anatomy and "No brain data". The run's analysis sequence only uses that run's genuine results, plays at most once per run and hands back to the canvas results inspector. No fake waves while waiting for inference.
+**AC:** fresh entry fills the viewport, locks page scroll and hides/inerts host controls; loading/error cannot flash a small raw viewer. Skip works before/after geometry loading and on WebGL failure. Entry runs once per session with explicit Replay; reduced motion uses fades/static framing. Completion/Skip preserves the same renderer/selection/time in the top-left dock with quiet continuous rotation subject to manual pause/reduced motion. Colored entry response requires a genuine matched example labeled "Demo example · precomputed"; otherwise gray anatomy + "No brain data". Analysis only uses the run's genuine exact-video results, once per run. No fake waves.
 
 #### FR-16 Two-way female Gemini Live Director
 
@@ -302,15 +300,16 @@ Screen recording input, brand kit, more templates, ad account connection, live A
 
 **Pattern:** a deterministic state machine with LLM decisions at the planning, panel and explanation steps. Predictable, resumable, easy to show to judges.
 
-**States:** `BRIEF_RECEIVED → PLANNED → RENDERED → SIMULATED → SCORED → EXPLAINED → (ITERATED) → DONE or FAILED`
+**Target states:** `VIDEO_RECEIVED → BASELINE_PRETESTED → EDITS_PLANNED → RENDERED → RETESTED → SCORED → EXPLAINED → (ITERATED) → DONE or FAILED`. Existing implementation states/contracts must be migrated with their owners, not renamed in another owner's branch.
 
-**Live control boundary (FR-16/P0):** the Director is a conversational control surface for this workflow, not a second scheduler. Enable Live opts into bounded conversation, not pipeline jobs. Confirm bounded planning before generating concepts; expose a pre-render review/confirmation checkpoint while `PLANNED`: select a scene/variant and apply a source-backed hook/copy, screenshot or scene-order change to the validated draft, then approve that draft for render/pretest. Agree typed command/result schemas with Dashboard/backend owners. Include project/variant/scene IDs, draft revision and idempotent command IDs; reject stale/invalid edits, persist accepted changes and acknowledge only completed tool results. Enforce the three-concept/4–6-scene/15-second contract. After rendering, never patch a tested artifact/result in place; the tested-winner revision stays FR-11/P1 with re-render/retest. Live connection state is separate from job state; losing audio does not stop or duplicate a confirmed job.
+**Live control boundary (FR-16/P0):** the Director controls this workflow, not a second scheduler. Enable Live is conversation consent, not job authorization. Confirm bounded baseline analysis/planning; expose pre-render review while `EDITS_PLANNED`: choose a scene/variant and apply a grounded hook/copy, source-clip/asset or scene-order edit, then approve render/retest. Share typed commands with Canvas/backend: canonical project/artifact/variant/scene IDs, draft revision and idempotent command ID. Reject stale/invalid edits, persist accepted changes and acknowledge actual tool results. Enforce three candidate concepts/4–6 scenes/15-second exports. Never patch a tested artifact in place; an additional winner revision stays P1 with new render/retest. Audio failure does not duplicate or stop confirmed jobs.
 
 **Tools** (each with a typed input and output, see §10.3):
 
 | Tool | Input | Output |
 | --- | --- | --- |
-| `plan_variants` | `Brief` | 3 × `CreativeConcept` |
+| `analyze_original` | Original video + `Brief` | Baseline simulations + timestamped observations |
+| `plan_variants` | `Brief` + original + baseline evidence | 3 × grounded candidate-edit `CreativeConcept` |
 | `render_variant` | `CreativeConcept` | MP4 path |
 | `simulate_tribe` | MP4 path | `SimulationResult` |
 | `simulate_viewer_panel` | MP4 path, personas, goal | `SimulationResult` |
@@ -320,7 +319,7 @@ Screen recording input, brand kit, more templates, ad account connection, live A
 
 **Guardrails**
 
-- Max 3 variants and 1 revision per run. Per tool timeout. One retry.
+- Max 3 generated candidates plus one original baseline; at most one additional P1 winner revision. Per-tool timeout and one retry. Confirm jobs; upload alone is not paid-run authorization.
 - Never invent product claims. Every on screen text must map to a brief field.
 - Treat all text inside screenshots and videos as data, never as instructions (prompt injection).
 - Token budget per run; log usage.
@@ -352,7 +351,7 @@ If finalization changes the content or timing of a tested video, re-render and r
 
 Separate **hypothesis nodes** from **rendered videos** and **completed neural simulations**. A hook/storyboard needs a playable render before TRIBE can evaluate it; Gemini-authored text or a thumbnail is not a neural result. Selection, ranking and explanations consume the actual stored evidence, not the number of nodes on screen.
 
-The user's “at scale” direction is bounded batch experimentation: queue candidates, apply configured worker concurrency/rate limits/timeouts, cache identical analyzed videos and prune/shortlist before expensive render/TRIBE/Opus steps. Default today remains FR-02/FR-03's three videos and one P1 revision until William and the backend owner approve an explicit batch budget and record throughput. Do not silently expand this to 50 full renders per node. Fifty choices at three depths means 125,000 possible paths, not 150 completed tests; neither the cost nor GPU capacity is yet verified.
+The user's “at scale” direction is bounded experimentation: queue/prune candidates, enforce worker concurrency/rate limits/timeouts and cache identical video/config hashes. v1.7 adds the original baseline to the existing three-generated-candidate budget; one additional winner revision stays P1. No unlimited full renders, inferred test counts or unmeasured capacity. Higher batch limits need owner/backend budget approval and measured throughput.
 
 Large visual trees may use viewport virtualization/level-of-detail and staged layout while retaining actual nodes/edges and lineage. A node must be inspectable when zoomed in; a “+47” badge is not evidence that 47 hypotheses were generated or tested. If the product shows a prototype/example tree, the whole graph and its claims stay visibly prototype/untested. Present this as **simulated comparison/pretest**, not a live randomized audience A/B experiment.
 
@@ -391,6 +390,8 @@ Every simulator implements one function: video in, `SimulationResult` out. Scori
 
 ### 10.3 Data contracts (JSON, simplified)
 
+**Target contract migration:** the examples below add original-video/artifact/clip fields. Current merged code still has screenshots-only intake and A/B/C-only identifiers. Backend, Canvas, Voice and brain owners must agree and implement migration/versioning together. These examples do not make new routes or schemas available; never pretend the original is candidate A or attach its results to another artifact.
+
 **Brief**
 
 ```json
@@ -398,7 +399,16 @@ Every simulator implements one function: video in, `SimulationResult` out. Scori
   "project_id": "str",
   "product_name": "str",
   "one_liner": "str<=140",
-  "screenshots": ["path"],
+  "source_video": {
+    "artifact_id": "original-id",
+    "path": "server-owned path",
+    "sha256": "hex",
+    "duration_s": 15,
+    "width": 1080,
+    "height": 1920,
+    "fps": 30
+  },
+  "screenshots": ["optional supporting asset path"],
   "goal": "signups|downloads|understand|purchase",
   "goal_note": "str?",
   "audience": "str",
@@ -413,12 +423,15 @@ Every simulator implements one function: video in, `SimulationResult` out. Scori
 {
   "variant_id": "A|B|C",
   "hypothesis": "str",
+  "baseline_artifact_id": "original-id",
+  "evidence_refs": [{ "artifact_id": "original-id", "t": 3, "kind": "creative|gemini_panel|tribe_v2" }],
   "hook": "str<=8 words",
   "scenes": [
     {
       "t_start": 0,
       "t_end": 3,
-      "screenshot": "path",
+      "source_clip": { "artifact_id": "original-id", "in_s": 3, "out_s": 6 },
+      "screenshot": "optional supporting asset path",
       "text": "str",
       "source_field": "brief field this text comes from"
     }
@@ -432,7 +445,9 @@ Every simulator implements one function: video in, `SimulationResult` out. Scori
 
 ```json
 {
-  "variant_id": "A",
+  "variant_id": "original|A|B|C",
+  "artifact_id": "exact analyzed artifact id",
+  "video_sha256": "hex",
   "simulator": "tribe_v2|gemini_panel",
   "version": "str",
   "hz": 1,
@@ -462,6 +477,7 @@ Every simulator implements one function: video in, `SimulationResult` out. Scori
   "runner_up": "A",
   "reasons": { "C": [{ "t": 2, "text": "str" }] },
   "next_time": ["str"],
+  "baseline_comparison": { "original_artifact_id": "original-id", "candidate_artifact_id": "candidate-id", "rule": "documented comparison rule", "improved_under_rule": false },
   "token_savings": { "tokens_saved": 0, "percent": 0 }
 }
 ```
@@ -523,7 +539,7 @@ Implementation direction and visual quality bar: [visual baseline](docs/design/R
 
 ### 12.2 Entry intro and analysis focus: the "Preflight sequence" (FR-14)
 
-**Entry, before the brief:** on first arrival this session, a 10–15 second hero reveals the shaded brain/silhouette, slowly orbits it, moves toward an atlas-backed region, then pulls back and docks the same brain in a corner as the canvas appears. No backend job or microphone starts on page load. A visible Enable Live action requests mic permission and unlocks the female Gemini conversation/welcome; the visual intro remains usable silently and skippable. The silent path is a fallback, not FR-16 acceptance.
+**Entry, before intake:** on fresh arrival, a seamless 10–15 second full-viewport hero reveals the brain/silhouette, orbits and deliberately visits anatomical regions, pulls back and docks the **same** renderer top-left as the canvas appears. No page scrolling, old host/composer/Run overlay, raw viewer card or pre-load dock flash. Lock scroll and keep underlying controls inert until completion/Skip. Skip survives slow/failed geometry/WebGL; reduced motion keeps static framing/fades. No backend job or mic starts on mount. Enable Live requires a gesture/permission; silent entry remains usable but does not pass FR-16.
 
 Red/orange/yellow “waves” before the user's run require genuine precomputed predictions for a specific example video, visibly labeled **Demo example · precomputed**, with its provenance/video available. Without that bundle, show gray anatomy and **No brain data**, using lighting/camera motion for the entry. Never portray a prerecorded/reference animation or fabricated pulse as the user's simulated response. The original reference images are inspiration, not analysis data.
 
@@ -533,7 +549,7 @@ Red/orange/yellow “waves” before the user's run require genuine precomputed 
 | --- | --- | --- |
 | 1. Black out | 0 to 1.5 s | Screen dims to black. The variant video shrinks into a floating frame on the left. Small mono text: "Running simulated viewers · Variant A". |
 | 2. Assemble | 1.5 to 4 s | Head silhouette fades in. The brain builds from a thin wireframe into the shaded gray mesh while slowly rotating to a side view. |
-| 3. Watch | 4 to 9 s | The video plays in its frame. The brain lights up second by second with the predicted response (interpolated between the 1 Hz frames so it moves smoothly). Thin HUD lines connect three live meters (Visual, Auditory, Language) to their regions. A timeline under everything shows the scrubber moving. |
+| 3. Watch | 4 to 9 s | Video plays with exact-video predicted response interpolated between genuine 1 Hz samples. Quiet visible activity legend/timeline; detailed region curves appear intentionally, not as decorative HUD telemetry. |
 | 4. Lock on | 9 to 12 s | At the strongest moment, the camera pushes in on the most active region. An info card slides in: region group, what it is known for (one line), timestamp, and what is on screen at that second (for example "0:03 · product screen appears"). |
 | 5. Hand over | 12 to 15 s | Camera pulls back. The brain returns to its persistent corner dock; the selected result node, verdict and evidence inspector are revealed on the canvas. |
 
@@ -566,9 +582,9 @@ Bottom controls, as segmented pills like the reference:
 ### 12.4 Screens
 
 1. **Entry hero:** rotating brain intro and Enable Live/female-voice welcome, then the brain docks and reveals the workspace.
-2. **Canvas intake and storyboard review:** prompt/brief/source uploads plus two-way Live conversation; completed brief becomes the root node. Spoken/typed selection and edits share the actual validated draft/canvas state. Keep FR-01 validation, not prompt text alone; confirm the summarized run before jobs start.
-3. **Canvas at work:** connected storyboard/hook branches, rendered-video nodes and actual test states; selected path highlighted. Persistent corner brain, voice dock and accessible persisted activity log.
-4. **Canvas results:** recommendation node plus leaderboard/evidence inspector; selected video, time-aligned curves and expanded brain; actual Condense savings; verdict reachable at 1440 px without canvas hunting.
+2. **Canvas intake and original review:** short video-upload invitation on an otherwise quiet canvas. Uploaded Original becomes a playable source node; confirm product facts/audience/goal, then Run baseline analysis. Conversation uses the large central orb; no empty fabricated storyboard tree before intake.
+3. **Canvas at work:** Original → actual baseline analysis → grounded edit hypotheses/storyboards → candidate videos → retests; selected path highlighted. Persistent top-left brain, bottom idle voice dock and accessible persisted log. Typed/spoken edits use the same validated draft.
+4. **Canvas results:** recommended candidate plus original comparison, leaderboard/evidence inspector, selected video/time-aligned curves/brain, actual Condense savings. Verdict reachable at 1440 px; real-world uplift is not claimed.
 5. **Compare (P1):** inspect two variant nodes with synchronized video/brain/difference view; return without losing canvas position.
 6. **Export:** chosen tested asset and runner-up, report and launch-brief downloads remain the four FR-08 files. Graph complexity must not bury them.
 
@@ -623,7 +639,7 @@ Technical handoff: [Canvas and voice integration brief](docs/design/CANVAS_VOICE
 
 ### 12.10 Canvas evidence and job binding
 
-Use one left-to-right branching graph with parent/child lineage rather than separate disconnected stage dashboards or a radial node universe. Connect brief assets to concepts, concepts to their renders, and renders to their exact simulation/ranking/export evidence. Fit the initial three concept lanes to the desktop viewport with readable cards, then allow pan/zoom and focused expansion. Show source media/hook/storyboard content, variant ID, actual state and relevant duration rather than indistinguishable tiny dots; at distant zoom simplify detail without replacing actual evidence. Pan/zoom/fit-to-flow and selection should explain both the full experiment tree and an individual scene. A branching hook can continue the same storyline; it is not necessarily a new full video or independent test. The visual A/B/C pretest comparison does not promote FR-15/P1 synchronized difference mode or claim a live randomized audience experiment.
+Use one readable left-to-right graph: Original/brief → baseline evidence → three candidate edit/storyboard/video/pretest lanes → original comparison/recommendation/export. Empty intake does not show a wall of empty scenes. Source/output IDs, clip ranges, actual durations and hashes preserve lineage; simplified distant zoom cannot replace evidence. Pan/zoom/fit/selection explain the whole experiment and individual scene. Visual original/candidate evidence comparison is P0; synchronized dual-brain/difference remains FR-15/P1, not a live audience experiment.
 
 Agree with backend owners how node IDs map to project/variant/job IDs, persisted event IDs and video hashes. Reuse the existing state machine and `SimulationResult` contracts; a client-side timer or graph animation cannot declare a backend transition complete. A/B selection uses compatible stored results. Preserve rerender/resimulation traceability when a final Opus composition changes the video (§9.1).
 
@@ -677,8 +693,6 @@ Show status per node: proposed/untested, queued, running, completed, failed or u
 
 ### 14.3 Owners (fill in now)
 
-**v1.6.3 release priority:** the historical cut order above no longer makes runtime Opus the first cut. William explicitly prioritizes FR-17 before release; obtain a further owner decision before dropping it. Batch expansion and unrelated P1 work remain cuttable.
-
 The source PRD leaves technical owners blank. Assign and maintain the live assignments in [TEAM.md](TEAM.md); these areas come from the PRD.
 
 | Area | Owner |
@@ -693,11 +707,11 @@ The source PRD leaves technical owners blank. Assign and maintain the live assig
 
 ### 14.4 Two minute demo script
 
-- **0:00** "I'm launching my app tablehopp on Wednesday. I need a tested launch video." Show entry brain, Enable Live and a real female Gemini reply to the presenter, then dock into the canvas. Any example predictions are visibly disclosed.
-- **0:15** Brief with real tablehopp screenshots/storyboard. Ask aloud to select a scene and change its hook using the brief; interrupt a reply and see the confirmed edit on the actual canvas. Confirm the summarized Run. Fast-forward waiting only with clear disclosure; show an actual job milestone.
+- **0:00** "Our company already has this video. What should we change before the next spend?" Full-viewport brain entry → top-left dock → FLORA canvas; Enable Live and hear a real female reply. Example predictions are disclosed.
+- **0:15** Upload a genuine existing video; play Original and confirm facts/audience/goal. Run baseline analysis; discuss a real timestamp, interrupt and refine a grounded candidate edit on the actual canvas. Confirm render/retest; fast-forward waiting only with disclosure. Orb is central in conversation and small/bottom-docked when inactive.
 - **0:40** Genuine results populate the canvas. Expand the persistent brain and show a video-aligned region/timestamp; analysis focus if available. Distinguish actual tests from untested hypotheses.
 - **1:20** Ask the Live Director why this variant won; hear an evidence-backed answer with timestamps. Show evidence and iteration delta if built; never claim retention/sales prediction.
-- **1:45** Export. "This is the video we launch on Wednesday." Mention Gemini, Condense, and TRIBE as one of the simulated viewers.
+- **1:45** Show original-versus-candidate evidence and export. "This is the cut we will test with real customers." Mention Gemini, Condense and TRIBE; do not claim proven lift.
 
 ### 14.5 Five minute final (if top 5)
 
@@ -725,14 +739,12 @@ Problem (40 s) → live demo (2 min 30) → how it works, the agent and the simu
 10. Primary coding agent for this repo: Claude Opus 5.5. Keep this PRD in the repo root as `PRD.md` and update the decision log when a requirement changes.
 11. Build Preflight as the browser-based web platform specified in §7.5 and §10. Do not scaffold Swift, SwiftUI, an Xcode project or a native client. References to a customer's mobile app, screenshots or vertical videos describe input/output, not Preflight's implementation platform.
 12. Read the shared visual baseline before changing the brain experience. Opus 5.5 owns its implementation; keep the reusable mesh/renderer separate from per-video data and from any planned runtime Opus video-composition calls (§9.1/§10.5). No random “brain waves”, no per-user regeneration of the brain.
-13. PRD v1.6 retains the canvas and two-way female Gemini Live Director core demo requirements. TTS-only narration, prerecorded dialogue, browser/system voice, a huge static tree or reactive glow cannot substitute for real conversation, validated visible storyboard edits or generation/testing. Distinguish entry example, real run data and test MOCK; do not retask other agents or bypass their ownership just because this document changed. Live scope approval is not a Condense routing exception.
+13. PRD v1.7 makes existing company video → baseline analysis → improved candidate → retest the main product, superseding screenshots-first/existing-video exclusions. Keep the FLORA canvas, full-viewport entry/top-left same-brain dock and central-conversation/bottom-idle two-way Gemini Live orb. TTS-only/fake dialogue/glow cannot pass Live. Coordinate migration/ownership; a new spec is not shipped acceptance or a Condense exception.
 14. Apply the clean-flow design in §12 and its shared brief: near-black dotted canvas, readable left-to-right media/storyboard branches, minimal floating chrome, Redaction identity and restrained orange-red accents. Preserve existing application logic/contracts when changing the shell. New layout references supersede the old radial/sidebar layout, not the anatomical brain baseline.
 
 ## 16. Decision log
 
-The original entries below are retained from the supplied v1.1 PRD; later decisions are appended with their version. Append new decisions with their date, rationale and affected requirement IDs. Requirement changes must also update the relevant section and version/change notes in this document.
-
-**Latest FR-16 placement, v1.6.1:** William rejected the central/full-screen voice view. Voice replaces the prompt at the bottom with a fairly large neutral Libraries.dev orb; canvas remains visible and interactive with no dimming. End/Escape restores the prompt. The earlier central-orb entry below is historical and superseded.
+The original entries below are retained for provenance. **v1.7 explicitly supersedes their screenshots-first output, exclusion of editing existing videos and later-only e-commerce scope.** Later decisions are appended; update affected requirements/version/change notes together.
 
 | Date | Decision | Why |
 | --- | --- | --- |
@@ -753,14 +765,19 @@ The original entries below are retained from the supplied v1.1 PRD; later decisi
 | 3 Oct, v1.5 | William explicitly confirmed two-way Gemini Live as FR-16/P0, superseding v1.4's TTS minimum/optional Live. Require listening/replies/interruption, transcripts, validated source-backed storyboard selection/pre-render editing with visible persisted canvas changes, explicit Run confirmation and actual progress/verdict. Preserve female original voice, standalone orb, secure session lifecycle and event truth. Update §5/§7/§8/§9/§10/§12.9/§14/§15. | Owner requires the interactive creative Director for the wow-moment demo; narration-only does not satisfy it. Three-video cap and FR-11/P1 tested-winner revision remain. Model/account/Condense Live transport are still unverified; this does not approve a routing exception or claim implementation acceptance. |
 | 3 Oct, v1.6 | Adopt FLORA and the owner's FLORA workspace screenshot as the primary product-layout reference; earlier two clean-flow/dark-dot images remain supporting references. Use black dotted canvas, narrow floating left tool rail, compact corner actions and readable source/storyboard/render/pretest/result branches. Adopt Redaction/orange-red identity and require both standalone speaking-growth ThinkingOrb and restrained prompt VoiceBeam. Keep top-left hover/pin brain and actual milestone → roughly three-second slower camera/text → resume choreography. Exact tokens/selective fonts/effect tuning are logged implementation choices. Applies to FR-07/FR-09/FR-12/FR-14/FR-16 and §12/§15. | Explicit owner corrections: "exakt denna design" at flora.ai, minimal black dotted high-tech product, and both Libraries.dev visuals adapted for us. Preserve cinematic anatomy and real backend/voice logic; no fictional response, unlimited tests, FLORA branding/features or provider change. Gemini Live remains two-way P0. |
 | 3 Oct, v1.6 quality clarification | Add the owner's Specific screenshot as a supporting reference and make "minimum interface, complete capability" explicit: contextual primary action, details on demand, persistent safety/evidence controls. Sana-like restraint describes the desired feel. FLORA remains the primary shell; no new feature/platform/provider scope or AC removed. Applies to §12 and existing UI requirements. | Owner emphasizes professional UI/UX and subtraction, not feature deletion. Prevents the additional reference from reintroducing a permanent sidebar or hiding necessary controls under the guise of minimalism. |
+| 3 Oct, v1.7 | William clarifies existing company/e-commerce video as primary input: baseline pretest → grounded edit hypotheses → candidate renders/retests → original comparison/recommended export. Supersede screenshots-first and the historical existing-video exclusion. Full-viewport cinematic entry must hide/inert host UI and lock scroll before same-brain top-left docking. Gemini Live orb is large/central during conversation, small/bottom when inactive; localized multicolor beam is permitted. Applies to FR-01–FR-09/FR-12/FR-14/FR-16 and §1–§12/§14/§15. | Explicit owner correction after reviewing the live interface. Preserve bounded three-candidate/one-template/15-second exports, add one original baseline, keep additional winner iteration and dual-brain difference P1. Coordinate schema migration and report actual evidence; no guaranteed retention/psychology/frequency claims, fake waves or automatic merges. |
+
 | 3 Oct, v1.6 implementation | Reuse Gemini Live's single microphone and `AudioContext`; measure assistant output after its gain node, discard queued playback on interruption/mute/disconnect, and bind the one canvas brain to a project id only after the backend accepts that project. | Keeps voice visuals tied to audible playback, prevents a second capture/service, and prevents local draft ids or audio amplitude from becoming false brain/job evidence. Applies to FR-07/FR-12/FR-16. |
 | 3 Oct, FR-16 implementation clarification | Latest owner gesture: voice is a button inside the text bar; explicit click opens a large central standalone orb, End/Escape returns it smoothly to that button and disconnects. Use the library's public engine at native resolution for the large orb, its supported 20 preset in the active button, and real-audio VoiceBeam. Expose actual host capabilities, serialized tools and one snapshot-bound spoken/clicked run command. | Makes the owner's FLORA/minimalism direction and required two-way voice usable without a permanently floating side avatar or blurry bitmap. The supplied builder guide requires voice-first operation; see docs/VOICE_FIRST_ACCEPTANCE.md. This branch is based on main's v1.6 implementation; the owner's broader video-first v1.7 baseline remains in pending docs PR #1 and is not silently implemented by changing the voice prompt. |
 | 3 Oct, v1.6.1 / FR-16 placement correction | Voice button inside the bottom prompt → fairly large standalone orb **at the bottom, instead of the prompt** → End/Escape restores the prompt and disconnects. Adopt reference 10's neutral gray Libraries.dev orb. No full-screen voice view, canvas dimming or surrounding card. Implementation uses native 160 px canvas (136 px on short viewports) with the library's tuned 64 geometry, restrained warm beam and compact controls/captions. | Explicit owner correction of the preceding central-orb interpretation. Keeps canvas interaction primary and Gemini Live functional; no audio/provider/backend/brain scope change. |
 | 3 Oct, v1.6.2 / FR-16 orb and floor | Reference 10 is the library's composing sash: preserve it instead of a breathing/loading ring, even when disconnected. Actual assistant output amplitude drives both orb growth/deformation and a warm VoiceBeam anchored at the screen's bottom border, like a floor beneath the orb. The briefly requested white circle is withdrawn; transparent orb on black. Honest phase labels/paused disconnected visuals, compact controls and existing audio/job/brain contracts remain. | Owner reports mismatched orb and connection failure in the preview, then clarifies the simultaneous floor effect and withdraws the white substrate. No new microphone/service. Main token probe passes; protected Preview needs separate provider/configuration verification. Pin token issuance to the SDK-documented v1alpha API and emit only allowlisted error categories; do not claim this proves the Preview root cause or a real conversation. |
 | 3 Oct, sound addendum | Add narration (Gemini TTS, voice `Kore`), a synthesized music bed and effects to the exported winner and runner-up after the pretest; the picture stream is copied unchanged; the verdict covers the silent render and the launch brief says so; narration bypasses Condense (logged exception, owner to confirm). Applies to FR-08 and §9.3. | The owner wants finished ads with audio. Keeping the tested silent render and the sound cut as separate, hashed files keeps the pretest claim honest. |
 | 3 Oct, v1.6.3 / FR-17 FINAL-OPUS | William: “CONNECT OPUS FIRST WITH THE LAST STEP”. Connect runtime Opus only to one explicitly confirmed winner motion-finalization job. Opus recipe → existing Remotion template → local music/SFX → exact-final-byte Gemini/available-TRIBE pretest → separate final MP4/evidence. Preserve original candidates/ranking/export and existing voice/audio owners' work. Docs verify `claude-opus-5-5` and Condense's native Anthropic route; configure keys on the Python host, never forward Vercel secrets. Cap output/attempts and persist checkpoints/locks. | Makes the requested expensive final step executable without pretending that Opus generates video pixels, reusing a different video's brain data, widening creative scope or silently approving the existing direct-TTS exception. Code/tests are not evidence of live account/deployment success; those gates remain explicit. |
+| 3 Oct, v1.7.1 release reconciliation | Integrate the existing-video product target from PR #1, newer anatomical entry/dock from PR #3 and voice/Opus from PR #11; PR #4 is superseded by the current canvas, asset inspection and server-key compatibility. Later owner corrections win: voice replaces the bottom prompt with the transparent composing orb and warm bottom-border beam, never a central takeover. | Explicit owner request to resolve all PRs and deploy. Current implementation still uses screenshot intake; video-first migration and genuine Live/Opus/TRIBE acceptance remain separately reported gates. Preserve current source/audio/privacy/consent boundaries and teammate work. |
 
 ## 17. Open questions
+
+- v1.7 video-intake migration: agree validated upload size/duration/container limits, clip/audio/crop handling, canonical original/artifact IDs, durable source storage and baseline-versus-candidate time normalization with backend/Canvas/Voice/brain owners. Existing screenshot schemas/routes are not video acceptance. Demo exports retain 15 s/1080x1920/30 fps until explicitly changed; use a genuine compatible clip and report limitations.
 
 - Public repo URL to paste into the header and §10.4. **Repository import update:** URL filled in as https://github.com/clawmax12-lang/Norrsken; visibility was PRIVATE when checked on 3 Oct 2026. Public visibility remains outstanding; see TEAM.md.
 - Exact submission time (19:00 or 19:19).
@@ -769,7 +786,7 @@ The original entries below are retained from the supplied v1.1 PRD; later decisi
 - Lunch time (unclear in the opening talk).
 - Runtime Opus finalization: verify API model availability, Condense routing, server credentials, exact budget/latency and whether it fits today's P1 timebox. Coding-agent availability in Conductor alone does not resolve these.
 - Voice P0: scope is resolved as two-way Gemini Live (FR-16), not TTS-only. Verify proposed Live model/account access, audition the female-sounding preset, agree typed tool/draft/event contracts and session/cost bounds, and verify Condense Live transport or obtain an explicit approved routing exception. No key material belongs in this document.
-- Batch scale: approve explicit hypothesis/render/simulation limits, pruning strategy, GPU concurrency, cost ceiling and measured latency before increasing today's three-video execution cap.
+- Batch scale: approve limits/pruning/GPU concurrency/cost/latency before increasing today's one-original/three-generated-candidate budget.
 - Shared UI/job integration: agree event IDs/transport, artifact hashes and the cortical adapter payload; merge current baseline so older branches do not continue on v1.1.
 
 ## 18. Glossary

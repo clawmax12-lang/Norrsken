@@ -1,0 +1,2 @@
+# Preserve the supplied font license byte-for-byte, including its CRLF/spacing.
+public/fonts/redaction/OFL.txt -text -whitespace

@@ -8,7 +8,7 @@ Preflight turns a product brief and 3–6 screenshots into three 15-second motio
 
 **[TRIBE v2 by Meta FAIR](https://github.com/facebookresearch/tribev2) is a foundational component of Preflight's planned neural pretesting system.** It supplies the predicted brain responses behind the brain simulation, synchronized activity curves, interactive 3D brain and Preflight sequence. Gemini supplies the complementary viewer panel and the agent's planning/explanations; Preflight coordinates generation, simulation, comparison and export.
 
-**Current approved specification on this branch: [PRD v1.6.3](PRD.md).** It adds an explicitly confirmed runtime Opus final-video step after Gemini experimentation; the v1.6.2 orb/floor, FLORA canvas, Live Director and reusable brain remain. The separate video-first product migration remains in docs PR #1 and is not implemented by this change. This repository is the shared reference for the hackathon team and its coding agents.
+**Current approved specification on this branch: [PRD v1.7.1](PRD.md).** It adds an explicitly confirmed runtime Opus final-video step after Gemini experimentation; the v1.6.2 orb/floor, FLORA canvas, Live Director and reusable brain remain. The separate video-first product migration remains in docs PR #1 and is not implemented by this change. This repository is the shared reference for the hackathon team and its coding agents.
 ## At a glance
 
 **Problem.** A founder launching an app needs a demo video, but agencies take weeks, DIY looks amateur, and nobody knows which version works until ad money is spent.
@@ -27,11 +27,13 @@ Preflight turns a product brief and 3–6 screenshots into three 15-second motio
 The backend is ports-and-adapters: every stage (planner, renderer, simulators, explainer) implements a protocol in `backend/src/preflight/ports.py`, `wiring.py` binds the real adapters, and the resumable state machine in `orchestrator/` never knows which provider is behind a port. All simulators speak one `SimulationResult` contract, so scoring and UI are provider-agnostic. See [docs/backend/ARCHITECTURE.md](docs/backend/ARCHITECTURE.md). All four subprojects run in [CI](.github/workflows/ci.yml) on every pull request.
 
 
+**Release capability boundary:** the approved product target is existing company-video pretesting and candidate editing (PRD v1.7.1). The integrated runtime currently accepts screenshots plus a confirmed brief; original-video ingestion/baseline editing is not implemented. The latest voice layout is the bottom composing orb plus border glow. New brain and Opus finalization code is included; provider configuration and genuine acceptance remain deployment gates.
+
 ## Start here
 
 | Document | Purpose |
 | --- | --- |
-| [PRD.md](PRD.md) | Product scope, FR-01–FR-16, acceptance criteria, architecture, UI, timeline and decision log. The source of truth for what to build. |
+| [PRD.md](PRD.md) | Product scope, FR-01–FR-17, acceptance criteria, architecture, UI, timeline and decision log. The source of truth for what to build. |
 | [TEAM.md](TEAM.md) | Owners, task status, integration evidence, open blockers and the shared Git/Conductor workflow. |
 | [AGENTS.md](AGENTS.md) | Instructions every coding agent must follow. Claude loads these through [CLAUDE.md](CLAUDE.md). |
 | [Visual baseline](docs/design/README.md) | All supplied reference images (including the bottom voice orb) and the motion clip, shared visual direction, provenance and the existing Dashboard preview. |

@@ -1,6 +1,6 @@
 # Preflight — shared team board
 
-**Product baseline:** [PRD v1.6.3](PRD.md) on this branch (owner-prioritized FR-17 runtime Opus final-video integration; v1.6.2 orb/floor/voice layout preserved). **Platform:** desktop-browser web product; no iOS/SwiftUI or native client. **Repository:** https://github.com/clawmax12-lang/Norrsken. **Product owner:** William.
+**Product baseline:** [PRD v1.7.1](PRD.md) on this branch (owner-prioritized FR-17 runtime Opus final-video integration; v1.6.2 orb/floor/voice layout preserved). **Platform:** desktop-browser web product; no iOS/SwiftUI or native client. **Repository:** https://github.com/clawmax12-lang/Norrsken. **Product owner:** William.
 
 This document tracks coordination and implementation evidence. It does not redefine the product. Update it when claiming work, handing off a change, resolving a blocker or integrating a pull request. Blank ownership is intentional: technical names and progress were not supplied in the PRD.
 
@@ -63,6 +63,8 @@ Statuses: `unclaimed` → `in_progress` → `in_review` → `done`. Use `blocked
 P2 stays outside today's build. The broader validation programme also has the explicit prerequisite in PRD §13; do not silently start it as part of the MVP.
 
 ## Integration and acceptance handoff
+
+**PR reconciliation:** PR #3’s newer full-viewport entry, smooth anatomy, red/orange shader and dock are integrated while preserving current audio events/proxy. PR #4’s old DirectorStudio is superseded by the current canvas and validated asset inspection; preserve its commit ancestry without restoring the deleted UI or dropping lowercase-key compatibility. PR #1’s video-first specification is adopted, but later bottom-orb/no-white-circle decisions and FR-17 remain authoritative. Existing-video intake migration is not implemented by this merge.
 
 **RELEASE-ALL — claimed by William / Codex, 3 Oct:** William explicitly requests deployment of all changes, including voice, and resolution of every open PR. Review/integrate PR #11 (voice/Opus), #3 (newer brain), #1 (approved product/docs corrections, retaining later bottom-voice decisions) and #4 (retain any unique asset-access change or close as superseded with evidence). Fix the backend/TRIBE NumPy dependency incompatibility without changing upstream vendor pins, rerun all four CI suites and coordinate the running tunnel origin with its existing owner before restarting. Deployment, configured provider keys and genuine Live/Opus acceptance are separate gates; do not claim them from a successful merge/build.
 
