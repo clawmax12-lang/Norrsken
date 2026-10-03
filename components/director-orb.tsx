@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import type { OrbState } from "thinking-orbs";
 import { MODE_FRAMES, paintFrame, resolvePreset } from "thinking-orbs/engine";
 
-/** The library's tuned 64 geometry, painted at native display resolution, not a blurry 5× bitmap. */
+/** The library's tuned 64 geometry, painted at native dock resolution instead of stretching a bitmap. */
 export function DirectorOrb({ state, paused, label }: { state: OrbState; paused: boolean; label: string }) {
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
@@ -19,7 +19,7 @@ export function DirectorOrb({ state, paused, label }: { state: OrbState; paused:
       if (canvas.width !== pixels) { canvas.width = pixels; canvas.height = pixels; }
       context.setTransform(pixels / 64, 0, 0, pixels / 64, 0, 0);
       context.clearRect(0, 0, 64, 64);
-      paintFrame(context, MODE_FRAMES[preset.mode](64, time / 1000 * preset.speed, preset.opts), true, { r: 255, g: 155, b: 128 });
+      paintFrame(context, MODE_FRAMES[preset.mode](64, time / 1000 * preset.speed, preset.opts), true);
       if (alive && !paused && !document.hidden) frameId = requestAnimationFrame(paint);
     };
     const refresh = () => {

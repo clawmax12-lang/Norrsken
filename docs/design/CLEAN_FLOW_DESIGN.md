@@ -29,7 +29,7 @@ Minimalism must not hide active microphone/privacy state, mute/stop, failures, j
 - Top-left: small Preflight/project identity; brain companion sits below it with room for hover/pin enlargement. No permanent navigation sidebar or full-width dashboard header.
 - Top-right: compact actual run/status/actions; Export becomes available only with real files. Do not copy account, share or template-management features from the reference.
 - Left-center: a narrow floating vertical tool pill, approximately 48–56 px wide (add/upload, assets, select, pan, fit/search). This is a lightweight tool rail on the canvas, not a navigation sidebar. Only implement actions the product actually supports.
-- Bottom-center: a compact prompt with the customized VoiceBeam. The standalone Director orb sits just above/alongside it, with separate captions and accessible mic/mute/stop controls. No giant chat card.
+- Bottom-center: a compact prompt with its voice button inside. Voice mode **replaces the prompt** with a fairly large neutral standalone Director orb at the bottom, compact captions/mute/end and the actual-audio VoiceBeam. No central/full-screen voice view, dimmed canvas or card; closing restores the prompt. See PRD v1.6.1 and reference 10.
 - Bottom-left: zoom/fit controls. On-demand inspector for the selected brief, storyboard, result or transcript; close it without losing canvas position or selection.
 - Bottom-right: small queue/activity control if backed by real job state, not a persistent log panel or an invented active-job count.
 

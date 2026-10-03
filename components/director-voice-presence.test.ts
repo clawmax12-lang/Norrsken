@@ -8,6 +8,7 @@ import { DirectorVoicePresence } from "./director-voice-presence";
 vi.mock("@/components/director-orb", () => ({
   DirectorOrb: ({ label }: { label: string }) => createElement("div", { role: "img", "aria-label": label }),
 }));
+vi.mock("voice-glow", () => ({ VoiceBeam: ({ children }: { children: React.ReactNode }) => children }));
 
 type Props = ComponentProps<typeof DirectorVoicePresence>;
 function fixture(): Props {
@@ -18,6 +19,7 @@ function fixture(): Props {
       state: "listening", error: "", isSpeaking: false, isProcessing: false,
       isMuted: false, isMicPaused: false, liveDirectorText: "", liveUserText: "",
       toggleMute: vi.fn(), setMicPaused: vi.fn(),
+      inputLevel: 0, outputLevel: 0,
     },
   };
 }

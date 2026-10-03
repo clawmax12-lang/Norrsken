@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react";
+import { VoiceBeam } from "voice-glow";
 import { DirectorOrb } from "@/components/director-orb";
 
 import type { useLiveDirector } from "@/hooks/use-live-director";
@@ -8,7 +9,7 @@ import { directorOrbState } from "@/lib/director-presence";
 
 type Director = Pick<ReturnType<typeof useLiveDirector>,
   "state" | "error" | "isSpeaking" | "isProcessing" | "isMuted" | "isMicPaused" |
-  "liveDirectorText" | "liveUserText" | "toggleMute" | "setMicPaused">;
+  "liveDirectorText" | "liveUserText" | "toggleMute" | "setMicPaused" | "inputLevel" | "outputLevel">;
 
 export function VoiceIcon() {
   return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 10v4m4-7v10m4-13v16m4-13v10m4-7v4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" /></svg>;
@@ -62,8 +63,14 @@ export function DirectorVoicePresence({ open, director, paused, anchorRef, onClo
         <DirectorOrb state={orbState} label={label} paused={paused || !open || director.state === "idle" || director.state === "error"} />
       </div>
       <div className="voice-status" role="status">{label}{director.isMuted && <span> · speaker muted</span>}</div>
-      {caption && <button className="voice-caption" onClick={onTranscript}>{caption}</button>}
+      <div className="voice-caption-slot">{caption && <button className="voice-caption" onClick={onTranscript}>{caption}</button>}</div>
       {director.error && <p className="voice-error" role={open ? "alert" : undefined}>{director.error}</p>}
+      <VoiceBeam className="voice-dock-beam" type="pill" theme="dark"
+        level={() => director.isSpeaking ? director.outputLevel : connected && !director.isMicPaused ? director.inputLevel : 0}
+        processing={director.isProcessing} active={open && (connected || director.isProcessing)} paused={paused || !open}
+        colorVariant="sunset" colors={["#FF5A36", "#F2472C", "#FF773F", "#CB3828"]}
+        bandColors={{ core: "#FFE1C7", above: "#FF773F", mid: "#FF5A36", below: "#CB3828" }}
+        staticColors strength={0.3} idle={0}>
       <div className="voice-actions">
         {connected && <>
           <button aria-label={director.isMuted ? "Unmute Director" : "Mute Director"} aria-pressed={director.isMuted} onClick={director.toggleMute} title={director.isMuted ? "Unmute speaker" : "Mute speaker"}>
@@ -76,6 +83,7 @@ export function DirectorVoicePresence({ open, director, paused, anchorRef, onClo
         {!connected && (director.state === "error" || director.state === "idle") && <button className="voice-retry" onClick={onRetry}>Try again</button>}
         <button className="voice-close" onClick={onClose} aria-label="End voice conversation" title="End conversation · Esc"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg></button>
       </div>
+      </VoiceBeam>
       {connected && pushToTalk && <button className="voice-hold"
         onPointerDown={(event) => { event.currentTarget.setPointerCapture(event.pointerId); director.setMicPaused(false); }}
         onPointerUp={() => director.setMicPaused(true)} onPointerCancel={() => director.setMicPaused(true)}

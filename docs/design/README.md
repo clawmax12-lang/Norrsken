@@ -60,6 +60,12 @@ The owner supplied this as an additional reference from **specific.dev**, emphas
 
 Apply [minimum interface, complete capability](CLEAN_FLOW_DESIGN.md#minimum-interface-complete-capability): one contextual primary action, details on demand, and persistent safety/evidence controls. Sparse does not mean low legibility, missing required features or hiding errors/privacy/data mode.
 
+## Reference 10 — bottom voice orb
+
+![Owner-supplied neutral gray Libraries.dev orb](references/10-voice-orb-bottom.png)
+
+Latest FR-16 placement correction (PRD v1.6.1): enabling voice **replaces the bottom prompt with a fairly large standalone orb at the bottom**. No central/full-screen voice view, dimmed canvas, backdrop or card. Match this neutral gray orb; keep the warm beam restrained and actual audio/state-driven. Compact captions/mute/end remain available and the canvas stays interactive. Closing restores the prompt. This supersedes the central-orb interpretation, not Gemini Live or the shared audio graph.
+
 ## What "extremely cool, and you can see how it works" means
 
 The viewer should be able to follow this sequence without an explanation from the presenter:
@@ -112,3 +118,4 @@ The originals were copied byte-for-byte; they were not resized, generated or ret
 | `07-dark-dotted-canvas.png` | `9398120a-d11f-4fac-a26a-a5adf8d20bca` | 3420 × 1962 PNG | `b14936d8202c324407ab2a09af0ca2342f3084d22eb8b757e5c8a855a4dc2a44` |
 | `08-flora-canvas-primary.png` | `07936ce0-78e6-44d6-b0c4-d3982ad4cb4c` | 3420 × 1962 PNG | `39a5152ec6e1d4a3dbaf56fc5e57403ca6884f1552ebb3353a3488cdde431b03` |
 | `09-specific-sparse-flow.png` | `3512cb96-690d-4cb9-a7c2-68a1d4a52f4d` | 3420 × 1962 PNG | `0434efb3fe3190e154b54e9cfafc11bae2c387607e591606e79b42bd4730b054` |
+| `10-voice-orb-bottom.png` | `0de2e966-3735-408d-880d-b0d0ed80cca7` | 146 × 212 PNG | `1ca9951794f45c819e1f320b7c658867f527b2031592053577d1a1353b3b18ef` |

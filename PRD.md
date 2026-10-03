@@ -1,12 +1,14 @@
 # Preflight · Product Requirements Document
 
-**Version:** 1.6 · **Date:** 3 Oct 2026 · **Status:** Hackathon build ({Tech: Europe} Agentic AI Hack, Norrsken Stockholm)
+**Version:** 1.6.1 · **Date:** 3 Oct 2026 · **Status:** Hackathon build ({Tech: Europe} Agentic AI Hack, Norrsken Stockholm)
 
 **Owner:** William (product) · **Tech owners:** see §14.3 and [TEAM.md](TEAM.md)
 
 **Repository:** https://github.com/clawmax12-lang/Norrsken
 
 **Built with (PRD plan):** Claude Opus 5.5 as the coding agent · Gemini · Condense · TRIBE v2 (Meta FAIR, research use)
+
+**What changed in 1.6.1:** the owner corrects FR-16's placement: the voice button stays inside the bottom text bar; enabling voice **replaces that bar with a fairly large standalone orb at the bottom**, not a central/full-screen surface. No canvas dimming, backdrop, card or modal. Keep the canvas usable, compact captions/mute/end and the real-audio beam; closing restores the prompt and keyboard focus. The latest supplied gray Libraries.dev orb is [reference 10](docs/design/references/10-voice-orb-bottom.png). This supersedes the earlier central-orb implementation clarification without changing Gemini Live, jobs, the brain or the separate video-first migration.
 
 > This is the team's canonical, editable product specification. It supersedes earlier brainstorming and advisor briefs. The baseline was imported from the complete, 20-page [Preflight PRD v1.1.pdf](docs/source/Preflight-PRD-v1.1.pdf), which is preserved unchanged; see [source provenance](docs/source/README.md). Versions 1.2–1.6 incorporate the product owner's web-platform, reusable-brain, canvas, voice and clean-flow design decisions, documented below and in §16. Actual implementation progress lives in [TEAM.md](TEAM.md), not in these requirements.
 
@@ -253,6 +255,8 @@ Gemini for planning, viewer panel and explanations. All LLM calls go through Con
 **AC:** entry plays once per browser session (explicit Replay permitted); Skip is always visible; reduced motion uses fades/static framing; completion/Skip reaches the canvas and leaves the brain docked with its state preserved. Before the user's first run, any colored response must come from a genuine video-matched example labeled "Demo example · precomputed"; no example means gray anatomy and "No brain data". The run's analysis sequence only uses that run's genuine results, plays at most once per run and hands back to the canvas results inspector. No fake waves while waiting for inference.
 
 #### FR-16 Two-way female Gemini Live Director
+
+**Placement — v1.6.1:** the button is inside the bottom text bar. Enabling voice replaces the prompt with the standalone orb in the bottom dock; no central/full-screen overlay, backdrop or canvas dimming. Canvas controls remain usable. End/Escape restores the text bar and focus, and releases the microphone. Reference 10 governs the neutral orb; orange-red remains the restrained beam/UI accent.
 
 **P0, explicitly required by William for the hackathon demo.** An original female-sounding Gemini Live creative Director listens and responds in a real two-way conversation, helps choose/refine the storyboard and explains actual agent transitions and evidence-backed conclusions. Tone: concise, capable, cinematic mission control, not an imitation of a copyrighted character's voice. Required visuals are a standalone state-driven `ThinkingOrb`, growing during actual assistant speech without a surrounding card, and `VoiceBeam` from `voice-glow` along the prompt's bottom edge, adapted to our orange-red palette. Neither library supplies speech or Live transport. See §12.9.
 
@@ -575,6 +579,8 @@ Bottom controls, as segmented pills like the reference:
 
 ### 12.9 Two-way Live Director, orb and glow (FR-16)
 
+**Latest bottom-dock layout — v1.6.1:** voice mode replaces the bottom prompt, not the canvas. Show a fairly large, neutral gray Libraries.dev orb at the bottom, compact captions and separate mute/end controls. No full-screen voice surface, dimming or surrounding card; source/storyboard/brain/console interaction stays available. A native-resolution 160 px orb (136 px on short viewports) reuses the tuned 64 geometry; actual playback gives a small smooth growth. The restrained warm `VoiceBeam` moves to the compact voice controls while the prompt is hidden. Closing restores the prompt and its voice-button focus; reduced motion disables growth/transitions. This supersedes the earlier central-orb clarification.
+
 **Required experience:** real two-way Gemini Live, not narration-only TTS. After Enable Live and mic permission, the user can ask questions, hear replies, interrupt, choose a storyboard/scene and ask for a source-grounded pre-render change that updates the actual canvas/draft. Verify the proposed `gemini-3.8-live` model/account and audition a supported female-sounding preset (the Voice workspace proposes Kore; not yet verified). Use an original mission-control personality, not a clone of JARVIS or an actor. The Director can recommend and explain a tradeoff, but respects an explicit user choice within safety/source/budget constraints.
 
 **Conversation and commands:** show input/output transcripts and actual connecting/listening/working/speaking/error states. Interruption stops queued assistant audio immediately and feeds the next user turn; do not replay interrupted/stale speech. Route typed and spoken commands to the same validated application state (§9), persist accepted changes and report the tool result, not merely “done” in speech. Selecting/changing a storyboard is P0 before rendering; a tested-winner revision remains P1. Filling fields/selecting nodes is not job authorization: summarize the current run and require an explicit confirmed Run action, clicked/typed or acknowledged spoken command. Reject invalid/stale/source-inventing commands and deduplicate execution on reconnect.
@@ -700,6 +706,8 @@ Problem (40 s) → live demo (2 min 30) → how it works, the agent and the simu
 
 The original entries below are retained from the supplied v1.1 PRD; later decisions are appended with their version. Append new decisions with their date, rationale and affected requirement IDs. Requirement changes must also update the relevant section and version/change notes in this document.
 
+**Latest FR-16 placement, v1.6.1:** William rejected the central/full-screen voice view. Voice replaces the prompt at the bottom with a fairly large neutral Libraries.dev orb; canvas remains visible and interactive with no dimming. End/Escape restores the prompt. The earlier central-orb entry below is historical and superseded.
+
 | Date | Decision | Why |
 | --- | --- | --- |
 | 3 Oct | B2B: startups and companies, not creators | Companies have money metrics and already pay to pretest |
@@ -721,6 +729,7 @@ The original entries below are retained from the supplied v1.1 PRD; later decisi
 | 3 Oct, v1.6 quality clarification | Add the owner's Specific screenshot as a supporting reference and make "minimum interface, complete capability" explicit: contextual primary action, details on demand, persistent safety/evidence controls. Sana-like restraint describes the desired feel. FLORA remains the primary shell; no new feature/platform/provider scope or AC removed. Applies to §12 and existing UI requirements. | Owner emphasizes professional UI/UX and subtraction, not feature deletion. Prevents the additional reference from reintroducing a permanent sidebar or hiding necessary controls under the guise of minimalism. |
 | 3 Oct, v1.6 implementation | Reuse Gemini Live's single microphone and `AudioContext`; measure assistant output after its gain node, discard queued playback on interruption/mute/disconnect, and bind the one canvas brain to a project id only after the backend accepts that project. | Keeps voice visuals tied to audible playback, prevents a second capture/service, and prevents local draft ids or audio amplitude from becoming false brain/job evidence. Applies to FR-07/FR-12/FR-16. |
 | 3 Oct, FR-16 implementation clarification | Latest owner gesture: voice is a button inside the text bar; explicit click opens a large central standalone orb, End/Escape returns it smoothly to that button and disconnects. Use the library's public engine at native resolution for the large orb, its supported 20 preset in the active button, and real-audio VoiceBeam. Expose actual host capabilities, serialized tools and one snapshot-bound spoken/clicked run command. | Makes the owner's FLORA/minimalism direction and required two-way voice usable without a permanently floating side avatar or blurry bitmap. The supplied builder guide requires voice-first operation; see docs/VOICE_FIRST_ACCEPTANCE.md. This branch is based on main's v1.6 implementation; the owner's broader video-first v1.7 baseline remains in pending docs PR #1 and is not silently implemented by changing the voice prompt. |
+| 3 Oct, v1.6.1 / FR-16 placement correction | Voice button inside the bottom prompt → fairly large standalone orb **at the bottom, instead of the prompt** → End/Escape restores the prompt and disconnects. Adopt reference 10's neutral gray Libraries.dev orb. No full-screen voice view, canvas dimming or surrounding card. Implementation uses native 160 px canvas (136 px on short viewports) with the library's tuned 64 geometry, restrained warm beam and compact controls/captions. | Explicit owner correction of the preceding central-orb interpretation. Keeps canvas interaction primary and Gemini Live functional; no audio/provider/backend/brain scope change. |
 
 ## 17. Open questions
 

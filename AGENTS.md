@@ -9,7 +9,7 @@
 
 ## Authority and scope
 
-- PRD v1.6 is the approved product baseline. The original v1.1 PDF is preserved at `docs/source/Preflight-PRD-v1.1.pdf` for provenance; subsequent approved decisions are in PRD.md and its §16 log.
+- PRD v1.6.1 is the approved product baseline on this branch. It adds the owner's bottom-dock voice placement correction; no full-screen voice overlay or canvas dimming. The original v1.1 PDF is preserved at `docs/source/Preflight-PRD-v1.1.pdf` for provenance; subsequent approved decisions are in PRD.md and its §16 log.
 - Preflight is a standard browser-based web platform. Build the frontend, including the 3D experience, with the web stack in PRD §10. Do not create an iOS app, Swift/SwiftUI code, an Xcode project or another native client. Customer app screenshots and vertical video exports do not determine Preflight's platform.
 - Earlier chats, advisor briefs and files under `.context/` do not override the adopted PRD. The product generates videos from screenshots for launch-week founders; editing existing videos and a creator/e-commerce-first product are not the current MVP.
 - README is the onboarding/run guide. TEAM.md tracks execution. Neither is a second product specification. If a summary disagrees with PRD.md, fix the summary.
