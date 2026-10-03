@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import { METER_GROUPS, REGION_GROUPS, type GroupId, type RegionStatistics } from "../../lib/brain/atlas";
 import type { SceneRef } from "../../lib/brain/contract";
 import { formatTime, sceneAt, seriesAt } from "../../lib/brain/timeline";
@@ -40,11 +40,13 @@ interface TimelineProps {
   curves: CurveData | null;
   scenes?: SceneRef[];
   emptyLabel: string;
+  /** Method/scale notes, revealed on demand. */
+  about?: ReactNode;
 }
 
 const H = 88;
 
-export function Timeline({ time, duration, playing, onSeek, onToggle, curves, scenes, emptyLabel }: TimelineProps) {
+export function Timeline({ time, duration, playing, onSeek, onToggle, curves, scenes, emptyLabel, about }: TimelineProps) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const [hoverT, setHoverT] = useState<number | null>(null);
   const safeDuration = Math.max(duration, 0.001);
@@ -111,7 +113,7 @@ export function Timeline({ time, duration, playing, onSeek, onToggle, curves, sc
         )}
       </div>
 
-      <div className="bv-track" ref={wrapRef} onPointerMove={handleHover} onPointerLeave={() => setHoverT(null)}>
+      <div className={`bv-track${curves ? "" : " bv-track-empty"}`} ref={wrapRef} onPointerMove={handleHover} onPointerLeave={() => setHoverT(null)}>
         {scenes && (
           <div className="bv-scenes" aria-hidden="true">
             {scenes.map((s) => (
@@ -138,7 +140,7 @@ export function Timeline({ time, duration, playing, onSeek, onToggle, curves, sc
               {REGION_GROUPS[p.g].label}
             </span>
           ))}
-        {!curves && <p className="bv-track-empty">{emptyLabel}</p>}
+        {!curves && <span className="bv-sr-only">{emptyLabel}</span>}
         {hoverT !== null && curves && (
           <div className="bv-tooltip bv-mono" style={{ left: `${(hoverT / safeDuration) * 100}%` }} role="presentation">
             <strong>{formatTime(hoverT)}</strong>
@@ -194,6 +196,12 @@ export function Timeline({ time, duration, playing, onSeek, onToggle, curves, sc
               ))}
             </tbody>
           </table>
+        </details>
+      )}
+      {about && (
+        <details className="bv-table bv-about">
+          <summary>About this view</summary>
+          <p>{about}</p>
         </details>
       )}
     </section>

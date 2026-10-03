@@ -11,7 +11,7 @@ import type { CorticalBinding, Hemisphere, SceneRef, SimulationResult, SurfaceKi
 import { getBrainGeometry, type BrainGeometry } from "../../lib/brain/geometry";
 import { loadHeadGeometry, type HeadObject } from "../../lib/brain/head";
 import type { BrainScene, PickResult } from "../../lib/brain/scene";
-import { formatTime, sampleAt, samplePeriod, seriesAt, stepSeconds } from "../../lib/brain/timeline";
+import { formatTime, sampleAt, samplePeriod, stepSeconds } from "../../lib/brain/timeline";
 import { ANALYSIS_RUN_KEY_PREFIX, BRAIN_COMMAND, ENTRY_SESSION_KEY, dispatchBrainEvent, type BrainCommand, type BrainEvent, type BrainMode, type DataMode, type RegionRef, type SelectionSnapshot } from "../../lib/brain/events";
 import { useLatest } from "../../lib/brain/useLatest";
 import { STEP_LABELS, statusLine, isWorking, RESULT_STEPS, type Milestone, type WorkloadState } from "../../lib/brain/workload";
@@ -21,7 +21,7 @@ import { EntrySequence } from "./EntrySequence";
 import { PreflightSequence } from "./PreflightSequence";
 import { RegionCard } from "./RegionCard";
 import { Segmented } from "./Segmented";
-import { GROUP_COLORS, Timeline, type CurveData } from "./Timeline";
+import { Timeline, type CurveData } from "./Timeline";
 import "./brain.css";
 
 const VARIANTS: VariantId[] = ["A", "B", "C"];
@@ -44,6 +44,16 @@ interface DemoExample {
   videoUrl: string;
   scenes?: SceneRef[];
 }
+
+/** Short data-mode labels for the dock caption (always visible). */
+const DOCK_DATA_LABELS: Record<DataMode, string> = {
+  none: "No brain data",
+  sim_off: "Brain sim off",
+  demo_example: "Demo example · precomputed",
+  genuine: "TRIBE result",
+  genuine_precomputed: "TRIBE · precomputed",
+  mock: "MOCK",
+};
 
 const DATA_LABELS: Record<DataMode, string> = {
   none: "No brain data",
@@ -780,7 +790,6 @@ export function BrainCompanion(props: BrainCompanionProps) {
   };
   const allNotices = hostNotices?.length ? [...notices, ...hostNotices] : notices;
   const emptyCopy = brainSim === "off" ? "Brain sim off · this run completed with the Gemini panel only" : "No brain data · curves appear only with genuine predictions";
-  const sample = binding ? sampleAt(binding.times, clockState.time, binding.hz) : null;
   const viewLabel = demoActive && demo ? `Demo example · ${demo.title}` : `Variant ${variant}`;
   const chipClass = mock ? "bv-chip-mock" : dataMode === "demo_example" ? "bv-chip-demo" : binding ? "bv-chip-live" : "";
   const pageClass = [
@@ -904,7 +913,7 @@ export function BrainCompanion(props: BrainCompanionProps) {
           )}
         </aside>
 
-        <div className={`bv-workspace${fullscreen ? " bv-fullscreen" : ""}`} ref={workspaceRef}>
+        <div className={`bv-workspace${fullscreen ? " bv-fullscreen" : ""}${selection ? "" : " bv-no-region"}`} ref={workspaceRef}>
           <div
             className="bv-stage"
             onMouseEnter={() => mode === "dock" && setHovered(true)}
@@ -940,43 +949,18 @@ export function BrainCompanion(props: BrainCompanionProps) {
               />
             )}
 
-            <figure className={`bv-video${current?.videoUrl ? "" : " bv-video-empty"}`}>
-              {current?.videoUrl ? (
+            {current?.videoUrl && (
+              <figure className="bv-video">
                 <video ref={videoRef} src={current.videoUrl} playsInline preload="auto" aria-label={`Variant ${variant} video`} />
-              ) : (
-                <div className="bv-video-placeholder">
-                  <span className="bv-mono">Variant {variant}</span>
-                  <strong>{mock ? "MOCK · no video" : "No variant video"}</strong>
-                  {current?.scenes && <em>{current.scenes.find((s) => clockState.time >= s.t_start && clockState.time < s.t_end)?.text}</em>}
-                </div>
-              )}
-              <figcaption className="bv-mono">{formatTime(clockState.time)}</figcaption>
-            </figure>
-
-            {binding && curves && sequence === "idle" && (
-              <div className="bv-meters" aria-label="Group meters at the current time">
-                {METER_GROUPS.map((g) => {
-                  const v = seriesAt(curves.stats.groupMeans[g], curves.times, clockState.time, curves.hz);
-                  const w = Number.isFinite(v) ? Math.max(0, Math.min(1, v / meterMax)) : 0;
-                  return (
-                    <div className="bv-meter" key={g}>
-                      <span><i style={{ background: GROUP_COLORS[g] }} aria-hidden="true" />{REGION_GROUPS[g].label}</span>
-                      <b className="bv-mono">{Number.isFinite(v) ? v.toFixed(3) : "—"}</b>
-                      <em><s style={{ width: `${w * 100}%`, background: GROUP_COLORS[g] }} /></em>
-                    </div>
-                  );
-                })}
-              </div>
+                <figcaption className="bv-mono">{formatTime(clockState.time)}</figcaption>
+              </figure>
             )}
+
 
             {!binding && sequence === "idle" && (
               <div className="bv-empty" role="status">
                 <strong>{brainSim === "off" ? "Brain sim off" : "No brain data"}</strong>
-                <span>
-                  {brainSim === "off"
-                    ? "TRIBE was unavailable for this run. Results use the Gemini viewer panel only; no brain activity is shown."
-                    : `Variant ${variant} has no genuine TRIBE prediction bound. The anatomy is interactive; activity appears only from real results.`}
-                </span>
+                <span>{brainSim === "off" ? "TRIBE was unavailable; this run used the Gemini panel only." : "Activity appears only from genuine TRIBE results."}</span>
               </div>
             )}
 
@@ -996,10 +980,16 @@ export function BrainCompanion(props: BrainCompanionProps) {
               <button type="button" className="bv-icon-button" onClick={() => setMode("dock")} title="Return the brain to its dock (Esc)">
                 {harness ? "Dock" : "Back to canvas"}
               </button>
-              <button type="button" className="bv-icon-button" onClick={() => scene?.resetCamera()} title="Reset camera (double-click the brain)">Reset view</button>
               <button type="button" className="bv-icon-button" onClick={toggleFullscreen} title="Fullscreen (F)" aria-pressed={fullscreen}>
                 {fullscreen ? "Exit fullscreen" : "Fullscreen"}
               </button>
+              <details className="bv-more">
+                <summary className="bv-icon-button" aria-label="More view actions">More</summary>
+                <div className="bv-more-menu">
+                  <button type="button" onClick={() => scene?.resetCamera()}>Reset view</button>
+                  <button type="button" onClick={() => startEntry(true)} disabled={Boolean(entry) || sequence !== "idle"}>Replay intro</button>
+                </div>
+              </details>
             </div>
 
             <div className="bv-controls" role="toolbar" aria-label="Brain view controls">
@@ -1029,11 +1019,18 @@ export function BrainCompanion(props: BrainCompanionProps) {
               />
             )}
 
-            {binding && (dataMode === "mock" || dataMode === "demo_example" || dataMode === "genuine_precomputed") && (
-              <span className={`bv-dock-tag ${dataMode === "mock" ? "bv-dock-tag-mock" : ""}`}>
-                {dataMode === "mock" ? "MOCK" : dataMode === "demo_example" ? "Demo example · precomputed" : "Precomputed"}
+            <p className="bv-dock-caption" aria-live="polite">
+              <span>
+                {demoActive ? "Demo example" : (
+                  <>
+                    <span className="bv-caption-long">Variant </span>
+                    {variant}
+                  </>
+                )}
               </span>
-            )}
+              <span className="bv-mono">{formatTime(clockState.time)}</span>
+              <span className={dataMode === "mock" ? "bv-caption-mock" : dataMode === "none" || dataMode === "sim_off" ? "bv-dim" : ""}>{DOCK_DATA_LABELS[dataMode]}</span>
+            </p>
 
             {workload && (
               <p className="bv-dock-status bv-mono" aria-live="polite">
@@ -1042,25 +1039,14 @@ export function BrainCompanion(props: BrainCompanionProps) {
               </p>
             )}
 
-            <div className="bv-dock-bar" aria-label="Brain dock">
-              <div className="bv-dock-meta">
-                <strong>{viewLabel}</strong>
-                <span className="bv-mono">
-                  {formatTime(clockState.time)}
-                  {sample?.inRange && binding ? ` · sample ${binding.times[sample.nearestIndex].toFixed(0)} s` : ""}
-                </span>
-              </div>
-              <span className={`bv-chip ${chipClass}`}>{dataMode === "mock" ? "MOCK" : statusLabel}</span>
-              <div className="bv-dock-actions">
-                <button type="button" className="bv-icon-button" onClick={() => setMode("expanded")} disabled={Boolean(entry)}>Expand</button>
-                <button type="button" className="bv-icon-button" onClick={() => startEntry(true)} disabled={Boolean(entry) || sequence !== "idle"} title="Replay the entry intro">Replay</button>
-                <button type="button" className="bv-icon-button" onClick={() => setPinned((v) => !v)} aria-pressed={pinned}>{pinned ? "Unpin" : "Pin"}</button>
-                {manual || motionPaused ? (
-                  <button type="button" className="bv-icon-button" onClick={() => { setManual(false); setMotionPaused(false); }}>Resume motion</button>
-                ) : (
-                  <button type="button" className="bv-icon-button" onClick={() => setMotionPaused(true)}>Pause motion</button>
-                )}
-              </div>
+            <div className="bv-dock-bar" aria-label="Brain dock actions">
+              <button type="button" className="bv-primary-button" onClick={() => setMode("expanded")} disabled={Boolean(entry)}>Expand</button>
+              {manual || motionPaused ? (
+                <button type="button" className="bv-ghost-button" onClick={() => { setManual(false); setMotionPaused(false); }}>Resume motion</button>
+              ) : (
+                <button type="button" className="bv-ghost-button" onClick={() => setMotionPaused(true)}>Pause motion</button>
+              )}
+              {pinned && <button type="button" className="bv-ghost-button" onClick={() => setPinned(false)}>Unpin</button>}
             </div>
 
             {entry && scene && (
@@ -1084,10 +1070,10 @@ export function BrainCompanion(props: BrainCompanionProps) {
             <aside className="bv-dock-callout" aria-live="polite">
               <span className="bv-eyebrow">
                 {STEP_LABELS[beat.milestone.step]}
-                {beat.milestone.variantId ? ` · Variant ${beat.milestone.variantId}` : ""} · backend event
+                {beat.milestone.variantId ? ` · Variant ${beat.milestone.variantId}` : ""}
+                {beat.milestone.durationS !== null ? ` · ${beat.milestone.durationS.toFixed(1)} s` : ""}
               </span>
               <h3>{beat.milestone.message}</h3>
-              {beat.milestone.durationS !== null && <p className="bv-mono bv-dim">Step took {beat.milestone.durationS.toFixed(1)} s</p>}
               {beat.region ? (
                 <>
                   <p className="bv-callout-region">
@@ -1096,8 +1082,7 @@ export function BrainCompanion(props: BrainCompanionProps) {
                     {beat.region.dataMode === "genuine_precomputed" ? " · precomputed" : ""}
                   </p>
                   <p>{beat.region.knownFor}</p>
-                  <p className="bv-mono bv-dim">On screen: {beat.region.sceneText ?? "no scene data at this time"}</p>
-                  <p className="bv-mono bv-dim">Brain colours still show playback time {formatTime(clockState.time)}; nothing was seeked.</p>
+                  <p className="bv-mono bv-dim">On screen: {beat.region.sceneText ?? "no scene data"} · colours show playback {formatTime(clockState.time)}</p>
                 </>
               ) : RESULT_STEPS.includes(beat.milestone.step) ? (
                 <p className="bv-dim">No region shown: no genuine brain data for this video yet.</p>
@@ -1114,31 +1099,30 @@ export function BrainCompanion(props: BrainCompanionProps) {
             curves={curves}
             scenes={current?.scenes}
             emptyLabel={emptyCopy}
+            about={
+              <>
+                Predicted cortical (fMRI-like) response for an average viewer from TRIBE v2, sampled about once per second and interpolated for display;
+                not measured EEG, and it does not read emotions, desire or buying intent. Mesh: FreeSurfer fsaverage5. Scale: {scale ? scale.rule : "none until data is bound"}.
+                Keys: space play/pause, ←/→ one second, F fullscreen, Esc back, double-click reset.
+              </>
+            }
           />
 
-          <aside className="bv-side bv-side-right" aria-label="Region details">
-            <RegionCard
-              selection={selection}
-              time={clockState.time}
-              stats={stats}
-              times={binding?.times ?? null}
-              hz={binding?.hz}
-              units={binding?.units ?? ""}
-              scenes={current?.scenes}
-              noDataLabel={brainSim === "off" ? "Brain sim off" : "No brain data"}
-              onClear={() => setPick(null)}
-            />
-            <details className="bv-card bv-about">
-              <summary className="bv-eyebrow">About this view</summary>
-              <p>
-                Predicted cortical (fMRI-like) response for an average viewer from TRIBE v2, sampled about once per second and interpolated for display. It is
-                not measured EEG and does not read emotions, desire or buying intent.
-              </p>
-              <p className="bv-footnote">
-                Mesh: FreeSurfer fsaverage5 (normal and inflated). Scale: {scale ? scale.rule : "none until data is bound"}. Keys: space play/pause, ←/→ one second, F fullscreen, Esc dock, double-click reset.
-              </p>
-            </details>
-          </aside>
+          {selection && (
+            <aside className="bv-side bv-side-right" aria-label="Region details">
+              <RegionCard
+                selection={selection}
+                time={clockState.time}
+                stats={stats}
+                times={binding?.times ?? null}
+                hz={binding?.hz}
+                units={binding?.units ?? ""}
+                scenes={current?.scenes}
+                noDataLabel={brainSim === "off" ? "Brain sim off" : "No brain data"}
+                onClear={() => setPick(null)}
+              />
+            </aside>
+          )}
         </div>
       </div>
     </div>

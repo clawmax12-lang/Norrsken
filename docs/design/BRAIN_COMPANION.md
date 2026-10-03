@@ -154,3 +154,30 @@ The earlier proposal `meta.cortical` v0 (float32 JSON/base64/URL, Desikan groups
 - Region outlines follow fsaverage5 mesh edges, so they look jagged at close range.
 - The entry title uses the host face only when `.preflight-theme` is applied; this branch doesn't load the Redaction files (docs PR #1 owns them).
 - Genuine activity has not been seen, because none exists.
+
+### Minimum interface, complete capability (Specific/Sana-like editing pass)
+
+**At rest:** the dock shows only the brain and one caption, `A · 0:00.0 · No brain data`. The caption carries variant, playback time and data mode, with MOCK as a red pill. While real work runs, a single status line is added.
+
+**Enlarged (hover/pin/keyboard):**
+- one primary action, **Expand**;
+- quiet **Pause/Resume motion**;
+- **Unpin** only when pinned.
+
+Replay, Reset view and the duplicate data chip left the dock. Replay and Reset live under **More** in the expanded view; double-click reset still works.
+
+**Expanded:**
+- anatomy, controls and timeline;
+- region details appear only after a region is clicked;
+- the stage meters were removed because they repeated the timeline legend values;
+- no empty "No variant video" frame;
+- the no-data message appears once, as one line;
+- "About this view" sits in the timeline footer on demand.
+
+**Always visible:**
+- selected variant, time and data mode;
+- MOCK/precomputed labels;
+- the legend whenever activity is drawn;
+- Back to canvas, Fullscreen, and Variant/Surface/View controls.
+
+Everything works by click and keyboard, not hover only.
