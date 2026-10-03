@@ -14,6 +14,20 @@ Start from the existing Dashboard web branch, inspect its current layout and pre
 
 **v1.6 design update:** FLORA/reference 08 is the owner's exact main-layout target: black dotted open canvas, narrow floating left tools and compact corner actions. Preserve your anatomy/dock/adapter work while coordinating the shell with Dashboard. Use supplied Redaction/warm orange-red identity; no radial universe, lime theme or panel-heavy Director landing. Brain stays top-left below project controls, with hover/keyboard pin; actual milestone → roughly three-second slower camera/text → resume, without changing video/sample time. Voice owner integrates both [orb and prompt beam](DIRECTOR_VISUALS.md), reusing actual Live input/output state; no competing audio service.
 
+## Product-owner quality prompt — FLORA is the bar
+
+> Treat this as a carefully art-directed creative product, not a generic AI dashboard. William has explicitly rejected the current generic "AI slop" appearance. FLORA at https://flora.ai/ and our reference 08 define the minimum visual quality: composition, spacing, quiet controls and a content-first black dotted canvas. "Tony Stark" describes responsiveness and intelligence, not extra sci-fi ornament.
+>
+> Preserve that restraint in every brain-owned surface. Use the supplied Redaction for identity/display text and clear neutral typography for controls. The brain should feel sculptural: correct anatomy, convincing folds, controlled directional light, depth, deliberate framing and precise interaction. In the dock it is an elegant companion; expanded, the anatomy and matching video become the focus. Keep meaningful controls and data labels available without permanent telemetry panels.
+>
+> The strongest visual contrast is genuine TRIBE v2 response against the neutral gray brain and black space. Warm red/orange/yellow activity must come from the exact selected video's stored prediction, with a consistent visible scale. No random glowing regions, decorative electrical waves, fabricated metrics or inference from microphone volume. Without data, beautiful gray anatomy and an honest no-data state are the complete design. UI accents stay restrained orange-red and separate from scientific normalization.
+>
+> Motion must have a reason. Entry → top-left dock; hover/keyboard pin → detail; actual meaningful milestone → roughly three seconds of slower camera/text → resume. Camera motion never changes video/sample time. Manual control and reduced motion win. Avoid gratuitous bloom, particle storms, neon blue/purple halos, rainbow gradients, glass-panel stacks, floating circuit decorations and always-pulsing borders. Remove nonfunctional ornament instead of adding another layer.
+>
+> Keep your ownership on brain/anatomy/dock/adapters and coordinate the FLORA shell with Dashboard. Preserve backend and Gemini Live logic; the separate warm orb/beam represent actual voice/work state, not neural activity. Use the existing geometry once; hover, scrub and replay never invoke a model.
+>
+> Before handoff, inspect at 1440 px in the browser and compare the visual hierarchy against reference 08 and the original anatomical references. Capture docked, expanded, selected-region and honest no-data states; genuine activity only if available. Verify crisp readable typography, unclipped hover/pin, accessible controls, deliberate transitions and no console errors. Passing tests is necessary but does not establish this visual quality. Report concrete remaining mismatches rather than declaring the aesthetic done from a build alone.
+
 ## Build once, bind data repeatedly
 
 This is a one-time product-development assignment, not an LLM-generated brain per user or video. Build a reusable typed viewer component, share/cache immutable geometry and atlas assets, and keep each instance's activity data separate. An A/B view duplicates the component, not anatomy generation or model inference. Playback, orbit and scrubbing must not invoke Gemini, Opus or TRIBE.
