@@ -87,3 +87,6 @@ asyncio_mode = "auto"
 testpaths = ["tests"]
 addopts = "-ra --strict-markers -m 'not live' --cov=tribe_worker --cov-report=term-missing:skip-covered"
 markers = ["live: needs a GPU, tribev2 weights and Llama access; never run in CI"]
+
+[tool.uv]
+constraint-dependencies = ["transformers>=4.50", "tokenizers>=0.21", "huggingface_hub>=0.30"]
