@@ -63,3 +63,4 @@ class HealthResponse(BaseModel):
     gemini: bool = False
     condense: bool = False
     brain_sim: bool = False
+    opus: bool = False

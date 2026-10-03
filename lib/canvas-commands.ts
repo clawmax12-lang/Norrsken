@@ -36,7 +36,7 @@ export function normalizeGoal(value: string): BriefDraft["goal"] | null {
 
 /** True when every meaningful word of `text` appears in the confirmed `source` field. */
 export function isGroundedCopy(text: string, source: string): boolean {
-  const normalize = (value: string) => value.toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
+  const normalize = (value: string) => value.toLocaleLowerCase().replace(/[^\p{L}\p{N}\s]/gu, " ").replace(/\s+/g, " ").trim();
   const candidate = normalize(text);
   const evidence = normalize(source);
   if (!candidate || !evidence) return false;

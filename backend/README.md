@@ -38,6 +38,31 @@ A full live run (4 screenshots, 3 variants, Gemini panel, no TRIBE) took 2 min 3
 | `GET /api/projects/{id}/results` | Concepts, render records, simulation series and events, ranking and report (including `token_savings`), plus file URLs. |
 | `GET /api/projects/{id}/files/{video,video-final,brain-activity,brain-groups}/{variant}` | The variant's tested silent MP4, its cut with sound (`video-final`, when sound was added; range requests supported) and TRIBE brain data. |
 | `GET /api/projects/{id}/export/{winner.mp4,runner_up.mp4,report.json,launch_brief.md}` | The four FR-08 downloads. |
+| `POST /api/projects/{id}/finalization` | Explicitly confirmed winner → bounded Opus motion composition → render/sound/exact-file pretest, background 202 response. |
+| `GET /api/projects/{id}/finalization` | Read final job status/evidence, or `null` before starting; never performs inference. |
+| `GET /api/projects/{id}/finalization/{video,report}` | Separate finished MP4/evidence; only after its own pretest, with download-time hash verification. |
+
+## Runtime Opus final video (FR-17)
+
+Set these **on this Python service**, not only on the Vercel web project:
+
+```dotenv
+ANTHROPIC_API_KEY=replace_with_server_secret
+ANTHROPIC_MODEL=claude-opus-5-5
+CONDENSE_API_KEY=replace_with_server_secret
+GEMINI_API_KEY=replace_with_server_secret
+OPUS_MAX_OUTPUT_TOKENS=4096
+```
+
+Use your host's secret manager; never paste keys into Git, browser code, PRs or chat. Backend reads environment/`.env`, not the web app's `.env.local`. Redeploy/restart the Python service. `/api/health` adds an `opus` configuration flag (not a live account-access test). Vercel's `PREFLIGHT_API_URL` points to this reachable service; the browser can use `NEXT_PUBLIC_PREFLIGHT_API_BASE=/preflight-api` after rebuilding the existing proxy.
+
+After a run is DONE, **Finish with Opus → Confirm paid finish** approves the actual winner and its tested SHA-256. Opus uses native structured JSON through `POST {CONDENSE_BASE_URL}/anthropic/v1/messages`, with the Anthropic upstream key kept server-side and the Condense credential in its documented header. No direct fallback or substitute model. Model/API/routing documentation checked 2026-10-03: [Anthropic models](https://platform.claude.com/docs/en/models/overview), [structured outputs](https://platform.claude.com/docs/en/build-with-claude/structured-outputs), [Condense reference](https://condense.chat/docs/reference/#ep-anthropic). Real account access/latency still require verification.
+
+The recipe controls only shot duration, layout and transitions in the existing template; server keeps copy, source fields, screenshots/order, CTA and brand. Remotion renders 1080×1920 / 30 fps / 15 s. Local music/SFX is added when `SOUND_ENABLED=true`, then Gemini and available TRIBE watch **the exact final bytes including sound**. Finalization makes no new direct-TTS calls while the existing narration exception remains owner-to-confirm; the original audio team's stage is preserved. New evidence never inherits the original verdict/brain prediction or guarantees improvement. Original candidate files/ranking/four exports stay intact; separate final downloads show source/final hashes, model/route/token usage, sound metadata and their own simulations. The existing brain continues showing the original selected A/B/C evidence; it never relabels those samples as final-video data.
+
+One final asset per project; 4,096 output tokens default, configurable maximum 8,192. No automatic Opus retry. Failure/timeout/crash needs another explicit confirmation with the original command ID; total Opus attempts capped at two, even across restarts. Atomic composition checkpoints avoid another call after render/simulator failure. Render/testing use the existing timeout/one-retry policy. Per-project `flock` prevents concurrent duplicate jobs across processes on the **same persistent filesystem**; multiple machines need a shared queue/lock adapter before horizontal scaling. A changed source/configuration cannot reuse the previous finalization. Downloads/status never start jobs. No final video is downloadable without its own matching Gemini pretest; optional TRIBE outage is “Final brain sim off”.
+
+The current **Cloudflare quick tunnel** forwards to the backend team's running server: [current endpoints/evidence](../TEAM.md#integration-and-acceptance-handoff). It is not a Workers deployment; configure the secrets on the origin Python server. The renderer needs Node/Chrome, ffmpeg and persistent writable storage. Do not assume Workers, Pages or Vercel can run the subprocess/background pipeline unchanged, and never treat a temporary tunnel URL as permanent configuration. Do not copy provider secrets through request headers.
 
 ## LLM and Condense
 

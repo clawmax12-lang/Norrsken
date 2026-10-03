@@ -1,10 +1,14 @@
 # Canvas, persistent brain and two-way Gemini Live — integration brief
 
-Authoritative scope: [PRD v1.6](../../PRD.md) §8/§9/§10/§12.9. This is an implementation handoff, not a second product specification. Visuals: [all supplied references](README.md), [FLORA-style layout](CLEAN_FLOW_DESIGN.md) and [Director effects](DIRECTOR_VISUALS.md). Execution evidence: [historical status audit](../status/2026-10-03-build-audit.md) and [TEAM.md](../../TEAM.md).
+**Release reconciliation:** PRD v1.7.1 adopts the existing-company-video target from PR #1; the currently implemented intake remains screenshots/brief until the original-video migration is built. Later owner corrections govern voice: bottom prompt → transparent composing orb plus warm bottom-border beam → prompt on End/Escape. Do not restore older central/full-screen or white-background interpretations.
+
+Authoritative scope: [PRD v1.7.1](../../PRD.md) §8/§9/§10/§12.9. This is an implementation handoff, not a second product specification. Visuals: [all supplied references](README.md), [FLORA-style layout](CLEAN_FLOW_DESIGN.md) and [Director effects](DIRECTOR_VISUALS.md). Execution evidence: [historical status audit](../status/2026-10-03-build-audit.md) and [TEAM.md](../../TEAM.md).
 
 Latest owner clarification: FLORA is the primary layout reference and ElevenLabs is a supporting UI reference only, not a voice-provider change. See the [Canvas integration handoff](CANVAS_INTEGRATION_HANDOFF.md) for the top-left hover/three-second brain-focus direction, actual backend routes/artifact mismatches, merge snapshot and short voice brief to relay. Merged PR #2 records a direct-Live policy exception; that decision must be reconciled with this docs baseline's routing rule before claiming one synchronized baseline.
 
 ## Target experience
+
+**Latest owner correction, v1.6.2:** voice replaces the bottom prompt with reference 10's neutral composing sash at the bottom, not a central/full-screen surface or breathing/loading ring. Keep the silhouette through errors, paused with an honest status. The orb is transparent on black (white circle withdrawn); actual output amplitude drives scale/deformation while the warm VoiceBeam reacts simultaneously at the viewport's bottom border, like a floor under the orb. No canvas dimming/backdrop/card; canvas remains interactive. Compact captions/mute/end remain separate. End/Escape restores prompt/focus and releases mic. Earlier controls-beam/central/side-orb directions are superseded; Gemini Live/audio/tools are unchanged.
 
 Entry brain hero → dock in a corner → Enable Live and prompt/validated brief on a flow canvas → conversational storyboard selection/refinement → confirmed run → actual variant/job/pretest nodes → recommended tested export. A female Gemini Live Director listens, replies, handles interruption and explains actual work throughout, represented by a standalone orb without a surrounding card, enlarging while speaking. The brain and voice are persistent companions; node selection drives their shared context. The finished video remains the outcome.
 
@@ -101,7 +105,7 @@ Enable Live → speak a brief/question and hear a female reply → interrupt and
 
 Share with the existing Voice session owner if direct Conductor messaging is restricted:
 
-> William confirmed two-way Gemini Live is FR-16/P0; TTS-only is insufficient. Read PR #1's current PRD v1.6, this integration brief, CLEAN_FLOW_DESIGN.md and DIRECTOR_VISUALS.md. Both requested warm orb/beam effects belong inside the FLORA-style black canvas; preserve existing Live/validated tools rather than another app. Reconcile older local PRD changes non-destructively, preserve run instructions and agree shared draft/tool/event contracts with Dashboard/backend/Opus. Demonstrate real conversation/interruption plus persisted visible source-backed storyboard edits. Confirm paid jobs and keep Condense routing unresolved until verified or explicitly approved; do not replace another owner's shell or expose credentials.
+> William confirmed two-way Gemini Live is FR-16/P0; TTS-only is insufficient. Read PR #1's current PRD v1.7.1, this integration brief, CLEAN_FLOW_DESIGN.md and DIRECTOR_VISUALS.md. Both requested warm orb/beam effects belong inside the FLORA-style black canvas; preserve existing Live/validated tools rather than another app. Reconcile older local PRD changes non-destructively, preserve run instructions and agree shared draft/tool/event contracts with Dashboard/backend/Opus. Demonstrate real conversation/interruption plus persisted visible source-backed storyboard edits. Confirm paid jobs and keep Condense routing unresolved until verified or explicitly approved; do not replace another owner's shell or expose credentials.
 
 ## Brain honesty and reuse
 

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "vitest";
-import { adaptBackendTribe, backendUrl, loadBackendRun, parseActivityEvent, parseNpy, parseWorkerGroups, type BackendSimulationResult } from "../../lib/brain/backend";
+import { adaptBackendTribe, backendUrl, loadBackendRun, loadDemoBundle, parseActivityEvent, parseNpy, parseWorkerGroups, validateDemoManifest, type BackendSimulationResult } from "../../lib/brain/backend";
 import { computeRegionStatistics } from "../../lib/brain/atlas";
 import { FSAVERAGE5_VERTICES } from "../../lib/brain/contract";
 import { sampleAt } from "../../lib/brain/timeline";
@@ -151,4 +151,25 @@ test("the audio step from the sound stage is kept, not dropped as unknown", () =
   );
   assert.equal(event?.step, "audio");
   assert.equal(event?.variant_id, "B");
+});
+
+test("demo bundles must be genuine, precomputed, licensed and video-matched", async () => {
+  const manifest = {
+    kind: "preflight.demo-bundle.v1",
+    title: "Example",
+    license: "Owned by the team; shown with permission",
+    source_video: { url: "example.mp4", sha256: SHA, duration_s: 15 },
+    simulation: sim([0, 1], { precomputed: true }),
+    activity_url: "activity.npy",
+  };
+  assert.ok(validateDemoManifest(manifest).ok);
+  assert.equal(validateDemoManifest({ ...manifest, license: "" }).ok, false);
+  assert.equal(validateDemoManifest({ ...manifest, simulation: sim([0, 1]) }).ok, false, "not precomputed");
+  assert.equal(validateDemoManifest({ ...manifest, simulation: sim([0, 1], { precomputed: true, meta: { mock: true } }) }).ok, false, "mock");
+  assert.equal(validateDemoManifest({ ...manifest, source_video: { ...manifest.source_video, sha256: "b".repeat(64) } }).ok, false, "other video");
+  const act = npyF16(2, NV, () => 0.5);
+  const fakeFetch = (async (url: string) => (url.endsWith("manifest.json") ? Response.json(manifest) : new Response(act.slice(0)))) as unknown as typeof fetch;
+  const bundle = await loadDemoBundle("http://demo.test/bundle/manifest.json", fakeFetch);
+  assert.equal(bundle.binding.precomputed, true);
+  assert.equal(bundle.videoUrl, "http://demo.test/bundle/example.mp4");
 });

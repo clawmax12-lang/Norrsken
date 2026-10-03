@@ -1,6 +1,8 @@
 # Preflight visual baseline
 
-**Approved direction:** eight original images and the motion clip supplied by the product owner are the shared baseline. **[FLORA](https://flora.ai/) and reference 08 are the primary main-interface target** in PRD v1.6: black dotted canvas, narrow floating tools and clean content-first branches. Specific/reference 09 and the owner's Sana-like direction reinforce restraint and contextual detail, not a new shell. Earlier canvas images remain supporting references; original brain images still define anatomy quality. Two-way female Gemini Live, standalone orb and prompt beam are required. This document supports [PRD §12](../../PRD.md#12-ui-and-the-analysis-intro); it does not replace priorities, scientific constraints or acceptance criteria in the PRD.
+**Release reconciliation:** PRD v1.7.1 adopts the existing-company-video target from PR #1; the currently implemented intake remains screenshots/brief until the original-video migration is built. Later owner corrections govern voice: bottom prompt → transparent composing orb plus warm bottom-border beam → prompt on End/Escape. Do not restore older central/full-screen or white-background interpretations.
+
+**Approved direction:** eight original images and the motion clip supplied by the product owner are the shared baseline. **[FLORA](https://flora.ai/) and reference 08 are the primary main-interface target** in PRD v1.7.1: black dotted canvas, narrow floating tools and clean content-first branches. Specific/reference 09 and the owner's Sana-like direction reinforce restraint and contextual detail, not a new shell. Earlier canvas images remain supporting references; original brain images still define anatomy quality. Two-way female Gemini Live, standalone orb and prompt beam are required. This document supports [PRD §12](../../PRD.md#12-ui-and-the-analysis-intro); it does not replace priorities, scientific constraints or acceptance criteria in the PRD.
 
 All originals are committed under `references/` so every teammate and Conductor workspace can access them. They are design references, not completed Preflight UI or brain simulation output. Preserve Meta/TRIBE source attribution; implement Preflight's own identity rather than copying their branding.
 
@@ -60,6 +62,12 @@ The owner supplied this as an additional reference from **specific.dev**, emphas
 
 Apply [minimum interface, complete capability](CLEAN_FLOW_DESIGN.md#minimum-interface-complete-capability): one contextual primary action, details on demand, and persistent safety/evidence controls. Sparse does not mean low legibility, missing required features or hiding errors/privacy/data mode.
 
+## Reference 10 — bottom voice orb
+
+![Owner-supplied neutral gray Libraries.dev orb](references/10-voice-orb-bottom.png)
+
+Latest FR-16 correction (PRD v1.7.1): enabling voice **replaces the bottom prompt with a fairly large standalone orb at the bottom**. This reference is the library's **composing sash**, not its breathing ring; retain its silhouette even when disconnected (paused and honestly labeled). Transparent on black, no white substrate/central/full-screen view/dimmed canvas/backdrop/card. Orb scale/deformation follows actual output amplitude; warm VoiceBeam reacts simultaneously at the viewport's bottom border, like a floor under it. Compact captions/mute/end remain available and canvas stays interactive. Closing restores prompt/focus. This supersedes the controls-beam/central-orb interpretations, not Gemini Live or the shared audio graph.
+
 ## What "extremely cool, and you can see how it works" means
 
 The viewer should be able to follow this sequence without an explanation from the presenter:
@@ -78,7 +86,7 @@ Use precise, readable controls and purposeful camera movement. Palette, rhythm, 
 
 **Build workspace:** [3D Brain — Opus 5.5](conductor://workspace?id=e14af4c4-eada-4c17-bc3b-42cd2ef08dcd&session=be40ac16-08d6-4ce4-999f-7e69ea8d4912), branch `conductor/3d-brain-opus-55`, isolated from the Dashboard. Started on 3 Oct 2026; the model was verified as `opus-5-5-1m` / `claude-opus-5-5[1m]` and the session was working. This records the assignment, not a completed renderer; implementation/preview evidence will be added to TEAM.md at handoff.
 
-The brain renderer runs in the web frontend. TRIBE remains the neuroscience model; the GPU worker and simulator contract belong to their designated owners. No SwiftUI or native application is involved. PRD v1.6 retains the entry/anatomy/dock even if live GPU inference is off; cortical animation still needs genuine data. A/B/difference mode remains FR-15/P1 under the current PRD; the visual direction does not silently promote it ahead of unfinished P0.
+The brain renderer runs in the web frontend. TRIBE remains the neuroscience model; the GPU worker and simulator contract belong to their designated owners. No SwiftUI or native application is involved. PRD v1.7.1 retains the entry/anatomy/dock even if live GPU inference is off; cortical animation still needs genuine data. A/B/difference mode remains FR-15/P1 under the current PRD; the visual direction does not silently promote it ahead of unfinished P0.
 
 ## Build once, reuse across video jobs
 
@@ -112,3 +120,4 @@ The originals were copied byte-for-byte; they were not resized, generated or ret
 | `07-dark-dotted-canvas.png` | `9398120a-d11f-4fac-a26a-a5adf8d20bca` | 3420 × 1962 PNG | `b14936d8202c324407ab2a09af0ca2342f3084d22eb8b757e5c8a855a4dc2a44` |
 | `08-flora-canvas-primary.png` | `07936ce0-78e6-44d6-b0c4-d3982ad4cb4c` | 3420 × 1962 PNG | `39a5152ec6e1d4a3dbaf56fc5e57403ca6884f1552ebb3353a3488cdde431b03` |
 | `09-specific-sparse-flow.png` | `3512cb96-690d-4cb9-a7c2-68a1d4a52f4d` | 3420 × 1962 PNG | `0434efb3fe3190e154b54e9cfafc11bae2c387607e591606e79b42bd4730b054` |
+| `10-voice-orb-bottom.png` | `0de2e966-3735-408d-880d-b0d0ed80cca7` | 146 × 212 PNG | `1ca9951794f45c819e1f320b7c658867f527b2031592053577d1a1353b3b18ef` |

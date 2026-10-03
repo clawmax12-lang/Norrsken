@@ -1,8 +1,9 @@
 import { GoogleGenAI, Modality } from "@google/genai";
 import { NextRequest, NextResponse } from "next/server";
 
-import { DIRECTOR_INSTRUCTION, LIVE_MODEL, LIVE_VOICE } from "@/lib/director";
+import { DIRECTOR_INSTRUCTION, directorTools, LIVE_MODEL, LIVE_VOICE } from "@/lib/director";
 import { getGoogleApiKey } from "@/lib/google-api-key";
+import { LIVE_TOKEN_ERRORS, liveTokenFailure } from "@/lib/live-token-errors";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -33,20 +34,20 @@ function allowsToken(request: NextRequest) {
 export async function POST(request: NextRequest) {
   if (!allowsToken(request)) {
     return NextResponse.json(
-      { error: "Too many voice sessions. Wait a minute and try again." },
+      { code: "rate_limited", error: LIVE_TOKEN_ERRORS.rate_limited },
       { status: 429, headers: { "Cache-Control": "no-store", "Retry-After": "60" } },
     );
   }
   const apiKey = getGoogleApiKey();
   if (!apiKey) {
     return NextResponse.json(
-      { error: "Voice is not configured. Set GOOGLE_API_KEY or google on the server." },
+      { code: "not_configured", error: LIVE_TOKEN_ERRORS.not_configured },
       { status: 503, headers: { "Cache-Control": "no-store" } },
     );
   }
 
   try {
-    const client = new GoogleGenAI({ apiKey });
+    const client = new GoogleGenAI({ apiKey, httpOptions: { apiVersion: "v1alpha" } });
     const token = await client.authTokens.create({
       config: {
         uses: 1,
@@ -62,6 +63,7 @@ export async function POST(request: NextRequest) {
             },
             inputAudioTranscription: {},
             outputAudioTranscription: {},
+            tools: [{ functionDeclarations: directorTools }],
           },
         },
         lockAdditionalFields: [],
@@ -77,10 +79,12 @@ export async function POST(request: NextRequest) {
       { headers: { "Cache-Control": "no-store" } },
     );
   } catch (error) {
-    console.error("Unable to create Gemini Live token", error);
+    // SDK errors can carry credential-bearing request URLs; never log raw objects.
+    const failure = liveTokenFailure(error);
+    console.error(`Unable to create Gemini Live token: ${failure.code}.`);
     return NextResponse.json(
-      { error: "Gemini Live is temporarily unavailable." },
-      { status: 502, headers: { "Cache-Control": "no-store" } },
+      { code: failure.code, error: failure.error },
+      { status: failure.status, headers: { "Cache-Control": "no-store", ...(failure.status === 429 ? { "Retry-After": "60" } : {}) } },
     );
   }
 }

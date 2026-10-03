@@ -23,6 +23,8 @@ export interface BrainStageProps {
   onReady?: (scene: BrainScene | null) => void;
   onHead?: (head: HeadObject | null) => void;
   onUserInteract?: () => void;
+  /** WebGL could not start (unsupported/blocked); the host shows a quiet fallback. */
+  onError?: (message: string) => void;
   label: string;
   children?: ReactNode;
 }
@@ -41,15 +43,22 @@ export function BrainStage(props: BrainStageProps) {
   const onReadyRef = useLatest(props.onReady);
   const onHeadRef = useLatest(props.onHead);
   const onInteractRef = useLatest(props.onUserInteract);
+  const onErrorRef = useLatest(props.onError);
 
   useEffect(() => {
     if (!hostRef.current) return;
-    const scene = new BrainScene(hostRef.current, geometry, {
-      reducedMotion,
-      onPick: (p) => onPickRef.current(p),
-      onContextLost: () => setContextLost(true),
-      onUserInteract: () => onInteractRef.current?.(),
-    });
+    let scene: BrainScene;
+    try {
+      scene = new BrainScene(hostRef.current, geometry, {
+        reducedMotion,
+        onPick: (p) => onPickRef.current(p),
+        onContextLost: () => setContextLost(true),
+        onUserInteract: () => onInteractRef.current?.(),
+      });
+    } catch (error) {
+      onErrorRef.current?.(error instanceof Error ? error.message : "WebGL is unavailable");
+      return;
+    }
     sceneRef.current = scene;
     scene.setTime(clock.getSnapshot().time);
     const unsubscribe = clock.subscribe(() => scene.setTime(clock.getSnapshot().time));

@@ -1,6 +1,7 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
+import { loadDemoBundle, type DemoBundle } from "../../lib/brain/backend";
 import type { BrainEvent } from "../../lib/brain/events";
 import type { VariantId } from "../../lib/brain/contract";
 import { useBackendRun } from "../../lib/brain/useBackendRun";
@@ -16,6 +17,11 @@ export interface CanvasBrainProps {
   onEvent?: (event: BrainEvent) => void;
   /** Play the once-per-session entry intro on this surface. */
   entry?: boolean;
+  /**
+   * URL of a genuine precomputed `preflight.demo-bundle.v1` manifest (licensed, video-matched),
+   * shown as "Demo example · precomputed" until the run has its own data. Optional; none exists yet.
+   */
+  demoBundleUrl?: string;
 }
 
 const noopSubscribe = () => () => {};
@@ -31,7 +37,19 @@ function readProjectParam(): string | undefined {
  * activity log (choreography only) and its stored TRIBE artifacts (the only source of heat).
  * No speech, scheduling or inference lives here.
  */
-export function CanvasBrain({ apiBase = process.env.NEXT_PUBLIC_PREFLIGHT_API_BASE, projectId, selectedVariant, onSelectVariant, onEvent, entry = true }: CanvasBrainProps) {
+export function CanvasBrain({ apiBase = process.env.NEXT_PUBLIC_PREFLIGHT_API_BASE, projectId, selectedVariant, onSelectVariant, onEvent, entry = true, demoBundleUrl }: CanvasBrainProps) {
+  const [demo, setDemo] = useState<{ url: string; bundle: DemoBundle | null; error: string | null } | null>(null);
+  useEffect(() => {
+    if (!demoBundleUrl) return;
+    let cancelled = false;
+    loadDemoBundle(demoBundleUrl)
+      .then((bundle) => !cancelled && setDemo({ url: demoBundleUrl, bundle, error: null }))
+      .catch((e: Error) => !cancelled && setDemo({ url: demoBundleUrl, bundle: null, error: e.message }));
+    return () => {
+      cancelled = true;
+    };
+  }, [demoBundleUrl]);
+  const demoState = demo && demo.url === demoBundleUrl ? demo : null;
   const urlProject = useSyncExternalStore(noopSubscribe, readProjectParam, () => undefined);
   const id = projectId ?? urlProject;
   const backend = useBackendRun(apiBase, id);
@@ -39,6 +57,7 @@ export function CanvasBrain({ apiBase = process.env.NEXT_PUBLIC_PREFLIGHT_API_BA
     ...(backend.run?.problems ?? []),
     ...(backend.error ? [`Backend: ${backend.error}`] : []),
     ...(backend.status === "error" ? ["Activity stream disconnected"] : []),
+    ...(demoState?.error ? [demoState.error] : []),
   ];
   return (
     <BrainCompanion
@@ -55,6 +74,7 @@ export function CanvasBrain({ apiBase = process.env.NEXT_PUBLIC_PREFLIGHT_API_BA
       onSelectVariant={onSelectVariant}
       onEvent={onEvent}
       hostNotices={notices}
+      demoBundle={demoState?.bundle ?? undefined}
     />
   );
 }

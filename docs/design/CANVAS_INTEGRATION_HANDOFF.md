@@ -1,8 +1,10 @@
 # Canvas integration — brain motion and Live Director
 
+**Release reconciliation:** PRD v1.7.1 adopts the existing-company-video target from PR #1; the currently implemented intake remains screenshots/brief until the original-video migration is built. Later owner corrections govern voice: bottom prompt → transparent composing orb plus warm bottom-border beam → prompt on End/Escape. Do not restore older central/full-screen or white-background interpretations.
+
 Product-owner direction, 3 Oct 2026: **ElevenLabs is a UI reference only; Gemini Live remains mandatory two-way voice.** This handoff records requested interaction and inspected seams, not completed acceptance or permission to overwrite/merge another branch. [PRD.md](../../PRD.md) remains the specification; [TEAM.md](../../TEAM.md) tracks evidence.
 
-**Latest design direction, PRD v1.6:** [FLORA and reference 08](README.md#reference-08--flora-primary-product-layout) supersede the earlier shell references. Use a black dotted open canvas, narrow floating left tools, compact corner actions, Redaction/warm orange-red identity and readable media/storyboard/pretest branches. Both [standalone orb and prompt beam](DIRECTOR_VISUALS.md) are requested, preserving existing real Gemini Live/audio/tool logic. See [CLEAN_FLOW_DESIGN.md](CLEAN_FLOW_DESIGN.md) for the relay-ready frontend brief. This does not change the backend contracts or authorize automatic merges.
+**Latest design direction, PRD v1.7.1:** [FLORA and reference 08](README.md#reference-08--flora-primary-product-layout) supersede the earlier shell references. Use a black dotted open canvas, narrow floating left tools, compact corner actions, Redaction/warm orange-red identity and readable media/storyboard/pretest branches. Both [standalone orb and prompt beam](DIRECTOR_VISUALS.md) are requested, preserving existing real Gemini Live/audio/tool logic. See [CLEAN_FLOW_DESIGN.md](CLEAN_FLOW_DESIGN.md) for the relay-ready frontend brief. This does not change the backend contracts or authorize automatic merges.
 
 ## Voice brief to relay
 

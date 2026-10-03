@@ -11,6 +11,7 @@ describe("Preflight Director contract", () => {
     const names = directorTools.map((tool) => tool.name);
     expect(new Set(names).size).toBe(names.length);
     expect(names).toEqual([
+      "get_project_context",
       "update_brief",
       "search_assets",
       "select_asset",
@@ -21,6 +22,7 @@ describe("Preflight Director contract", () => {
       "reorder_scene",
       "record_decision",
       "request_run_confirmation",
+      "confirm_run",
     ]);
   });
 
@@ -28,5 +30,14 @@ describe("Preflight Director contract", () => {
     expect(DIRECTOR_INSTRUCTION).toContain("Do not cite TRIBE");
     expect(DIRECTOR_INSTRUCTION).toContain("Never invent");
     expect(DIRECTOR_INSTRUCTION).toContain("creative rationale");
+  });
+
+  it("prioritizes real context, Swedish conversation, explicit consent and asynchronous runs", () => {
+    expect(DIRECTOR_INSTRUCTION).toContain("including Swedish");
+    expect(DIRECTOR_INSTRUCTION).toContain("at most one useful question");
+    expect(DIRECTOR_INSTRUCTION).toContain("existing video");
+    expect(DIRECTOR_INSTRUCTION).toContain("capability flags");
+    expect(DIRECTOR_INSTRUCTION).toContain("An ID is not consent");
+    expect(directorTools.find((tool) => tool.name === "confirm_run")?.behavior).toBe("NON_BLOCKING");
   });
 });

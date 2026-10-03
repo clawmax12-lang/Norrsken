@@ -27,6 +27,11 @@ describe("isGroundedCopy", () => {
     expect(isGroundedCopy("Free tables in Stockholm", source)).toBe(false);
     expect(isGroundedCopy("anything", "")).toBe(false);
   });
+
+  it("preserves Swedish letters rather than merging distinct source words", () => {
+    expect(isGroundedCopy("VÄLJ restaurang", "Välj restaurang och boka bord")).toBe(true);
+    expect(isGroundedCopy("räkna bokningar", "rökna bokningar")).toBe(false);
+  });
 });
 
 describe("parseTypedCommand", () => {
