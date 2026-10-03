@@ -43,6 +43,11 @@ export function DirectorVoicePresence({ open, director, paused, anchorRef, onClo
   }, [onClose, open]);
 
   const connected = director.state === "listening";
+  const setMicPaused = director.setMicPaused;
+  useEffect(() => {
+    // Keep the chosen privacy mode when a session is reopened/reconnected.
+    if (open && connected && pushToTalk) setMicPaused(true);
+  }, [open, connected, pushToTalk, setMicPaused]);
   const label = director.isSpeaking ? "Director speaking" : director.isProcessing ? "Working on your canvas"
     : connected ? director.isMicPaused ? "Microphone paused" : "Listening"
     : director.state === "requesting" ? "Allow microphone access" : director.state === "connecting" ? "Connecting to Gemini Live"

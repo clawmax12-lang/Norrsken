@@ -7,6 +7,7 @@ import { VoiceBeam } from "voice-glow";
 
 import { CanvasBrain } from "@/components/brain/CanvasBrain";
 import { DirectorVoicePresence, VoiceIcon } from "@/components/director-voice-presence";
+import { RunResults, type PlannedVariant, type RunState } from "@/components/run-results";
 import { useLiveDirector } from "@/hooks/use-live-director";
 import { briefSchema, emptyBrief, type BriefDraft, type BriefField, type SourceMap } from "@/lib/brief";
 import {
@@ -118,9 +119,12 @@ export function CanvasWorkspace() {
   const [dragging, setDragging] = useState(false);
   const [visualsPaused, setVisualsPaused] = useState(false);
   const [voiceOpen, setVoiceOpen] = useState(false);
+  const [showResults, setShowResults] = useState(false);
+  const [runNonce, setRunNonce] = useState(0);
 
   const folderInputRef = useRef<HTMLInputElement | null>(null);
   const voiceButtonRef = useRef<HTMLButtonElement | null>(null);
+  const filesInputRef = useRef<HTMLInputElement | null>(null);
   const dragRef = useRef({ x: 0, y: 0, viewX: 0, viewY: 0, moved: false });
   const assetsRef = useRef(assets);
   const selectedAssetsRef = useRef(selectedAssetIds);
@@ -266,6 +270,13 @@ export function CanvasWorkspace() {
     return { confirmation_id: approval.id, revision: draftRef.current.revision, summary, ready, job_started: false, missing_brief_fields: current.missing_brief_fields };
   }, [getProjectContext, runSignature]);
 
+  const cancelRunConfirmation = useCallback(() => {
+    setConfirmSummary(null);
+    runBoundaryRef.current.cancel();
+    runApprovalRef.current = null;
+    voiceApprovalTurnRef.current = null;
+  }, []);
+
   const selectScene = useCallback(async (variantId: VariantId, sceneId: string) => {
     const concept = draftRef.current.concepts.find((item) => item.variant_id === variantId);
     if (!concept?.scenes.some((scene) => scene.id === sceneId)) throw new Error("That scene is not in this concept.");
@@ -408,6 +419,8 @@ export function CanvasWorkspace() {
     concepts: draft.concepts.length === 3 && draft.concepts.every((concept) => concept.scenes.length >= 4 && concept.scenes.length <= 6),
   };
   const readyToConfirm = Object.values(readiness).every(Boolean);
+  const missingBrief = (["product_name", "one_liner", "audience"] as const).filter((field) => !brief[field]).map((field) => fieldLabels[field]);
+  if (!sources.goal) missingBrief.push(fieldLabels.goal);
 
   const loadFolder = useCallback((files: FileList | null) => {
     if (!files) return;
@@ -416,11 +429,12 @@ export function CanvasWorkspace() {
       .filter((file) => file.type === "image/png" || file.type === "image/jpeg")
       .slice(0, 100)
       .map((file) => ({ id: crypto.randomUUID(), name: file.name, relativePath: file.webkitRelativePath || file.name, file, previewUrl: URL.createObjectURL(file) }));
+    const selected = next.slice(0, 6).map((asset) => asset.id);
     setAssets(next);
-    setSelectedAssetIds([]);
-    selectedAssetsRef.current = [];
+    setSelectedAssetIds(selected);
+    selectedAssetsRef.current = selected;
     setShowAssets(true);
-    addNotice("system", `${next.length} image filenames indexed from the folder you approved.`);
+    addNotice("system", `${next.length} screenshots loaded · ${selected.length} selected for the run.`);
   }, [addNotice]);
 
   const toggleAsset = useCallback((assetId: string) => {
@@ -532,8 +546,12 @@ export function CanvasWorkspace() {
       localStorage.setItem(BACKEND_PROJECT_STORAGE, acceptedProjectId);
       setJobState("queued");
       jobRef.current = { status: "queued", message: "Backend accepted the run; awaiting genuine events", project_id: acceptedProjectId };
-      setJobMessage(`Run ${run.run_id ?? "queued"} · waiting for genuine backend events`);
-      addNotice("system", "Run accepted by the connected pipeline. Progress will only follow persisted backend events.");
+      setJobMessage("Run started · follow progress in Results");
+      setRunNonce((current) => current + 1);
+      setShowResults(true);
+      setShowBrief(false);
+      setShowAssets(false);
+      addNotice("system", "Run started. Progress and results are in the Results panel.");
       return { accepted: true, status: run.status ?? "queued", run_id: run.run_id, project_id: acceptedProjectId };
     } catch (error) {
       setJobState("error");
@@ -548,6 +566,43 @@ export function CanvasWorkspace() {
   }, [readyToConfirm, runSignature, submitRun]);
 
   useEffect(() => { confirmRunRef.current = confirmRun; }, [confirmRun]);
+
+  const syncPlannedConcepts = useCallback((state: RunState, variants: PlannedVariant[]) => {
+    const status = state === "DONE" || state === "EXPLAINED" || state === "SCORED" || state === "SIMULATED" ? "tested" : state === "RENDERED" ? "rendered" : state === "FAILED" ? "failed" : "rendering";
+    const assetIdFor = (screenshot: string) => {
+      const fileName = screenshot.split("/").pop()?.replace(/^[0-9a-f-]{36}-/, "");
+      return assetsRef.current.find((asset) => asset.name === fileName)?.id;
+    };
+    const next = structuredClone(draftRef.current);
+    next.concepts = next.concepts.map((concept) => {
+      const planned = variants.find((variant) => variant.variant_id === concept.variant_id)?.concept;
+      if (!planned || planned.scenes.length < 4 || planned.scenes.length > 6) return concept;
+      return {
+        ...concept,
+        hypothesis: planned.hypothesis.slice(0, 180) || concept.hypothesis,
+        hook: planned.hook.slice(0, 80),
+        status,
+        scenes: planned.scenes.map((scene, index) => {
+          const sourceField = sourceFields.find((field) => field === scene.source_field);
+          return {
+            id: `${concept.variant_id}-scene-${index + 1}`,
+            asset_id: assetIdFor(scene.screenshot),
+            text: sourceField ? scene.text.slice(0, 120) : "",
+            source_field: sourceField,
+            t_start: scene.t_start,
+            t_end: scene.t_end,
+          };
+        }),
+      };
+    });
+    const selected = next.concepts.find((concept) => concept.variant_id === next.selected_variant_id);
+    if (!selected?.scenes.some((scene) => scene.id === next.selected_scene_id)) next.selected_scene_id = `${next.selected_variant_id}-scene-1`;
+    try {
+      void persistDraft(touchDraft(next)).catch(() => undefined);
+    } catch {
+      // A plan that does not fit the canvas draft stays visible in Results only.
+    }
+  }, [persistDraft]);
 
   const startDrag = (event: PointerEvent<HTMLDivElement>) => {
     if ((event.target as HTMLElement).closest("button, input, select, textarea")) return;
@@ -579,19 +634,21 @@ export function CanvasWorkspace() {
         <div className="project-identity"><span className="preflight-mark">P</span><div><strong>Preflight</strong><small>{brief.product_name || "Untitled launch"} · storyboard</small></div></div>
         <div className="header-actions">
           <span className={`draft-state ${draftState}`}>{draftState === "saving" ? "Saving…" : draftState === "error" ? "Saved in browser" : `Draft r${draft.revision}`}</span>
-          <button onClick={() => setShowBrief((current) => !current)}>Brief</button>
+          <button onClick={() => { setShowResults(false); setShowBrief((current) => !current); }}>Brief</button>
+          {backendProjectId && <button onClick={() => { setShowBrief(false); setShowResults((current) => !current); }}>Results</button>}
           <button className="run-top" onClick={() => { try { requestRunConfirmation(); } catch (error) { addNotice("system", error instanceof Error ? error.message : "Run unavailable."); } }}>Run</button>
         </div>
       </header>
 
       <nav className="tool-rail" aria-label="Canvas tools">
         <button className="active" aria-label="Select">↖</button>
-        <button onClick={() => folderInputRef.current?.click()} aria-label="Add screenshots">＋</button>
+        <button onClick={() => filesInputRef.current?.click()} aria-label="Add screenshots">＋</button>
         <button onClick={() => setView({ x: 0, y: 0, zoom: 0.82 })} aria-label="Fit flow">⌂</button>
         <span />
         <button onClick={() => setShowTranscript((current) => !current)} aria-label="Transcript">≡</button>
       </nav>
-      <input ref={folderInputRef} hidden type="file" accept="image/png,image/jpeg" multiple onChange={(event) => loadFolder(event.target.files)} />
+      <input ref={folderInputRef} hidden type="file" accept="image/png,image/jpeg" multiple onChange={(event) => { loadFolder(event.target.files); event.target.value = ""; }} />
+      <input ref={filesInputRef} hidden type="file" accept="image/png,image/jpeg" multiple data-testid="screenshot-files" onChange={(event) => { loadFolder(event.target.files); event.target.value = ""; }} />
 
       <section
         className={`flow-viewport ${dragging ? "dragging" : ""}`}
@@ -608,7 +665,7 @@ export function CanvasWorkspace() {
           <small>New preflight</small>
           <h1 id="empty-canvas-title">Bring your launch screens.</h1>
           <p>Choose 3–6 screenshots, or enable Live and describe what you are shipping.</p>
-          <div><button onClick={() => folderInputRef.current?.click()}>Choose screenshots</button><button className="enable-live-empty" onClick={openVoice}>Talk to Director</button></div>
+          <div><button onClick={() => filesInputRef.current?.click()}>Choose screenshots</button><button className="enable-live-empty" onClick={openVoice}>Talk to Director</button></div>
         </section>}
 
         {hasProjectContent && <div className="flow-plane" style={{ transform: `translate(${view.x}px, ${view.y}px) scale(${view.zoom})` }}>
@@ -633,7 +690,7 @@ export function CanvasWorkspace() {
                 onClick={() => reportAction(selectScene(concept.variant_id, concept.scenes[0].id))}
               >
                 <span className="variant-letter">{concept.variant_id}</span>
-                <span><small>Proposed · not rendered</small><strong>{concept.hypothesis.split(" — ")[0]}</strong><em>{concept.scenes.length} scenes · 15 seconds</em></span>
+                <span><small>{concept.status === "tested" ? "Rendered · tested" : concept.status === "rendered" ? "Rendered · testing" : concept.status === "rendering" ? "Planned · rendering" : concept.status === "failed" ? "Run failed" : "Proposed · not rendered"}</small><strong>{concept.hypothesis.split(" — ")[0]}</strong><em>{concept.scenes.length} scenes · 15 seconds</em></span>
               </button>
             ))}
           </div>
@@ -666,6 +723,7 @@ export function CanvasWorkspace() {
 
         <div className="canvas-brain-layer">
           <CanvasBrain
+            key={runNonce}
             projectId={backendProjectId}
             selectedVariant={draft.selected_variant_id}
             onSelectVariant={(variant) => {
@@ -683,19 +741,21 @@ export function CanvasWorkspace() {
         <label>Product name <span>{sources.product_name ?? "missing"}</span><input value={brief.product_name} onChange={(event) => updateField("product_name", event.target.value, "typed")} /></label>
         <label>Description <span>{sources.one_liner ?? "missing"}</span><textarea maxLength={140} value={brief.one_liner} onChange={(event) => updateField("one_liner", event.target.value, "typed")} /><small>{brief.one_liner.length}/140</small></label>
         <label>Audience <span>{sources.audience ?? "missing"}</span><input value={brief.audience} onChange={(event) => updateField("audience", event.target.value, "typed")} /></label>
-        <label>Goal <span>{sources.goal ?? "missing"}</span><select value={brief.goal} onChange={(event) => updateField("goal", event.target.value, "typed")}><option value="signups">Sign ups</option><option value="downloads">Downloads</option><option value="understand">Understand product</option><option value="purchase">Purchase</option></select></label>
+        <label>Goal <span>{sources.goal ?? "missing"}</span><select value={sources.goal ? brief.goal : ""} onChange={(event) => updateField("goal", event.target.value, "typed")}><option value="" disabled>Choose a goal</option><option value="signups">Sign ups</option><option value="downloads">Downloads</option><option value="understand">Understand product</option><option value="purchase">Purchase</option></select></label>
         <div className="drawer-note">Each visible claim keeps one of these fields as its source. Draft edits are validated before saving.</div>
       </aside>}
 
       {showAssets && <aside className="asset-drawer">
         <div className="drawer-heading"><div><small>User-approved folder</small><h2>Product screens</h2></div><button onClick={() => setShowAssets(false)}>×</button></div>
-        <div className="asset-tools"><button onClick={() => folderInputRef.current?.click()}>Choose folder</button><input value={assetQuery} onChange={(event) => setAssetQuery(event.target.value)} placeholder="Search filenames" /></div>
-        {assets.length === 0 ? <button className="empty-assets" onClick={() => folderInputRef.current?.click()}><strong>Grant one folder</strong><span>PNG/JPG filenames stay local until you confirm Run.</span></button> : <div className="asset-shelf">{visibleAssets.map((asset) => {
+        <div className="asset-tools"><button onClick={() => filesInputRef.current?.click()}>Choose files</button><button onClick={() => folderInputRef.current?.click()}>Choose folder</button><input value={assetQuery} onChange={(event) => setAssetQuery(event.target.value)} placeholder="Search filenames" /></div>
+        {assets.length === 0 ? <button className="empty-assets" onClick={() => filesInputRef.current?.click()}><strong>Choose 3–6 screenshots</strong><span>PNG/JPG files stay in this browser until you confirm Run.</span></button> : <div className="asset-shelf">{visibleAssets.map((asset) => {
           const selected = selectedAssetIds.includes(asset.id);
           return <div className={`shelf-card ${selected ? "selected" : ""}`} key={asset.id}><button onClick={() => toggleAsset(asset.id)}><span style={{ backgroundImage: `url(${asset.previewUrl})` }} /><strong>{asset.name}</strong><small>{selected ? "Selected for brief" : "Select"}</small></button><button className="place-button" disabled={!selected} onClick={() => reportAction(handleToolCall({ name: "set_scene_asset", args: { scene_id: selectedScene.id, asset_id: asset.id, rationale: "Chosen by the user from the approved folder" } }))}>Place in {selectedScene.id}</button></div>;
         })}</div>}
         <div className="asset-count">{selectedAssetIds.length}/3–6 selected for the run</div>
       </aside>}
+
+      {showResults && backendProjectId && <RunResults apiBase={process.env.NEXT_PUBLIC_PREFLIGHT_API_BASE} projectId={backendProjectId} runNonce={runNonce} onClose={() => setShowResults(false)} onProgress={syncPlannedConcepts} />}
 
       {showTranscript && <aside className="transcript-drawer">
         <div className="drawer-heading"><div><small>One shared conversation</small><h2>Director transcript</h2></div><button onClick={() => setShowTranscript(false)}>×</button></div>
@@ -743,10 +803,15 @@ export function CanvasWorkspace() {
 
       {confirmSummary && <div className="modal-backdrop" role="presentation">
         <section className="run-modal" role="dialog" aria-modal="true" aria-labelledby="run-title">
-          <small>Explicit confirmation · no job started</small><h2 id="run-title">Run this bounded preflight?</h2><p>{confirmSummary}</p>
-          <ul><li className={readiness.brief ? "ready" : ""}>Confirmed brief fields</li><li className={readiness.screens ? "ready" : ""}>3–6 approved screenshots ({selectedAssetIds.length})</li><li className={readiness.concepts ? "ready" : ""}>Exactly A/B/C · five scenes each · 15 seconds</li></ul>
-          <div className="modal-warning">This can start planning, rendering, Gemini panel evaluation, and TRIBE only when those services are genuinely connected.</div>
-          <div className="modal-actions"><button onClick={() => { setConfirmSummary(null); runBoundaryRef.current.cancel(); runApprovalRef.current = null; }}>Keep editing</button><button className="confirm-run" disabled={!readyToConfirm || jobState === "saving"} onClick={() => reportAction(confirmRun(runApprovalRef.current ?? ""))}>{readyToConfirm ? "Confirm Run" : "Complete required inputs"}</button></div>
+          <small>Nothing starts until you confirm</small><h2 id="run-title">{readyToConfirm ? "Ready to run Preflight" : "Almost ready"}</h2>
+          <p>{confirmSummary}</p>
+          <ul>
+            <li className={readiness.brief ? "ready" : ""}><span>{readiness.brief ? `Brief: ${brief.product_name} · goal ${brief.goal}` : `Brief is missing: ${missingBrief.join(", ")}`}</span>{!readiness.brief && <button onClick={() => { cancelRunConfirmation(); setShowBrief(true); }}>Fill in brief</button>}</li>
+            <li className={readiness.screens ? "ready" : ""}><span>{readiness.screens ? `${selectedAssetIds.length} screenshots selected` : `Screenshots: ${selectedAssetIds.length} selected, need 3–6`}</span>{!readiness.screens && <button onClick={() => { cancelRunConfirmation(); filesInputRef.current?.click(); }}>Add screenshots</button>}</li>
+            <li className={readiness.concepts ? "ready" : ""}><span>Three variants · A, B, C · 15 seconds each</span></li>
+          </ul>
+          <div className="modal-warning">Planning, rendering, Gemini evaluation and TRIBE require their connected services. No neural or audience result is guaranteed.</div>
+          <div className="modal-actions"><button onClick={cancelRunConfirmation}>Keep editing</button><button className="confirm-run" disabled={!readyToConfirm || jobState === "saving"} onClick={() => reportAction(confirmRun(runApprovalRef.current ?? ""))}>{jobState === "saving" ? "Starting…" : readyToConfirm ? "Start run" : "Fix the items above"}</button></div>
         </section>
       </div>}
     </main>
