@@ -3,15 +3,31 @@
 import { useEffect, useRef, useState } from "react";
 import { FinalVideoFinish } from "@/components/final-video-finish";
 
+import { RunReport } from "@/components/run-report";
+import { CLOSE_CALL_POINTS, leadOf, measuredScores, points, type RenderRecord, type SimulationResult } from "@/lib/run-report";
+
 type VariantId = "A" | "B" | "C";
 export type RunState = "BRIEF_RECEIVED" | "PLANNED" | "RENDERED" | "SIMULATED" | "SCORED" | "EXPLAINED" | "ITERATED" | "DONE" | "FAILED";
 
 type Reason = { t: number; scene_index: number; text: string };
 export type PlannedScene = { t_start: number; t_end: number; screenshot: string; text: string; source_field: string };
-export type PlannedVariant = { variant_id: VariantId; concept: { hypothesis: string; hook: string; scenes: PlannedScene[] }; files: Record<string, string>; render?: { video_sha256: string | null } | null };
+export type PlannedVariant = {
+  variant_id: VariantId;
+  concept: { hypothesis: string; hook: string; scenes: PlannedScene[] };
+  render?: (RenderRecord & { video_sha256: string | null }) | null;
+  simulations?: SimulationResult[];
+  files: Record<string, string>;
+};
 type Results = {
   state: RunState;
-  ranking: { order: VariantId[]; scores: Record<string, number>; confidence: "low" | "medium" | "high"; rule: string } | null;
+  ranking: {
+    order: VariantId[];
+    scores: Record<string, number>;
+    per_simulator?: Record<string, Record<string, number>>;
+    confidence: "low" | "medium" | "high";
+    rule: string;
+    excluded?: Record<string, string>;
+  } | null;
   report: {
     winner: VariantId;
     runner_up: VariantId;
@@ -61,7 +77,14 @@ export function RunResults({ apiBase, projectId, runNonce, onClose, onProgress, 
   const [startedAt, setStartedAt] = useState(() => Date.now());
   const [now, setNow] = useState(() => Date.now());
   const [picked, setPicked] = useState<VariantId | null>(null);
+  const [accepted, setAccepted] = useState<string | null>(null);
+  const [showReport, setShowReport] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const acceptKey = `preflight.accepted.${projectId}`;
+
+  useEffect(() => {
+    queueMicrotask(() => setAccepted(localStorage.getItem(acceptKey)));
+  }, [acceptKey, runNonce]);
 
   useEffect(() => {
     if (!apiBase) return;
@@ -72,6 +95,7 @@ export function RunResults({ apiBase, projectId, runNonce, onClose, onProgress, 
       setFailure(null);
       setError(null);
       setPicked(null);
+      setShowReport(false);
       setStartedAt(Date.now());
     });
     const poll = async () => {
@@ -127,6 +151,11 @@ export function RunResults({ apiBase, projectId, runNonce, onClose, onProgress, 
   const variant = results?.variants.find((item) => item.variant_id === shown);
   const winnerSourceHash = results?.variants.find((item) => item.variant_id === report?.winner)?.render?.video_sha256;
   const elapsed = Math.max(0, Math.round((now - startedAt) / 1000));
+  const measured = new Map((results?.variants ?? []).map((item) => [item.variant_id, measuredScores(item).score]));
+  const isMeasured = Boolean(ranking?.order.every((id) => measured.get(id) != null));
+  const scoreOf = (id: VariantId) => points((isMeasured ? measured.get(id) : ranking?.scores[id]) ?? 0);
+  const lead = isMeasured && report?.runner_up ? leadOf(measured.get(report.winner), measured.get(report.runner_up)) : null;
+  const closeCall = lead != null && lead < CLOSE_CALL_POINTS;
 
   return (
     <aside className="side-drawer results-drawer" aria-live="polite">
@@ -144,7 +173,12 @@ export function RunResults({ apiBase, projectId, runNonce, onClose, onProgress, 
       {results?.state === "FAILED" && <p className="results-error">{failure?.error ?? "The backend stopped this run."} Press Run again to resume from the last completed step.</p>}
 
       {report && ranking && <>
-        <p className="results-verdict">Launch <b>{report.winner}</b>. A/B test it against <b>{report.runner_up}</b>.<span className={`confidence ${ranking.confidence}`}>{ranking.confidence} confidence</span></p>
+        <p className="results-verdict">Launch <b>{report.winner}</b>. A/B test it against <b>{report.runner_up}</b>.<span className={`confidence ${ranking.confidence}`}>{ranking.confidence} confidence</span>{closeCall && <span className="confidence close-call">close call</span>}</p>
+        {closeCall && <p className="results-muted">{report.winner} leads {report.runner_up} by only {lead} of 100 points. That is too close to call, so treat it as a tie and let the live A/B test decide.</p>}
+        <div className="results-argument">
+          <small>Where they leave</small>
+          <p>A bounce is a viewer who never sees the rest. The times under each film are that second. Launch the one that holds. Live money only has to settle it against the runner-up.{ranking.order.length > 2 ? ` ${ranking.order.length - 2 === 1 ? "One film never takes" : `${ranking.order.length - 2} films never take`} the boost.` : ""}</p>
+        </div>
 
         <div className="results-board">
           {ranking.order.map((id, index) => {
@@ -152,7 +186,7 @@ export function RunResults({ apiBase, projectId, runNonce, onClose, onProgress, 
             return <button key={id} className={id === shown ? "selected" : ""} onClick={() => setPicked(id)}>
               <span className="variant-letter">{id}</span>
               <span><strong>{index === 0 ? "Winner" : index === 1 ? "Runner-up" : "Third"} · {concept?.hypothesis ?? ""}</strong><em>{concept?.hook}</em></span>
-              <span className="results-score"><i style={{ width: `${Math.round((ranking.scores[id] ?? 0) * 100)}%` }} />{Math.round((ranking.scores[id] ?? 0) * 100)}</span>
+              <span className="results-score" title={isMeasured ? "Mean simulated-viewer score, out of 100" : "Relative to these variants only"}><i style={{ width: `${scoreOf(id)}%` }} />{scoreOf(id)}</span>
             </button>;
           })}
         </div>
@@ -173,6 +207,12 @@ export function RunResults({ apiBase, projectId, runNonce, onClose, onProgress, 
           <p><b>Brain simulation</b> {report.brain_sim ? "on: TRIBE v2 contributed to the score." : "off: ranked by the simulated viewer panel only."}</p>
         </div>
 
+        {results?.state === "DONE" && <div className="results-accept">
+          {accepted === report.winner
+            ? <><p>You accepted <b>{report.winner}</b> as the launch video.</p><button onClick={() => setShowReport(true)}>See this run’s report</button></>
+            : <button className="primary" onClick={() => { localStorage.setItem(acceptKey, report.winner); setAccepted(report.winner); setShowReport(true); }}>Accept {report.winner} and see the report</button>}
+        </div>}
+
         <div className="results-exports">
           {EXPORTS.map((item) => <a key={item.name} href={url(apiBase, `/api/projects/${encodeURIComponent(projectId)}/export/${item.name}`)} download>{item.label}</a>)}
         </div>
@@ -184,6 +224,7 @@ export function RunResults({ apiBase, projectId, runNonce, onClose, onProgress, 
           sourceHash={winnerSourceHash}
         />}
       </>}
+      {showReport && results && report && <RunReport apiBase={apiBase} projectId={projectId} results={results} onClose={() => setShowReport(false)} />}
     </aside>
   );
 }
