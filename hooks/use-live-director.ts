@@ -63,6 +63,9 @@ export function useLiveDirector({ onToolCall }: UseLiveDirectorOptions) {
   const [state, setState] = useState<ConnectionState>("idle");
   const [error, setError] = useState<string | null>(null);
   const [level, setLevel] = useState(0);
+  const [outputLevel, setOutputLevel] = useState(0);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
   const [transcript, setTranscript] = useState<TranscriptLine[]>([]);
   const [liveUserText, setLiveUserText] = useState("");
   const [liveDirectorText, setLiveDirectorText] = useState("");
@@ -73,6 +76,7 @@ export function useLiveDirector({ onToolCall }: UseLiveDirectorOptions) {
   const captureNodeRef = useRef<AudioWorkletNode | null>(null);
   const playbackCursorRef = useRef(0);
   const playbackSourcesRef = useRef<Set<AudioBufferSourceNode>>(new Set());
+  const outputGainRef = useRef<GainNode | null>(null);
   const levelFrameRef = useRef(0);
   const mountedRef = useRef(true);
   const toolHandlerRef = useRef(onToolCall);
@@ -99,6 +103,10 @@ export function useLiveDirector({ onToolCall }: UseLiveDirectorOptions) {
       }
     }
     playbackSourcesRef.current.clear();
+    if (mountedRef.current) {
+      setOutputLevel(0);
+      setIsSpeaking(false);
+    }
     const context = audioContextRef.current;
     playbackCursorRef.current = context?.currentTime ?? 0;
   }, []);
@@ -112,6 +120,7 @@ export function useLiveDirector({ onToolCall }: UseLiveDirectorOptions) {
     stopPlayback();
     const context = audioContextRef.current;
     audioContextRef.current = null;
+    outputGainRef.current = null;
     if (context && context.state !== "closed") await context.close();
     if (mountedRef.current) {
       setLevel(0);
@@ -128,17 +137,28 @@ export function useLiveDirector({ onToolCall }: UseLiveDirectorOptions) {
     const sampleCount = Math.floor(bytes.byteLength / 2);
     const buffer = context.createBuffer(1, sampleCount, 24_000);
     const channel = buffer.getChannelData(0);
+    let sum = 0;
     for (let index = 0; index < sampleCount; index += 1) {
       channel[index] = view.getInt16(index * 2, true) / 0x8000;
+      sum += channel[index] * channel[index];
     }
+    const chunkLevel = Math.min(1, Math.sqrt(sum / Math.max(1, sampleCount)) * 4.5);
+    setOutputLevel(chunkLevel);
+    setIsSpeaking(true);
     const source = context.createBufferSource();
     source.buffer = buffer;
-    source.connect(context.destination);
+    source.connect(outputGainRef.current ?? context.destination);
     const startAt = Math.max(context.currentTime + 0.025, playbackCursorRef.current);
     source.start(startAt);
     playbackCursorRef.current = startAt + buffer.duration;
     playbackSourcesRef.current.add(source);
-    source.onended = () => playbackSourcesRef.current.delete(source);
+    source.onended = () => {
+      playbackSourcesRef.current.delete(source);
+      if (playbackSourcesRef.current.size === 0 && mountedRef.current) {
+        setOutputLevel(0);
+        setIsSpeaking(false);
+      }
+    };
   }, []);
 
   const handleMessage = useCallback(
@@ -204,6 +224,10 @@ export function useLiveDirector({ onToolCall }: UseLiveDirectorOptions) {
     await context.resume();
     await context.audioWorklet.addModule("/audio-capture-worklet.js");
     audioContextRef.current = context;
+    const outputGain = context.createGain();
+    outputGain.gain.value = isMuted ? 0 : 1;
+    outputGain.connect(context.destination);
+    outputGainRef.current = outputGain;
     playbackCursorRef.current = context.currentTime;
     const source = context.createMediaStreamSource(stream);
     const capture = new AudioWorkletNode(context, "preflight-capture");
@@ -234,6 +258,15 @@ export function useLiveDirector({ onToolCall }: UseLiveDirectorOptions) {
       levelFrameRef.current = requestAnimationFrame(updateLevel);
     };
     updateLevel();
+  }, [isMuted]);
+
+  const toggleMute = useCallback(() => {
+    setIsMuted((current) => {
+      const next = !current;
+      const context = audioContextRef.current;
+      if (outputGainRef.current && context) outputGainRef.current.gain.setValueAtTime(next ? 0 : 1, context.currentTime);
+      return next;
+    });
   }, []);
 
   const start = useCallback(async () => {
@@ -338,11 +371,15 @@ export function useLiveDirector({ onToolCall }: UseLiveDirectorOptions) {
     state,
     error,
     level,
+    outputLevel,
+    isSpeaking,
+    isMuted,
     transcript,
     liveUserText,
     liveDirectorText,
     start,
     stop,
+    toggleMute,
     sendText,
     shareAsset,
   };

@@ -1,6 +1,6 @@
 # Preflight · Product Requirements Document
 
-**Version:** 1.4 · **Date:** 3 Oct 2026 · **Status:** Hackathon build ({Tech: Europe} Agentic AI Hack, Norrsken Stockholm)
+**Version:** 1.5 · **Date:** 3 Oct 2026 · **Status:** Hackathon build ({Tech: Europe} Agentic AI Hack, Norrsken Stockholm)
 
 **Owner:** William (product) · **Tech owners:** see §14.3 and [TEAM.md](TEAM.md)
 
@@ -9,6 +9,8 @@
 **Built with (PRD plan):** Claude Opus 5.5 as the coding agent · Gemini · Condense · TRIBE v2 (Meta FAIR, research use)
 
 > This is the team's canonical, editable product specification. It supersedes earlier brainstorming and advisor briefs. The baseline was imported from the complete, 20-page [Preflight PRD v1.1.pdf](docs/source/Preflight-PRD-v1.1.pdf), which is preserved unchanged; see [source provenance](docs/source/README.md). Versions 1.2 and 1.3 incorporate the product owner's web-platform, visual-reference and reusable-brain decisions, documented below and in §16. Actual implementation progress lives in [TEAM.md](TEAM.md), not in these requirements.
+
+**What changed in 1.5:** William approved the canvas-integrated two-way Gemini Live Director as FR-16/P0. Voice is no longer a separate interface: mic, captions, typed fallback, mute/disconnect and state-driven orb/glow live in the persistent canvas composer. Spoken, typed and clicked edits use one validated revisioned draft; source-backed pre-render changes must visibly persist. The user confirms one bounded run before generation/render/pretest. Progress and verdict speech can only follow genuine backend events/evidence. The visual shell is a minimal black dotted flow canvas with readable A/B/C lineage, not a dashboard or radial cloud. See FR-07/FR-09/FR-16, §9, §12.4/§12.9 and §16.
 
 **What changed in 1.4:** the backend generation layer is clarified (§9.2). Gemini may generate supporting image/video assets (backgrounds, abstract motion, b-roll, device lighting) that Remotion composes with the customer's real screenshots; Gemini never draws the product UI, and every on-screen claim still needs a `source_field`. The variant cap stays three for the demo but is a configuration value, not a hard-coded constant. See §9.2, §16.
 
@@ -216,9 +218,9 @@ For each variant, 2 to 4 reasons, each tied to a timestamp and to what is on scr
 
 #### FR-07 Results UI
 
-Browser-based results page: leaderboard; video player with per second curves synced to playback; verdict card ("Launch C. A/B test it against A.").
+The primary browser workspace is a pan/zoom flow canvas: confirmed brief/source → exactly three concept/storyboard branches → real render/simulation states → recommendation/export. Selecting a node opens its detail without losing the graph. Results include the leaderboard, video player, per-second synced curves and verdict card ("Launch C. A/B test it against A."). Proposed nodes are visibly distinct from rendered/tested artifacts.
 
-**AC:** the results page works in the desktop browser as part of the web platform; curves follow scrubbing; verdict visible without scrolling on a 1440 px wide screen. No native client is required.
+**AC:** pan/zoom, fit-to-flow and node selection work in the desktop browser; A/B/C lineage is readable at 1440 px; proposed nodes are labeled and never counted as completed tests; real artifact/result links and status bind to persisted project/run IDs; curves follow scrubbing; verdict is accessible without scrolling. The integrated composer and corner brain do not obscure core canvas controls. No native client is required.
 
 #### FR-08 Export
 
@@ -249,6 +251,12 @@ Gemini for the live Director, planning, viewer panel and explanations. Planning,
 **P0, depends on FR-12.** The 10 to 15 second cinematic sequence that plays when the pretest results are ready, as specified in §12.2.
 
 **AC:** plays once per run with real data; a Skip button is always visible; respects reduced motion settings; ends on the Results screen.
+
+#### FR-16 Integrated two-way Gemini Live Director
+
+**P0.** A female-sounding Gemini Live creative Director is embedded in the persistent canvas composer. After an explicit Enable Live gesture, the user can speak, hear a response, interrupt it, select an actual concept/scene and request a source-backed pre-render edit. Spoken tools, typed fallback and clicked controls use the same validated, revisioned draft and canvas selection. The Director is constructively opinionated but records an explicit override. A standalone state-driven orb and restrained prompt beam visualize actual service/output-audio state; neither is a separate chat panel or speech service.
+
+**AC:** real speech/reply/interruption completes without stale queued audio; input/output transcripts, output mute, mic stop/disconnect and typed fallback work; denied permission/token/quota errors are visible; a spoken source-backed scene edit is server-validated, persisted and immediately visible on the canvas; stale revisions/invalid IDs/source-less claims are rejected. Long-lived keys stay server-side and browser Live uses a scoped ephemeral token. The user explicitly confirms a summarized run before any generation/render/pretest job, with idempotent command handling. Job narration follows genuine persisted events only; verdict answers cite genuine timestamped evidence only. Missing services remain visibly unavailable. TTS-only, prerecorded or text-only demonstrations do not pass FR-16.
 
 ### P1
 
@@ -301,6 +309,8 @@ Voice narration of the verdict (Gemini text to speech), screen recording input, 
 
 **State and memory:** every step writes JSON to `data/projects/{project_id}/`. A run can resume from the last completed state.
 
+**Live control boundary (FR-16):** the Director is a conversational control surface, not another scheduler. Canvas, voice and typed input share project/variant/scene IDs, a monotonically increasing draft revision and validated operations. Accepted edits persist before success is acknowledged. Starting a session never authorizes a run; `request_run_confirmation` only opens a visible confirmation, and one idempotent confirmed command starts the bounded A/B/C job. Audio loss never cancels or duplicates a confirmed job.
+
 ### 9.1 Model roles and cost boundary
 
 `[DECISION — v1.3]` Distinguish building the product from running a customer's video job:
@@ -337,7 +347,7 @@ If finalization changes the content or timing of a tested video, re-render and r
 
 | Component | Responsibility | Suggested tech |
 | --- | --- | --- |
-| Web app (desktop browser) | Voice Director, brief, live log, Preflight sequence, results, brain viewer, export | Next.js, TypeScript, Tailwind, three.js, Gemini Live client with ephemeral tokens |
+| Web app (desktop browser) | Flow canvas, integrated Live Director composer, brief/storyboard editing, live log, Preflight sequence, results, brain viewer, export | Next.js, TypeScript, three.js, Gemini Live client with ephemeral tokens |
 | API and orchestrator | State machine, tools, storage | Python, FastAPI |
 | Renderer | Motion graphics template driven by concept JSON | Remotion (check its license for commercial use later) |
 | TRIBE worker | Runs TRIBE v2 on a GPU and returns `SimulationResult` | Python on a GPU with 40 GB+ VRAM |
@@ -426,7 +436,7 @@ Every simulator implements one function: video in, `SimulationResult` out. Scori
 
 ### 10.4 Secrets and repo
 
-- Keys in environment variables only (`GEMINI_API_KEY`, `CONDENSE_API_KEY`, `TRIBE_ENDPOINT`). The server may exchange `GEMINI_API_KEY` for a short-lived, one-use Live token; the permanent key never reaches browser code. Commit `.env.example`, never `.env`.
+- Keys in environment variables only (`GOOGLE_API_KEY`, backwards-compatible `GEMINI_API_KEY`, `CONDENSE_API_KEY`, `TRIBE_ENDPOINT`). The server may exchange the Google key for a short-lived, one-use Live token; the permanent key never reaches browser code. Commit `.env.example`, never `.env`.
 - No model weights in the repo. README credits TRIBE v2 (Meta FAIR) and states its CC BY-NC license.
 - Repo must be public (hackathon rule). URL: https://github.com/clawmax12-lang/Norrsken.
 - The README states the build stack, including that the code was written with Claude Opus 5.5 as the coding agent.
@@ -510,8 +520,8 @@ Bottom controls, as segmented pills like the reference:
 
 ### 12.4 Screens
 
-1. **Brief:** voice-native Director with live captions, a visible structured brief, an approved-folder asset shelf and a typed fallback. The user explicitly says or clicks "Run Preflight" after the required fields validate.
-2. **Agent at work:** live step log, three video cards filling in as they render, then simulation progress per variant.
+1. **Canvas intake:** the persistent bottom composer enables Live or typed fallback while the visible brief, approved-folder shelf and A/B/C storyboard nodes update in place. The user explicitly confirms "Run Preflight" after the required fields validate.
+2. **Agent at work on the same canvas:** persisted backend events update the three branches as they plan, render and simulate; reconnects do not invent or duplicate nodes.
 3. **Preflight sequence:** the intro above.
 4. **Results:** leaderboard left; center stage with video, brain viewer and synced curves; verdict card and timestamped reasons right; token savings from Condense in the footer.
 5. **Compare (P1):** two variants side by side, synced, with the difference view.
@@ -542,6 +552,15 @@ Bottom controls, as segmented pills like the reference:
 **We use:** simulated viewers, brain sim, pretest, winner, why, launch brief.
 
 **We never use:** "TRIBE output", "will go viral", "predicts sales", "reads emotions", "mind reading".
+
+### 12.9 Canvas-integrated Live Director
+
+- The composer is the single voice/typed entry point. No full-height idle Director panel and no competing conversation state.
+- The mic is off on first visit. Enable Live requires a user gesture, HTTPS/localhost and browser permission. Listening, assistant playback, mute and disconnect are distinct visible states.
+- The orb uses actual connection/mic/work/playback state. The prompt beam follows genuine assistant output amplitude, never a fake progress value and never neural activity.
+- Tool results update the selected real concept/scene and revisioned draft before the Director says the change succeeded. Copy requires `source_field`; assets remain within the folder the user explicitly approved.
+- Render/pretest stays confirmation-gated. Long jobs acknowledge queued status promptly, then canvas/voice consume the orchestrator's persisted events. Missing pipeline, brain or evidence shows an honest unavailable/empty state.
+- Minimum demo: speak brief → interrupt → select another real scene/screenshot → request source-backed copy edit → see the persisted change → confirm Run → hear a genuine milestone → ask why the genuine winner won.
 
 ## 13. Metrics and validation
 
@@ -657,6 +676,7 @@ The original entries below are retained from the supplied v1.1 PRD; later decisi
 | 3 Oct, v1.4 | Backend generation layer: Gemini may generate supporting image/video assets; Remotion composes them with real customer screenshots from a validated `CompositionSpec`; product UI is never generated; variant cap is configurable (default 3). Applies to FR-02, FR-03, FR-10 and §7.4/§9.2. | Product owner approval of the backend plan: higher visual quality without breaking "truth in the video" or the fixed three-variant demo. |
 | 3 Oct, 2026 | Make the Preflight Director the default FR-01 intake, using Gemini Live for interruption-capable voice and typed input as a full fallback | The founder should ideate the launch video with an opinionated creative director that can pull approved product screens into view, rather than complete a static form |
 | 3 Oct, 2026 | Permit direct Gemini Live WebSocket calls authenticated by server-minted ephemeral tokens; keep all non-Live planning, panel and explanation calls through Condense | Full-duplex audio and barge-in require Gemini Live transport, while the permanent API key must remain server-side and Condense eligibility remains required for the existing LLM stages |
+| 3 Oct, v1.5 | Make the black dotted flow canvas the primary workspace and integrate mandatory two-way Gemini Live into its bottom composer. Voice, typed input and clicks share one revisioned draft/selection; pre-render source-backed edits persist visibly; an explicit idempotent confirmation gates exactly three 15-second concept jobs. Applies to FR-01/FR-07/FR-09/FR-16 and §9/§10/§12. | Product-owner correction: voice is part of how the app works, not a standalone feature or interface. This preserves one project truth and prevents conversational claims, visual nodes or job progress from diverging from actual state. |
 
 ## 17. Open questions
 
