@@ -85,6 +85,8 @@ export function useLiveDirector({ onToolCall }: UseLiveDirectorOptions) {
   const processingTasksRef = useRef<Set<symbol>>(new Set());
   const mountedRef = useRef(true);
   const toolHandlerRef = useRef(onToolCall);
+  const userBufferRef = useRef("");
+  const directorBufferRef = useRef("");
 
   useEffect(() => {
     toolHandlerRef.current = onToolCall;
@@ -167,16 +169,36 @@ export function useLiveDirector({ onToolCall }: UseLiveDirectorOptions) {
 
       const content = message.serverContent;
       if (content?.interrupted) stopPlayback();
+      // Transcriptions arrive as incremental chunks; a line is complete when the turn ends.
+      const flushUser = () => {
+        const text = userBufferRef.current.trim();
+        userBufferRef.current = "";
+        setLiveUserText("");
+        if (text) addTranscript("user", text);
+      };
+      const flushDirector = () => {
+        const text = directorBufferRef.current.trim();
+        directorBufferRef.current = "";
+        setLiveDirectorText("");
+        if (text) addTranscript("director", text);
+      };
       if (content?.interimInputTranscription?.text) {
-        setLiveUserText(content.interimInputTranscription.text);
+        setLiveUserText(`${userBufferRef.current}${content.interimInputTranscription.text}`);
       }
       if (content?.inputTranscription?.text) {
-        setLiveUserText(content.inputTranscription.finished ? "" : content.inputTranscription.text);
-        if (content.inputTranscription.finished) addTranscript("user", content.inputTranscription.text);
+        userBufferRef.current += content.inputTranscription.text;
+        setLiveUserText(userBufferRef.current);
+        if (content.inputTranscription.finished) flushUser();
       }
       if (content?.outputTranscription?.text) {
-        setLiveDirectorText(content.outputTranscription.finished ? "" : content.outputTranscription.text);
-        if (content.outputTranscription.finished) addTranscript("director", content.outputTranscription.text);
+        if (userBufferRef.current) flushUser();
+        directorBufferRef.current += content.outputTranscription.text;
+        setLiveDirectorText(directorBufferRef.current);
+        if (content.outputTranscription.finished) flushDirector();
+      }
+      if (content?.turnComplete || content?.interrupted) {
+        flushUser();
+        flushDirector();
       }
 
       if (message.toolCall?.functionCalls?.length) {
