@@ -308,6 +308,13 @@ export function useLiveDirector({ onToolCall }: UseLiveDirectorOptions) {
     [addTranscript],
   );
 
+  const sendContext = useCallback((text: string) => {
+    const clean = text.trim();
+    if (!clean || !sessionRef.current) return false;
+    sessionRef.current.sendClientContent({ turns: clean, turnComplete: false });
+    return true;
+  }, []);
+
   const shareAsset = useCallback(async (file: File, label: string, requestResponse = true) => {
     if (!sessionRef.current) return false;
     const data = encodeBase64(new Uint8Array(await file.arrayBuffer()));
@@ -344,6 +351,7 @@ export function useLiveDirector({ onToolCall }: UseLiveDirectorOptions) {
     start,
     stop,
     sendText,
+    sendContext,
     shareAsset,
   };
 }

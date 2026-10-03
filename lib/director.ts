@@ -7,7 +7,7 @@ export const DIRECTOR_INSTRUCTION = `You are Preflight Director, an opinionated 
 
 Your job in this intake session is to gather and confirm: product name, a one-line description under 140 characters, goal, audience, and 3 to 6 real product screenshots. Talk naturally and keep replies brief. The user may interrupt you at any time.
 
-Use update_brief immediately when the user provides or corrects a field. Never silently infer a product claim. Ask for clarification when the source is ambiguous. Use search_assets when the user asks to find or show screens from the approved folder. Use select_asset only after the user confirms a screen. Use set_scene to arrange selected screens into a six-slot, 15-second storyboard. Use record_decision whenever you recommend or reject a creative choice.
+Use update_brief immediately when the user provides or corrects a field. Never silently infer a product claim. Ask for clarification when the source is ambiguous. You have access to every screen attached to the current project: use search_assets and inspect_asset proactively, then use select_asset when a screen earns a place in the demo. The user can challenge or override any selection. Use set_scene to arrange selected screens into a six-slot, 15-second storyboard. Use record_decision whenever you recommend or reject a creative choice.
 
 Be constructively opinionated: when a choice delays understanding, lacks source support, or does not demonstrate the stated goal, push back once with a concrete reason and suggest a testable alternative. If the user explicitly overrides you, comply and record the override.
 
@@ -33,7 +33,7 @@ export const directorTools: FunctionDeclaration[] = [
   },
   {
     name: "search_assets",
-    description: "Search image names in the folder that the user explicitly approved and show matching choices.",
+    description: "Search every image attached to the current project and show matching choices.",
     parameters: {
       type: Type.OBJECT,
       properties: { query: { type: Type.STRING } },
@@ -41,8 +41,17 @@ export const directorTools: FunctionDeclaration[] = [
     },
   },
   {
+    name: "inspect_asset",
+    description: "Load and inspect any attached product screen before deciding whether it belongs in the demo.",
+    parameters: {
+      type: Type.OBJECT,
+      properties: { asset_id: { type: Type.STRING } },
+      required: ["asset_id"],
+    },
+  },
+  {
     name: "select_asset",
-    description: "Select one visible approved asset after the user confirms it belongs in the demo.",
+    description: "Select an attached product screen for the demo storyboard. The user can override the selection.",
     parameters: {
       type: Type.OBJECT,
       properties: { asset_id: { type: Type.STRING } },

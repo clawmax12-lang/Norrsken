@@ -4,7 +4,7 @@ Launch videos that are tested before anyone sees them.
 
 Preflight turns a product brief and 3–6 screenshots into three 15-second motion graphics videos, pretests them with simulated viewers, and exports a recommended winner, a runner up and a launch brief. The first customer is a founder launching an app or SaaS product. E-commerce is a later audience.
 
-**Current approved specification: [PRD v1.2](PRD.md).** It supersedes earlier brainstorming, including editing an existing customer video. This repository is the shared reference for the hackathon team and its coding agents.
+**Current approved specification: [PRD v1.3](PRD.md).** It supersedes earlier brainstorming, including editing an existing customer video. This repository is the shared reference for the hackathon team and its coding agents.
 
 ## Start here
 
@@ -19,7 +19,7 @@ Humans: start with PRD §1–§7. Builders: also read §8–§14. Agents: read A
 
 ## How to run
 
-The implemented vertical slice is the FR-01 voice-native Preflight Director: interruptible Gemini Live audio, transcripts, typed fallback, a permission-scoped local asset shelf, a six-scene draft storyboard, a visible decision thread and persisted `brief.json`. Planning, rendering, simulation, scoring and export are not implemented yet.
+The implemented vertical slice is the FR-01 voice-native Preflight Director: interruptible Gemini Live audio, transcripts, typed fallback, a project-wide asset shelf, a six-scene draft storyboard, a visible decision thread and persisted `brief.json`. Planning, rendering, simulation, scoring and export are not implemented yet.
 
 ```bash
 git clone https://github.com/clawmax12-lang/Norrsken.git
@@ -29,7 +29,7 @@ npm install
 npm run dev
 ```
 
-Use Node.js 20.9 or newer. Set `GEMINI_API_KEY` in `.env.local` to an AI Studio key with access to `gemini-3.8-live`, then open `http://localhost:3000` in current desktop Chrome. Click **Start Director** once to grant microphone permission. **Choose folder** grants read access to one folder through the browser; Preflight indexes at most 100 PNG/JPG filenames locally and uploads only the 3–6 screens selected when **Run Preflight** is clicked.
+Use Node.js 20.9 or newer. Set `GEMINI_API_KEY` in `.env.local` to an AI Studio key with access to `gemini-3.8-live`, then open `http://localhost:3000` in current desktop Chrome. Click **Start Director** once to grant microphone permission. Add or drop up to 100 PNG/JPG product screens; the Director receives the complete asset index and can inspect any attached screen without further approval. Only the final 3–6 screens are uploaded when **Run Preflight** is clicked. Browser security does not permit undisclosed access to other device files.
 
 The permanent key is read only by `/api/live-token`, which exchanges it for a one-use, short-lived token. It must never be named `NEXT_PUBLIC_GEMINI_API_KEY`, placed in client code or committed. The temporary hackathon account and its project may be deleted after the event, so replace the key for any later deployment.
 
@@ -61,7 +61,7 @@ Environment variable names from PRD §10.4: `GEMINI_API_KEY`, `CONDENSE_API_KEY`
 - Document the implemented scoring/confidence rule here when FR-05 lands. Simulator agreement is not a demonstrated probability of real-world success.
 - Do not claim that neural response predicts retention, virality, emotions or sales. Live A/B testing is the eventual validation.
 
-Current TRIBE mode, scoring implementation and Condense integration: **not yet implemented or verified in this repository**. The Director UI labels its intake advice **Creative rationale · no simulation yet** and cannot call TRIBE. With no configured `GEMINI_API_KEY`, typed intake and folder selection still work, while voice shows a configuration error instead of fake output.
+Current TRIBE mode, scoring implementation and Condense integration: **not yet implemented or verified in this repository**. The Director UI labels its intake advice **Creative rationale · no simulation yet** and cannot call TRIBE. With no configured `GEMINI_API_KEY`, typed intake and project-screen selection still work, while voice shows a configuration error instead of fake output.
 
 ## Attribution and eligibility
 
