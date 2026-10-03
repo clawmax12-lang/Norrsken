@@ -29,7 +29,7 @@ Fill in real people rather than assigning all work to an unnamed agent. Record a
 | TRIBE worker | FR-04 (TRIBE) | Unassigned | — |
 | Agent, Gemini, Condense | FR-02, FR-04 (panel), FR-05, FR-06, FR-10 | Unassigned | — |
 | Web app, results, export and log | FR-07, FR-08, FR-09 | Unassigned | — |
-| Brain viewer and Preflight sequence | FR-12, FR-14, FR-15 | Claude Opus 5.5 (implementation); William (product review) | Dedicated workspace pending launch; see docs/design/OPUS_BRAIN_BRIEF.md. FR-15 remains gated P1. |
+| Brain viewer and Preflight sequence | FR-12, FR-14, FR-15 | Claude Opus 5.5 (implementation); William (product review) | Conductor workspace `3d-brain-opus-55` / branch `conductor/3d-brain-opus-55`. Owned files: `app/brain/**`, `components/brain/**`, `lib/brain/**`, `public/brain/**`, `scripts/brain/**`, `tests/brain/**`; integration touches only a nav link in `app/page.tsx` plus `package.json`/lockfile for `three`. FR-15 remains gated P1. |
 | Web dashboard shell | FR-01 entry point, §12.6 visual tokens | Codex | Dashboard workspace / `williu16/preflight-swiftui-dashboard`; `app/*.tsx`, `app/*.css` |
 | Integration and release | Shared contracts, clean-clone run, final demo path | Unassigned | — |
 | Demo video and pitch | PRD §14.4–§14.6 | William | — |
@@ -52,8 +52,8 @@ Statuses: `unclaimed` → `in_progress` → `in_review` → `done`. Use `blocked
 | FR-08 | Four export files | P0 | — | unclaimed | — |
 | FR-09 | Live persisted activity log | P0 | — | unclaimed | — |
 | FR-10 | Gemini via Condense, measured savings | P0 | — | unclaimed | — |
-| FR-12 | Interactive 3D brain | Conditional P0: TRIBE go/no-go | — | unclaimed | — |
-| FR-14 | Preflight sequence | Conditional P0: FR-12 | — | unclaimed | — |
+| FR-12 | Interactive 3D brain | Conditional P0: TRIBE go/no-go | Claude Opus 5.5 | in_progress | `conductor/3d-brain-opus-55` |
+| FR-14 | Preflight sequence | Conditional P0: FR-12 | Claude Opus 5.5 | in_progress | `conductor/3d-brain-opus-55` |
 | FR-11 | One revision of the winner | P1: all applicable P0 pass | — | unclaimed | — |
 | FR-15 | A/B and brain difference view | P1: all applicable P0 pass | — | unclaimed | — |
 | FR-13 | Historical backtest | P1: P0 pass and real historical data exists | — | unclaimed | — |
