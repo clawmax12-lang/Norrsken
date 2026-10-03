@@ -266,3 +266,62 @@ export async function loadBackendRun(apiBase: string, projectId: string, fetchIm
   }
   return out;
 }
+
+// ---------------------------------------------------------------- demo bundle
+
+/**
+ * A genuine, precomputed, licensed TRIBE example for first arrival, served by the backend
+ * (or static hosting) in the backend's own artifact format. Proposed seam; nothing in the
+ * repository supplies one yet. Never a test fixture: `meta.mock` is rejected.
+ */
+export interface DemoBundleManifest {
+  kind: "preflight.demo-bundle.v1";
+  title: string;
+  /** Licence/permission for showing the example video and its prediction. */
+  license: string;
+  source_video: { url: string; sha256: string; duration_s: number };
+  /** Backend SimulationResult for exactly that video, with precomputed=true. */
+  simulation: BackendSimulationResult;
+  /** URLs of the float16 activity.npy and optional groups.json for that result. */
+  activity_url: string;
+  groups_url?: string;
+  scenes?: Array<{ t_start: number; t_end: number; text: string }>;
+}
+
+export interface DemoBundle {
+  title: string;
+  license: string;
+  videoUrl: string;
+  scenes?: SceneRef[];
+  binding: CorticalBinding;
+}
+
+export function validateDemoManifest(m: unknown): { ok: true; manifest: DemoBundleManifest } | { ok: false; reason: string } {
+  const d = m as Partial<DemoBundleManifest>;
+  if (!d || d.kind !== "preflight.demo-bundle.v1") return { ok: false, reason: "not a preflight.demo-bundle.v1 manifest" };
+  if (typeof d.title !== "string" || !d.title) return { ok: false, reason: "missing title" };
+  if (typeof d.license !== "string" || !d.license.trim()) return { ok: false, reason: "missing licence/permission" };
+  if (!d.source_video || typeof d.source_video.url !== "string" || !/^[0-9a-f]{64}$/.test(d.source_video.sha256 ?? "")) return { ok: false, reason: "missing source video url/sha256" };
+  if (!d.simulation || d.simulation.precomputed !== true) return { ok: false, reason: "demo result must be precomputed" };
+  if (d.simulation.meta?.mock === true) return { ok: false, reason: "test fixtures cannot be demo examples" };
+  if (d.simulation.video_sha256 !== d.source_video.sha256) return { ok: false, reason: "result belongs to a different video (sha256 mismatch)" };
+  if (typeof d.activity_url !== "string" || !d.activity_url) return { ok: false, reason: "missing activity_url" };
+  return { ok: true, manifest: d as DemoBundleManifest };
+}
+
+export async function loadDemoBundle(manifestUrl: string, fetchImpl: typeof fetch = fetch): Promise<DemoBundle> {
+  const res = await fetchImpl(manifestUrl);
+  if (!res.ok) throw new Error(`demo manifest request failed (${res.status})`);
+  const checked = validateDemoManifest(await res.json());
+  if (!checked.ok) throw new Error(`demo bundle rejected: ${checked.reason}`);
+  const m = checked.manifest;
+  const base = new URL(manifestUrl, typeof window !== "undefined" ? window.location.href : "http://localhost/");
+  const resolve = (u: string) => new URL(u, base).toString();
+  const [actRes, groupsRes] = await Promise.all([fetchImpl(resolve(m.activity_url)), m.groups_url ? fetchImpl(resolve(m.groups_url)) : Promise.resolve(null)]);
+  if (!actRes.ok) throw new Error(`demo activity request failed (${actRes.status})`);
+  const groups = groupsRes && groupsRes.ok ? parseWorkerGroups(await groupsRes.json()) : undefined;
+  const videoUrl = resolve(m.source_video.url);
+  const adapted = adaptBackendTribe(m.simulation, parseNpy(await actRes.arrayBuffer()), { renderSha256: m.source_video.sha256, groups, videoUrl });
+  if (!adapted.ok) throw new Error(`demo bundle rejected: ${adapted.reason}`);
+  return { title: m.title, license: m.license, videoUrl, scenes: m.scenes, binding: adapted.binding };
+}
