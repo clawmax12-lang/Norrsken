@@ -119,8 +119,8 @@ The authoritative schedule, cut order and pitch are in [PRD §14](PRD.md#14-hack
 
 | Gate | Required evidence | Decision / status |
 | --- | --- | --- |
-| 12:30 — TRIBE | One real clip completes; capture environment, duration and real output artifact | Pending; owner unassigned |
-| 12:30 — renderer | One 15 s, 1080x1920, 30 fps MP4 renders through the template | Pending; owner unassigned |
+| 12:30 — TRIBE | One real clip completes; capture environment, duration and real output artifact | **Passed, 3 Oct 2026.** Worker on one NVIDIA A100-SXM4-40GB (driver 570.148.08, torch 2.6.0+cu124, `tribev2` `af58661`, checkpoint `f894e78`), model preloaded, `/health` `model_loaded: true`. A 5 s clip returned a `SimulationResult` (6 samples at 1 Hz, `fsaverage5` 20,484 vertices, Destrieux groups; 3 s on a cached rerun). A full Preflight run simulated three real 15 s variants through the worker: about 6.7 min wall clock for A, B and C one after another on the single-flight queue (first run, cold feature cache), `activity.npy` and `groups.json` downloaded for each. Result carries `scale v0-uncalibrated`. Setup fix in `workers/tribe/pyproject.toml` (`transformers>=4.50` constraint, otherwise the resolver picks `transformers 4.12.2`, whose `tokenizers 0.10.3` needs a Rust build) |
+| 12:30 — renderer | One 15 s, 1080x1920, 30 fps MP4 renders through the template | **Passed, 3 Oct 2026.** Three variants rendered by `workers/renderer` (Remotion, 450 frames each, 6–10 s render per video after a one-time Chrome headless shell download); `ffprobe` of each MP4: H.264, 1080x1920, 30 fps, 15.000 s |
 | P0 complete | All applicable FR-01–FR-10 plus conditional FR-12/FR-14 AC pass; clean-clone run and end-to-end duration recorded | Pending |
 | 17:45 — code freeze | Demo path verified; remaining cuts recorded per PRD | Pending |
 | 18:00–18:40 — recording | Two-minute recording of the real product, as specified in PRD | Pending |
