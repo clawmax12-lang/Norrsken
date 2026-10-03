@@ -123,7 +123,7 @@ When a company has a video ready, it needs to know what to change and which alte
 | Stage | What happens | User sees |
 | --- | --- | --- |
 | 1. Trigger | "Improve this video" | Full-viewport brain entry → same brain docks top-left; explicit Enable Live |
-| 2. Intake | Upload existing video; confirm facts, goal and audience | Playable Original, validated intake, large central conversation orb, interruption/transcripts |
+| 2. Intake | Upload existing video; confirm facts, goal and audience | Playable Original, validated intake, bottom-docked composing orb, interruption/transcripts |
 | 3. Agent at work (target under 8 min) | Pretest original → 3 grounded edit hypotheses → render candidates → retest exact outputs | Readable original/analysis/A-B-C branches, real jobs and brain; inactive voice docks near bottom |
 | 4. Verdict | Best-ranked candidate, reasons and comparison to original | Timestamped evidence, synced video/curves/brain; no invented uplift |
 | 5. Export | Winner plus runner up plus launch brief | Downloads |
@@ -150,7 +150,7 @@ Journey rule: the user never sees "TRIBE output". They see: which video, why, wh
 
 ### 7.1 Hackathon MVP (today)
 
-Full-viewport brain entry → FLORA canvas + existing-video intake → confirmed original pretest → 3 edit hypotheses → Gemini Live storyboarding/refinement → confirmed render of 3 candidates from source clips/assets using one template family → retest → ranking, original comparison and export. The same brain docks top-left; voice is central during conversation and bottom-docked when inactive. Cortical animation requires genuine data. P1: synchronized dual-brain/difference view and an additional tested-winner iteration. Execution remains bounded: one original plus three generated candidates, not unlimited edits.
+Full-viewport brain entry → FLORA canvas + existing-video intake → confirmed original pretest → 3 edit hypotheses → Gemini Live storyboarding/refinement → confirmed render of 3 candidates from source clips/assets using one template family → retest → ranking, original comparison and export. The same brain docks top-left; voice replaces the bottom prompt with the bottom-docked composing orb while enabled. Cortical animation requires genuine data. P1: synchronized dual-brain/difference view and an additional tested-winner iteration. Execution remains bounded: one original plus three generated candidates, not unlimited edits.
 
 ### 7.2 V1 (only after validation, see §13)
 
@@ -582,7 +582,7 @@ Bottom controls, as segmented pills like the reference:
 ### 12.4 Screens
 
 1. **Entry hero:** rotating brain intro and Enable Live/female-voice welcome, then the brain docks and reveals the workspace.
-2. **Canvas intake and original review:** short video-upload invitation on an otherwise quiet canvas. Uploaded Original becomes a playable source node; confirm product facts/audience/goal, then Run baseline analysis. Conversation uses the large central orb; no empty fabricated storyboard tree before intake.
+2. **Canvas intake and original review:** short video-upload invitation on an otherwise quiet canvas. Uploaded Original becomes a playable source node; confirm product facts/audience/goal, then Run baseline analysis. Conversation uses the bottom-docked composing orb; no empty fabricated storyboard tree before intake.
 3. **Canvas at work:** Original → actual baseline analysis → grounded edit hypotheses/storyboards → candidate videos → retests; selected path highlighted. Persistent top-left brain, bottom idle voice dock and accessible persisted log. Typed/spoken edits use the same validated draft.
 4. **Canvas results:** recommended candidate plus original comparison, leaderboard/evidence inspector, selected video/time-aligned curves/brain, actual Condense savings. Verdict reachable at 1440 px; real-world uplift is not claimed.
 5. **Compare (P1):** inspect two variant nodes with synchronized video/brain/difference view; return without losing canvas position.
@@ -708,7 +708,7 @@ The source PRD leaves technical owners blank. Assign and maintain the live assig
 ### 14.4 Two minute demo script
 
 - **0:00** "Our company already has this video. What should we change before the next spend?" Full-viewport brain entry → top-left dock → FLORA canvas; Enable Live and hear a real female reply. Example predictions are disclosed.
-- **0:15** Upload a genuine existing video; play Original and confirm facts/audience/goal. Run baseline analysis; discuss a real timestamp, interrupt and refine a grounded candidate edit on the actual canvas. Confirm render/retest; fast-forward waiting only with disclosure. Orb is central in conversation and small/bottom-docked when inactive.
+- **0:15** Upload a genuine existing video; play Original and confirm facts/audience/goal. Run baseline analysis; discuss a real timestamp, interrupt and refine a grounded candidate edit on the actual canvas. Confirm render/retest; fast-forward waiting only with disclosure. Orb replaces the bottom prompt while voice is enabled.
 - **0:40** Genuine results populate the canvas. Expand the persistent brain and show a video-aligned region/timestamp; analysis focus if available. Distinguish actual tests from untested hypotheses.
 - **1:20** Ask the Live Director why this variant won; hear an evidence-backed answer with timestamps. Show evidence and iteration delta if built; never claim retention/sales prediction.
 - **1:45** Show original-versus-candidate evidence and export. "This is the cut we will test with real customers." Mention Gemini, Condense and TRIBE; do not claim proven lift.
@@ -739,7 +739,7 @@ Problem (40 s) → live demo (2 min 30) → how it works, the agent and the simu
 10. Primary coding agent for this repo: Claude Opus 5.5. Keep this PRD in the repo root as `PRD.md` and update the decision log when a requirement changes.
 11. Build Preflight as the browser-based web platform specified in §7.5 and §10. Do not scaffold Swift, SwiftUI, an Xcode project or a native client. References to a customer's mobile app, screenshots or vertical videos describe input/output, not Preflight's implementation platform.
 12. Read the shared visual baseline before changing the brain experience. Opus 5.5 owns its implementation; keep the reusable mesh/renderer separate from per-video data and from any planned runtime Opus video-composition calls (§9.1/§10.5). No random “brain waves”, no per-user regeneration of the brain.
-13. PRD v1.7 makes existing company video → baseline analysis → improved candidate → retest the main product, superseding screenshots-first/existing-video exclusions. Keep the FLORA canvas, full-viewport entry/top-left same-brain dock and central-conversation/bottom-idle two-way Gemini Live orb. TTS-only/fake dialogue/glow cannot pass Live. Coordinate migration/ownership; a new spec is not shipped acceptance or a Condense exception.
+13. PRD v1.7 makes existing company video → baseline analysis → improved candidate → retest the main product, superseding screenshots-first/existing-video exclusions. Keep the FLORA canvas, full-viewport entry/top-left same-brain dock and bottom-prompt/bottom-orb two-way Gemini Live presentation. TTS-only/fake dialogue/glow cannot pass Live. Coordinate migration/ownership; a new spec is not shipped acceptance or a Condense exception.
 14. Apply the clean-flow design in §12 and its shared brief: near-black dotted canvas, readable left-to-right media/storyboard branches, minimal floating chrome, Redaction identity and restrained orange-red accents. Preserve existing application logic/contracts when changing the shell. New layout references supersede the old radial/sidebar layout, not the anatomical brain baseline.
 
 ## 16. Decision log
