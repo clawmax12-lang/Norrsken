@@ -66,7 +66,7 @@ P2 stays outside today's build. The broader validation programme also has the ex
 
 | Date | Scope | Owner / branch | Status and evidence | Remaining work |
 | --- | --- | --- | --- | --- |
-| 3 Oct 2026 | TypeScript web dashboard shell; FR-01 entry point and §12.6 visual tokens | Codex / `williu16/preflight-swiftui-dashboard` | In review. Added the responsive Next.js dashboard, pipeline explanation, empty recent-brief state and new-preflight entry surface. `npm run build` passed on Next.js 16.3.8, including strict TypeScript validation; desktop and 390 px mobile layouts were visually checked. | Dashboard only. Brief persistence and every render, simulator, score, result, and export acceptance criterion remain unimplemented. No FR is marked done. |
+| 3 Oct 2026 | TypeScript web dashboard shell; FR-01 entry point and §12.6 visual tokens | Codex / `williu16/preflight-swiftui-dashboard` | In review. Added a responsive app shell with sidebar/top bar, priority-first overview, workflow, empty recent-brief state and new-preflight entry surface. `npm run build` passed on Next.js 16.3.8, including strict TypeScript validation; desktop and 390 px mobile layouts were visually checked. | Dashboard only. Brief persistence and every render, simulator, score, result, and export acceptance criterion remain unimplemented. No FR is marked done. |
 
 For each task, record:
 
