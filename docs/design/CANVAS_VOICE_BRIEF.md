@@ -2,6 +2,8 @@
 
 Authoritative scope: [PRD v1.5](../../PRD.md) §8/§9/§10/§12.9. This is an implementation handoff, not a second product specification. Visuals: [all supplied references](README.md). Execution evidence: [historical status audit](../status/2026-10-03-build-audit.md) and [TEAM.md](../../TEAM.md).
 
+Latest owner clarification: ElevenLabs is a UI reference only, not a voice-provider change. See the [Canvas integration handoff](CANVAS_INTEGRATION_HANDOFF.md) for the top-left hover/three-second brain-focus direction, actual backend routes/artifact mismatches, merge snapshot and short voice brief to relay. Merged PR #2 now records a direct-Live policy exception; that decision must be reconciled with this docs branch's v1.5 routing rule before claiming one synchronized baseline.
+
 ## Target experience
 
 Entry brain hero → dock in a corner → Enable Live and prompt/validated brief on a flow canvas → conversational storyboard selection/refinement → confirmed run → actual variant/job/pretest nodes → recommended tested export. A female Gemini Live Director listens, replies, handles interruption and explains actual work throughout, represented by a standalone orb without a surrounding card, enlarging while speaking. The brain and voice are persistent companions; node selection drives their shared context. The finished video remains the outcome.

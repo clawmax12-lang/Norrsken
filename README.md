@@ -20,6 +20,7 @@ Preflight turns a product brief and 3–6 screenshots into three 15-second motio
 | [Visual baseline](docs/design/README.md) | All four original reference images and the motion clip, shared brain/canvas direction, provenance and existing preview. |
 | [Opus 5.5 brain brief](docs/design/OPUS_BRAIN_BRIEF.md) | Complete interactive browser brain, reuse/data boundaries, A/B synchronization and verification/handoff. |
 | [Canvas and voice brief](docs/design/CANVAS_VOICE_BRIEF.md) | Mandatory two-way Gemini Live, validated storyboard edits, canvas/brain/job integration and standalone orb; optional prompt glow. |
+| [Canvas integration handoff](docs/design/CANVAS_INTEGRATION_HANDOFF.md) | Relay-ready voice brief, top-left hover/focus brain direction, inspected backend/SSE/data-adapter seams and current merge gaps. |
 | [Build status audit](docs/status/2026-10-03-build-audit.md) | Timestamped evidence from all nine Norrsken workspaces; prototype, implementation and genuine-data gaps are separate. |
 | [Original PDF](docs/source/Preflight-PRD-v1.1.pdf) | Unchanged, 20-page source supplied by the product owner. [Provenance and checksum](docs/source/README.md). |
 
