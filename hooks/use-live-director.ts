@@ -11,6 +11,7 @@ import {
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { DIRECTOR_INSTRUCTION, directorTools, LIVE_MODEL, LIVE_VOICE } from "@/lib/director";
+import { normalizedRms, outputVisualState, stopQueuedPlayback } from "@/lib/live-audio";
 
 export type ConnectionState = "idle" | "requesting" | "connecting" | "listening" | "error";
 
@@ -62,9 +63,10 @@ function downsampleToPcm16(input: Float32Array, inputRate: number, outputRate = 
 export function useLiveDirector({ onToolCall }: UseLiveDirectorOptions) {
   const [state, setState] = useState<ConnectionState>("idle");
   const [error, setError] = useState<string | null>(null);
-  const [level, setLevel] = useState(0);
+  const [inputLevel, setInputLevel] = useState(0);
   const [outputLevel, setOutputLevel] = useState(0);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [transcript, setTranscript] = useState<TranscriptLine[]>([]);
   const [liveUserText, setLiveUserText] = useState("");
@@ -77,7 +79,10 @@ export function useLiveDirector({ onToolCall }: UseLiveDirectorOptions) {
   const playbackCursorRef = useRef(0);
   const playbackSourcesRef = useRef<Set<AudioBufferSourceNode>>(new Set());
   const outputGainRef = useRef<GainNode | null>(null);
+  const outputAnalyserRef = useRef<AnalyserNode | null>(null);
   const levelFrameRef = useRef(0);
+  const mutedRef = useRef(false);
+  const processingTasksRef = useRef<Set<symbol>>(new Set());
   const mountedRef = useRef(true);
   const toolHandlerRef = useRef(onToolCall);
 
@@ -95,20 +100,18 @@ export function useLiveDirector({ onToolCall }: UseLiveDirectorOptions) {
   }, []);
 
   const stopPlayback = useCallback(() => {
-    for (const source of playbackSourcesRef.current) {
-      try {
-        source.stop();
-      } catch {
-        // A source that already ended cannot be stopped again.
-      }
-    }
-    playbackSourcesRef.current.clear();
+    stopQueuedPlayback(playbackSourcesRef.current);
     if (mountedRef.current) {
       setOutputLevel(0);
       setIsSpeaking(false);
     }
     const context = audioContextRef.current;
     playbackCursorRef.current = context?.currentTime ?? 0;
+  }, []);
+
+  const clearProcessing = useCallback(() => {
+    processingTasksRef.current.clear();
+    if (mountedRef.current) setIsProcessing(false);
   }, []);
 
   const releaseAudio = useCallback(async () => {
@@ -121,30 +124,27 @@ export function useLiveDirector({ onToolCall }: UseLiveDirectorOptions) {
     const context = audioContextRef.current;
     audioContextRef.current = null;
     outputGainRef.current = null;
+    outputAnalyserRef.current = null;
+    clearProcessing();
     if (context && context.state !== "closed") await context.close();
     if (mountedRef.current) {
-      setLevel(0);
+      setInputLevel(0);
       setLiveUserText("");
       setLiveDirectorText("");
     }
-  }, [stopPlayback]);
+  }, [clearProcessing, stopPlayback]);
 
   const playPcm = useCallback((base64: string) => {
     const context = audioContextRef.current;
-    if (!context) return;
+    if (!context || mutedRef.current) return;
     const bytes = decodeBase64(base64);
     const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
     const sampleCount = Math.floor(bytes.byteLength / 2);
     const buffer = context.createBuffer(1, sampleCount, 24_000);
     const channel = buffer.getChannelData(0);
-    let sum = 0;
     for (let index = 0; index < sampleCount; index += 1) {
       channel[index] = view.getInt16(index * 2, true) / 0x8000;
-      sum += channel[index] * channel[index];
     }
-    const chunkLevel = Math.min(1, Math.sqrt(sum / Math.max(1, sampleCount)) * 4.5);
-    setOutputLevel(chunkLevel);
-    setIsSpeaking(true);
     const source = context.createBufferSource();
     source.buffer = buffer;
     source.connect(outputGainRef.current ?? context.destination);
@@ -180,27 +180,36 @@ export function useLiveDirector({ onToolCall }: UseLiveDirectorOptions) {
       }
 
       if (message.toolCall?.functionCalls?.length) {
-        const responses = await Promise.all(
-          message.toolCall.functionCalls.map(async (call) => {
-            try {
-              const output = await toolHandlerRef.current(call);
-              return {
-                id: call.id,
-                name: call.name,
-                response: { output },
-                scheduling: FunctionResponseScheduling.WHEN_IDLE,
-              };
-            } catch (toolError) {
-              return {
-                id: call.id,
-                name: call.name,
-                response: { error: toolError instanceof Error ? toolError.message : "Tool failed." },
-                scheduling: FunctionResponseScheduling.WHEN_IDLE,
-              };
-            }
-          }),
-        );
-        sessionRef.current?.sendToolResponse({ functionResponses: responses });
+        const task = Symbol("live-tool-call");
+        const session = sessionRef.current;
+        processingTasksRef.current.add(task);
+        setIsProcessing(true);
+        try {
+          const responses = await Promise.all(
+            message.toolCall.functionCalls.map(async (call) => {
+              try {
+                const output = await toolHandlerRef.current(call);
+                return {
+                  id: call.id,
+                  name: call.name,
+                  response: { output },
+                  scheduling: FunctionResponseScheduling.WHEN_IDLE,
+                };
+              } catch (toolError) {
+                return {
+                  id: call.id,
+                  name: call.name,
+                  response: { error: toolError instanceof Error ? toolError.message : "Tool failed." },
+                  scheduling: FunctionResponseScheduling.WHEN_IDLE,
+                };
+              }
+            }),
+          );
+          if (session && session === sessionRef.current) session.sendToolResponse({ functionResponses: responses });
+        } finally {
+          processingTasksRef.current.delete(task);
+          if (mountedRef.current) setIsProcessing(processingTasksRef.current.size > 0);
+        }
       }
     },
     [addTranscript, playPcm, stopPlayback],
@@ -225,9 +234,14 @@ export function useLiveDirector({ onToolCall }: UseLiveDirectorOptions) {
     await context.audioWorklet.addModule("/audio-capture-worklet.js");
     audioContextRef.current = context;
     const outputGain = context.createGain();
-    outputGain.gain.value = isMuted ? 0 : 1;
-    outputGain.connect(context.destination);
+    outputGain.gain.value = mutedRef.current ? 0 : 1;
+    const outputAnalyser = context.createAnalyser();
+    outputAnalyser.fftSize = 1024;
+    outputAnalyser.smoothingTimeConstant = 0.45;
+    outputGain.connect(outputAnalyser);
+    outputAnalyser.connect(context.destination);
     outputGainRef.current = outputGain;
+    outputAnalyserRef.current = outputAnalyser;
     playbackCursorRef.current = context.currentTime;
     const source = context.createMediaStreamSource(stream);
     const capture = new AudioWorkletNode(context, "preflight-capture");
@@ -238,13 +252,11 @@ export function useLiveDirector({ onToolCall }: UseLiveDirectorOptions) {
     silence.connect(context.destination);
     captureNodeRef.current = capture;
 
-    let displayedLevel = 0;
+    let displayedInputLevel = 0;
+    const outputSamples = new Float32Array(outputAnalyser.fftSize);
     capture.port.onmessage = (event: MessageEvent<ArrayBuffer>) => {
       const samples = new Float32Array(event.data);
-      let sum = 0;
-      for (const sample of samples) sum += sample * sample;
-      const rms = Math.sqrt(sum / Math.max(1, samples.length));
-      displayedLevel = Math.max(displayedLevel * 0.72, Math.min(1, rms * 7));
+      displayedInputLevel = Math.max(displayedInputLevel * 0.72, normalizedRms(samples, 7));
       const pcm = downsampleToPcm16(samples, context.sampleRate);
       session.sendRealtimeInput({
         audio: { data: encodeBase64(pcm), mimeType: "audio/pcm;rate=16000" },
@@ -253,21 +265,25 @@ export function useLiveDirector({ onToolCall }: UseLiveDirectorOptions) {
 
     const updateLevel = () => {
       if (!mountedRef.current) return;
-      setLevel(displayedLevel);
-      displayedLevel *= 0.86;
+      setInputLevel(displayedInputLevel);
+      displayedInputLevel *= 0.86;
+      outputAnalyser.getFloatTimeDomainData(outputSamples);
+      const visual = outputVisualState(outputSamples, playbackSourcesRef.current.size, mutedRef.current);
+      setOutputLevel(visual.level);
+      setIsSpeaking(visual.isSpeaking);
       levelFrameRef.current = requestAnimationFrame(updateLevel);
     };
     updateLevel();
-  }, [isMuted]);
+  }, []);
 
   const toggleMute = useCallback(() => {
-    setIsMuted((current) => {
-      const next = !current;
-      const context = audioContextRef.current;
-      if (outputGainRef.current && context) outputGainRef.current.gain.setValueAtTime(next ? 0 : 1, context.currentTime);
-      return next;
-    });
-  }, []);
+    const next = !mutedRef.current;
+    mutedRef.current = next;
+    setIsMuted(next);
+    const context = audioContextRef.current;
+    if (outputGainRef.current && context) outputGainRef.current.gain.setValueAtTime(next ? 0 : 1, context.currentTime);
+    if (next) stopPlayback();
+  }, [stopPlayback]);
 
   const start = useCallback(async () => {
     if (state !== "idle" && state !== "error") return;
@@ -370,9 +386,10 @@ export function useLiveDirector({ onToolCall }: UseLiveDirectorOptions) {
   return {
     state,
     error,
-    level,
+    inputLevel,
     outputLevel,
     isSpeaking,
+    isProcessing,
     isMuted,
     transcript,
     liveUserText,

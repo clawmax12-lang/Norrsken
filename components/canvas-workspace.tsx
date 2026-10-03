@@ -2,9 +2,10 @@
 
 import type { FunctionCall } from "@google/genai";
 import { FormEvent, PointerEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ThinkingOrb, type OrbState } from "thinking-orbs";
+import { ThinkingOrb } from "thinking-orbs";
 import { VoiceBeam } from "voice-glow";
 
+import { CanvasBrain } from "@/components/brain/CanvasBrain";
 import { useLiveDirector } from "@/hooks/use-live-director";
 import { briefSchema, emptyBrief, type BriefDraft, type BriefField, type SourceMap } from "@/lib/brief";
 import {
@@ -18,6 +19,7 @@ import {
   type VariantId,
   variantIds,
 } from "@/lib/canvas-draft";
+import { directorOrbState } from "@/lib/director-presence";
 
 type LocalAsset = {
   id: string;
@@ -33,6 +35,7 @@ type JobState = "draft" | "saving" | "queued" | "unavailable" | "error";
 const PROJECT_ID = "launch-draft";
 const BRIEF_STORAGE = `preflight:${PROJECT_ID}:brief`;
 const DRAFT_STORAGE = `preflight:${PROJECT_ID}:canvas`;
+const BACKEND_PROJECT_STORAGE = `preflight:${PROJECT_ID}:backend-project`;
 
 const fieldLabels: Record<BriefField, string> = {
   product_name: "Product",
@@ -100,6 +103,7 @@ export function CanvasWorkspace() {
   const [composerText, setComposerText] = useState("");
   const [notices, setNotices] = useState<Notice[]>([]);
   const [draftState, setDraftState] = useState<"saved" | "saving" | "error">("saved");
+  const [backendProjectId, setBackendProjectId] = useState<string | undefined>();
   const [jobState, setJobState] = useState<JobState>("draft");
   const [jobMessage, setJobMessage] = useState("Draft only · no render or simulation has run");
   const [showBrief, setShowBrief] = useState(false);
@@ -108,6 +112,7 @@ export function CanvasWorkspace() {
   const [confirmSummary, setConfirmSummary] = useState<string | null>(null);
   const [view, setView] = useState({ x: 0, y: 0, zoom: 0.82 });
   const [dragging, setDragging] = useState(false);
+  const [visualsPaused, setVisualsPaused] = useState(false);
 
   const folderInputRef = useRef<HTMLInputElement | null>(null);
   const dragRef = useRef({ x: 0, y: 0, viewX: 0, viewY: 0, moved: false });
@@ -122,6 +127,18 @@ export function CanvasWorkspace() {
     folderInputRef.current?.setAttribute("directory", "");
   }, []);
 
+  useEffect(() => {
+    const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => setVisualsPaused(motion.matches || document.hidden);
+    update();
+    motion.addEventListener("change", update);
+    document.addEventListener("visibilitychange", update);
+    return () => {
+      motion.removeEventListener("change", update);
+      document.removeEventListener("visibilitychange", update);
+    };
+  }, []);
+
   useEffect(() => { assetsRef.current = assets; }, [assets]);
   useEffect(() => { selectedAssetsRef.current = selectedAssetIds; }, [selectedAssetIds]);
   useEffect(() => { draftRef.current = draft; }, [draft]);
@@ -133,12 +150,14 @@ export function CanvasWorkspace() {
       return { brief: { ...emptyBrief(PROJECT_ID), ...record.brief, project_id: PROJECT_ID }, sources: record.sources ?? {} };
     });
     const storedDraft = readStored(DRAFT_STORAGE, (value) => canvasDraftSchema.parse(value));
+    const storedBackendProject = localStorage.getItem(BACKEND_PROJECT_STORAGE);
     queueMicrotask(() => {
       if (storedBrief) {
         setBrief(storedBrief.brief);
         setSources(storedBrief.sources);
       }
       if (storedDraft) setDraft(storedDraft);
+      if (storedBackendProject && /^[A-Za-z0-9_-]{1,128}$/.test(storedBackendProject)) setBackendProjectId(storedBackendProject);
     });
 
     void fetch(`/api/projects/${PROJECT_ID}/draft`, { cache: "no-store" })
@@ -425,13 +444,16 @@ export function CanvasWorkspace() {
       if (!briefResponse.ok) throw new Error(((await briefResponse.json()) as { error?: string }).error ?? "Brief save failed.");
 
       const runResponse = await fetch(`/api/projects/${PROJECT_ID}/run`, { method: "POST", headers: { "Idempotency-Key": commandId } });
-      const run = await runResponse.json() as { error?: string; status?: string; run_id?: string };
+      const run = await runResponse.json() as { error?: string; status?: string; run_id?: string; project_id?: string };
       if (!runResponse.ok) {
         setJobState(runResponse.status === 503 ? "unavailable" : "error");
         setJobMessage(run.error ?? "No job was started.");
         addNotice("system", run.error ?? "No job was started.");
         return;
       }
+      const acceptedProjectId = run.project_id && /^[A-Za-z0-9_-]{1,128}$/.test(run.project_id) ? run.project_id : PROJECT_ID;
+      setBackendProjectId(acceptedProjectId);
+      localStorage.setItem(BACKEND_PROJECT_STORAGE, acceptedProjectId);
       setJobState("queued");
       setJobMessage(`Run ${run.run_id ?? "queued"} · waiting for genuine backend events`);
       addNotice("system", "Run accepted by the connected pipeline. Progress will only follow persisted backend events.");
@@ -460,13 +482,14 @@ export function CanvasWorkspace() {
     ...notices,
   ].slice(-12), [director.transcript, notices]);
 
-  const orbState: OrbState = director.state === "connecting" || director.state === "requesting" ? "connecting" : director.isSpeaking ? "composing" : director.state === "listening" ? "listening" : "breathing";
-  const liveLabel = director.state === "listening" ? "Live · listening" : director.state === "connecting" || director.state === "requesting" ? "Connecting…" : director.state === "error" ? "Live unavailable" : "Enable Live";
+  const orbState = directorOrbState(director.state, director.isSpeaking, director.isProcessing);
+  const liveLabel = director.isSpeaking ? "Live · Director speaking" : director.isProcessing ? "Live · working" : director.state === "listening" ? "Live · listening" : director.state === "connecting" || director.state === "requesting" ? "Connecting…" : director.state === "error" ? "Live unavailable" : "Enable Live";
   const latestLine = director.liveDirectorText || director.liveUserText || allTranscript.at(-1)?.text;
   const selectedAsset = assets.find((asset) => asset.id === selectedScene.asset_id);
+  const hasProjectContent = Boolean(brief.product_name || brief.one_liner || brief.audience || assets.length || selectedAssetIds.length || Object.keys(sources).length);
 
   return (
-    <main className="canvas-app">
+    <main className="canvas-app preflight-theme pf-canvas">
       <header className="canvas-header">
         <div className="project-identity"><span className="preflight-mark">P</span><div><strong>Preflight</strong><small>{brief.product_name || "Untitled launch"} · storyboard</small></div></div>
         <div className="header-actions">
@@ -483,6 +506,7 @@ export function CanvasWorkspace() {
         <span />
         <button onClick={() => setShowTranscript((current) => !current)} aria-label="Transcript">≡</button>
       </nav>
+      <input ref={folderInputRef} hidden type="file" accept="image/png,image/jpeg" multiple onChange={(event) => loadFolder(event.target.files)} />
 
       <section
         className={`flow-viewport ${dragging ? "dragging" : ""}`}
@@ -495,7 +519,14 @@ export function CanvasWorkspace() {
           setView((current) => ({ ...current, zoom: Math.min(1.22, Math.max(0.58, current.zoom * (event.deltaY > 0 ? 0.9 : 1.1))) }));
         }}
       >
-        <div className="flow-plane" style={{ transform: `translate(${view.x}px, ${view.y}px) scale(${view.zoom})` }}>
+        {!hasProjectContent && <section className="empty-canvas-invite" aria-labelledby="empty-canvas-title">
+          <small>New preflight</small>
+          <h1 id="empty-canvas-title">Bring your launch screens.</h1>
+          <p>Choose 3–6 screenshots, or enable Live and describe what you are shipping.</p>
+          <div><button onClick={() => folderInputRef.current?.click()}>Choose screenshots</button><button className="enable-live-empty" onClick={() => void director.start()}>Enable Live</button></div>
+        </section>}
+
+        {hasProjectContent && <div className="flow-plane" style={{ transform: `translate(${view.x}px, ${view.y}px) scale(${view.zoom})` }}>
           <svg className="flow-lines" width="1440" height="720" viewBox="0 0 1440 720" aria-hidden="true">
             {variantIds.map((variant, index) => <path key={variant} d={`M 330 355 C 395 355, 390 ${170 + index * 185}, 462 ${170 + index * 185}`} />)}
             {selectedConcept.scenes.map((_, index) => <path className="scene-line" key={index} d={`M 720 ${170 + variantIds.indexOf(selectedConcept.variant_id) * 185} C 770 ${170 + variantIds.indexOf(selectedConcept.variant_id) * 185}, 760 ${118 + index * 116}, 820 ${118 + index * 116}`} />)}
@@ -546,9 +577,19 @@ export function CanvasWorkspace() {
             </div>
             <button className="asset-picker-button" onClick={() => setShowAssets(true)}>{selectedAsset ? "Change screenshot" : "Choose screenshot"}</button>
           </aside>
-        </div>
+        </div>}
 
-        <div className="brain-placeholder"><span className="brain-glyph">◌</span><div><strong>Brain</strong><small>No brain data</small></div></div>
+        <div className="canvas-brain-layer">
+          <CanvasBrain
+            projectId={backendProjectId}
+            selectedVariant={draft.selected_variant_id}
+            onSelectVariant={(variant) => {
+              const concept = draftRef.current.concepts.find((item) => item.variant_id === variant);
+              if (concept) void selectScene(variant, concept.scenes[0].id);
+            }}
+            entry
+          />
+        </div>
         <div className="zoom-control"><button onClick={() => setView((current) => ({ ...current, zoom: Math.max(0.58, current.zoom - 0.1) }))}>−</button><span>{Math.round(view.zoom * 100)}%</span><button onClick={() => setView((current) => ({ ...current, zoom: Math.min(1.22, current.zoom + 0.1) }))}>＋</button></div>
       </section>
 
@@ -564,7 +605,6 @@ export function CanvasWorkspace() {
       {showAssets && <aside className="asset-drawer">
         <div className="drawer-heading"><div><small>User-approved folder</small><h2>Product screens</h2></div><button onClick={() => setShowAssets(false)}>×</button></div>
         <div className="asset-tools"><button onClick={() => folderInputRef.current?.click()}>Choose folder</button><input value={assetQuery} onChange={(event) => setAssetQuery(event.target.value)} placeholder="Search filenames" /></div>
-        <input ref={folderInputRef} hidden type="file" accept="image/png,image/jpeg" multiple onChange={(event) => loadFolder(event.target.files)} />
         {assets.length === 0 ? <button className="empty-assets" onClick={() => folderInputRef.current?.click()}><strong>Grant one folder</strong><span>PNG/JPG filenames stay local until you confirm Run.</span></button> : <div className="asset-shelf">{visibleAssets.map((asset) => {
           const selected = selectedAssetIds.includes(asset.id);
           return <div className={`shelf-card ${selected ? "selected" : ""}`} key={asset.id}><button onClick={() => toggleAsset(asset.id)}><span style={{ backgroundImage: `url(${asset.previewUrl})` }} /><strong>{asset.name}</strong><small>{selected ? "Selected for brief" : "Select"}</small></button><button className="place-button" disabled={!selected} onClick={() => void handleToolCall({ name: "set_scene_asset", args: { scene_id: selectedScene.id, asset_id: asset.id, rationale: "Chosen by the user from the approved folder" } })}>Place in {selectedScene.id}</button></div>;
@@ -579,17 +619,23 @@ export function CanvasWorkspace() {
 
       <section className="composer-dock">
         {latestLine && <button className="latest-caption" onClick={() => setShowTranscript(true)}><span>{director.liveDirectorText ? "Director" : director.liveUserText ? "You" : "Session"}</span>{latestLine}</button>}
-        <div className={`orb-wrap ${director.isSpeaking ? "speaking" : ""}`}>
-          <ThinkingOrb state={orbState} size={64} theme="dark" color="#ff5a36" aria-label={liveLabel} />
+        <div className={`orb-wrap ${director.isSpeaking && !visualsPaused ? "speaking" : ""}`}>
+          <div className="orb-core">
+            <ThinkingOrb state={orbState} size={64} theme="dark" color="#FF5A36" paused={visualsPaused || director.state === "idle" || director.state === "error"} aria-label={liveLabel} />
+          </div>
         </div>
         <VoiceBeam
-          level={director.outputLevel}
-          processing={director.state === "connecting" || draftState === "saving"}
+          className="director-beam"
+          level={() => director.isSpeaking ? director.outputLevel : director.state === "listening" ? director.inputLevel : 0}
+          processing={director.isProcessing}
+          active={director.isSpeaking || director.state === "listening" || director.isProcessing}
+          paused={visualsPaused}
+          type="default"
           colorVariant="sunset"
-          colors={["#ff5a36", "#f2472c", "#ff773f", "#cb3828", "#ff9650", "#a82923", "#e45432"]}
-          bandColors={{ core: "#ffe1c7", above: "#ff773f", mid: "#ff5a36", below: "#cb3828" }}
+          colors={["#FF5A36", "#F2472C", "#FF773F", "#CB3828", "#FF9650", "#A82923", "#E45432"]}
+          bandColors={{ core: "#FFE1C7", above: "#FF773F", mid: "#FF5A36", below: "#CB3828" }}
           staticColors
-          strength={0.42}
+          strength={0.45}
           idle={0}
           theme="dark"
         >
@@ -604,7 +650,7 @@ export function CanvasWorkspace() {
             <button className="send-button" type="submit" disabled={!composerText.trim()} aria-label="Send">↗</button>
           </form>
         </VoiceBeam>
-        <div className="composer-meta"><button onClick={() => director.state === "listening" ? void director.stop() : void director.start()}>{liveLabel}</button>{director.state === "listening" && <><span>Mic {Math.round(director.level * 100)}%</span><button onClick={director.toggleMute}>{director.isMuted ? "Unmute Director" : "Mute Director"}</button><button onClick={() => void director.stop()}>Disconnect</button></>}<span className={`job-state ${jobState}`}>{jobMessage}</span></div>
+        <div className="composer-meta" aria-live="polite"><button onClick={() => director.state === "listening" ? void director.stop() : void director.start()}>{liveLabel}</button>{director.state === "listening" && <><span>Mic {Math.round(director.inputLevel * 100)}%</span><span>Voice {Math.round(director.outputLevel * 100)}%</span><button onClick={director.toggleMute}>{director.isMuted ? "Unmute Director" : "Mute Director"}</button><button onClick={() => void director.stop()}>Disconnect</button></>}<span className={`job-state ${jobState}`}>{jobMessage}</span></div>
         {director.error && <div className="composer-error" role="alert">{director.error}</div>}
       </section>
 
