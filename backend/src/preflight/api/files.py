@@ -17,12 +17,14 @@ class FileKind(StrEnum):
     """The only kinds of file the API serves per variant."""
 
     VIDEO = "video"
+    VIDEO_FINAL = "video-final"
     BRAIN_ACTIVITY = "brain-activity"
     BRAIN_GROUPS = "brain-groups"
 
 
 _MEDIA_TYPES = {
     FileKind.VIDEO: "video/mp4",
+    FileKind.VIDEO_FINAL: "video/mp4",
     FileKind.BRAIN_ACTIVITY: "application/octet-stream",
     FileKind.BRAIN_GROUPS: "application/json",
 }
@@ -56,6 +58,8 @@ def _candidate_path(
 ) -> Path | None:
     if kind is FileKind.VIDEO:
         return paths.video(variant)
+    if kind is FileKind.VIDEO_FINAL:
+        return paths.final_video(variant)
     simulation = paths.simulation(variant, SimulatorName.TRIBE_V2.value)
     if not simulation.is_file():
         return None

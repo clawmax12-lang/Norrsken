@@ -144,3 +144,11 @@ test("loads results and adapts artifacts through the files URLs", async () => {
   assert.equal(calls[0], "http://api.test/api/projects/p1/results");
   assert.equal(backendUrl("http://x/", "/api/y"), "http://x/api/y");
 });
+
+test("the audio step from the sound stage is kept, not dropped as unknown", () => {
+  const event = parseActivityEvent(
+    JSON.stringify({ at: "2026-10-03T12:00:00Z", step: "audio", status: "succeeded", message: "Added sound to variant B", variant_id: "B", duration_s: 4.2 }),
+  );
+  assert.equal(event?.step, "audio");
+  assert.equal(event?.variant_id, "B");
+});

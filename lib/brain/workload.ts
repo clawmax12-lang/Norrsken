@@ -29,6 +29,7 @@ export const STEP_LABELS: Record<BackendStep, string> = {
   simulate: "Simulating viewers",
   score: "Scoring",
   explain: "Explaining",
+  audio: "Adding sound",
   iterate: "Revising winner",
   export: "Exporting",
 };

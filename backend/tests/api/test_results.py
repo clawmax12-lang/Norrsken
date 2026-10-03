@@ -1,5 +1,5 @@
 from preflight.contracts import RenderStatus, RunRecord, RunState, VariantRecord
-from tests.export.seed import NOW, PROJECT_ID, seed_project
+from tests.export.seed import NOW, PROJECT_ID, add_sound, seed_project
 
 
 async def get_results(client, project_id=PROJECT_ID):
@@ -96,3 +96,16 @@ async def test_render_progress_comes_from_the_run_record(client, store):
 
 async def test_unknown_project_is_404(client):
     assert (await get_results(client, "missing")).status_code == 404
+
+
+async def test_sound_is_listed_with_its_file_and_record_once_added(client, store):
+    paths = seed_project(store)
+    add_sound(store, paths, "A")
+
+    variants = (await client.get(f"/api/projects/{PROJECT_ID}/results")).json()["variants"]
+
+    assert variants[0]["files"]["video-final"] == f"/api/projects/{PROJECT_ID}/files/video-final/A"
+    assert variants[0]["sound"]["narrated"] is True
+    assert variants[0]["sound"]["voice"] == "Kore"
+    assert variants[1]["sound"] is None
+    assert "video-final" not in variants[1]["files"]

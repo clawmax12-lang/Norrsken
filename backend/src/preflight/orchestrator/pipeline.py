@@ -1,8 +1,9 @@
 """FR-09 / PRD §9: the deterministic, resumable state machine.
 
 ``BRIEF_RECEIVED -> PLANNED -> RENDERED -> SIMULATED -> SCORED -> EXPLAINED -> DONE`` (or
-``FAILED``). The pipeline only sequences stages: each stage persists its artifacts through
-the project store, so a re-run resumes after the last completed state without repeating work.
+``FAILED``); the optional sound stage runs between ``EXPLAINED`` and ``DONE``. The pipeline
+only sequences stages: each stage persists its artifacts through the project store, so a re-run
+resumes after the last completed state without repeating work.
 Nothing here knows about HTTP; the API layer reads the log and ``run.json`` from the store.
 """
 
@@ -20,6 +21,7 @@ from preflight.ports import (
     Planner,
     Renderer,
     Simulator,
+    SoundFinisher,
     UsageMeter,
 )
 from preflight.scoring import score_and_rank
@@ -37,6 +39,7 @@ from .stages import (
     RenderStage,
     ScoreStage,
     SimulateStage,
+    SoundStage,
     Stage,
 )
 from .tracker import RunTracker
@@ -60,8 +63,13 @@ class Pipeline:
         *,
         ranker: Ranker = score_and_rank,
         next_time: NextTimeSuggester = next_time_suggestions,
+        sound: SoundFinisher | None = None,
     ) -> None:
-        """Wire the ports; ``ranker`` and ``next_time`` default to the real pure functions."""
+        """Wire the ports; ``ranker`` and ``next_time`` default to the real pure functions.
+
+        ``sound`` adds narration, music and effects to the exported videos; without it they
+        stay silent.
+        """
         policy = StepPolicy.from_settings(settings)
         self._store = store
         self._clock = clock
@@ -73,6 +81,8 @@ class Pipeline:
             ScoreStage(ranker),
             ExplainStage(explainer, usage, policy, next_time),
         )
+        if sound is not None:
+            self._stages = (*self._stages, SoundStage(sound, policy))
 
     async def run(self, project_id: str) -> RunRecord:
         """Run or resume ``project_id`` and return its final record (``DONE`` or ``FAILED``).
@@ -90,7 +100,8 @@ class Pipeline:
         except PreflightError as exc:
             ctx.tracker.fail(exc)
         else:
-            ctx.tracker.advance(RunState.DONE)
+            if not ctx.tracker.has_completed(RunState.DONE):
+                ctx.tracker.advance(RunState.DONE)
         return ctx.tracker.record
 
     def _open(self, project_id: str) -> RunContext:

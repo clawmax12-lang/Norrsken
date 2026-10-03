@@ -1,7 +1,7 @@
 import pytest
 
 from preflight.contracts import BrainArtifact, SimulatorName
-from tests.export.seed import BRAIN_BYTES, PROJECT_ID, VIDEO_BYTES, seed_project
+from tests.export.seed import BRAIN_BYTES, PROJECT_ID, VIDEO_BYTES, add_sound, seed_project
 from tests.factories import make_result
 
 
@@ -166,3 +166,22 @@ async def test_brain_files_are_404_when_the_tribe_result_has_no_brain_artifact(c
     store.write(paths.simulation("A", "tribe_v2"), make_result("A", SimulatorName.TRIBE_V2))
 
     assert (await client.get(file_url("brain-activity"))).status_code == 404
+
+
+async def test_the_cut_with_sound_is_a_separate_file_kind_from_the_tested_render(client, store):
+    paths = seed_project(store)
+    final = add_sound(store, paths, "A")
+
+    with_sound = await client.get(file_url("video-final"))
+    silent = await client.get(file_url("video"))
+
+    assert with_sound.status_code == 200
+    assert with_sound.headers["content-type"] == "video/mp4"
+    assert with_sound.content == final
+    assert silent.content == VIDEO_BYTES["A"]
+
+
+async def test_there_is_no_cut_with_sound_until_sound_was_added(client, store):
+    seed_project(store)
+
+    assert (await client.get(file_url("video-final"))).status_code == 404

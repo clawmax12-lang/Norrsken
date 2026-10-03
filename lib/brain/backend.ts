@@ -16,11 +16,11 @@ import { FSAVERAGE5_VERTICES, type CorticalBinding, type SceneRef } from "./cont
 
 // ------------------------------------------------------------------ contracts (subset)
 
-export type BackendStep = "plan" | "generate" | "render" | "simulate" | "score" | "explain" | "iterate" | "export";
+export type BackendStep = "plan" | "generate" | "render" | "simulate" | "score" | "explain" | "audio" | "iterate" | "export";
 export type BackendStepStatus = "started" | "succeeded" | "failed" | "skipped";
 export type BackendRunState = "BRIEF_RECEIVED" | "PLANNED" | "RENDERED" | "SIMULATED" | "SCORED" | "EXPLAINED" | "ITERATED" | "DONE" | "FAILED";
 
-const STEPS: readonly BackendStep[] = ["plan", "generate", "render", "simulate", "score", "explain", "iterate", "export"];
+const STEPS: readonly BackendStep[] = ["plan", "generate", "render", "simulate", "score", "explain", "audio", "iterate", "export"];
 const STATUSES: readonly BackendStepStatus[] = ["started", "succeeded", "failed", "skipped"];
 
 export interface ActivityEvent {

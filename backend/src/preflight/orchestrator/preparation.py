@@ -25,6 +25,7 @@ _RUN_OUTPUTS = (
     "videos",
     "simulations",
     "brain",
+    "sound",
     "exports",
 )
 

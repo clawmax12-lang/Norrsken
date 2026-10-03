@@ -50,6 +50,23 @@ class Settings(BaseSettings):
         description="Frames rendered in parallel per video; unset = Remotion's default.",
     )
 
+    sound_enabled: bool = Field(
+        default=True,
+        description="Add music and sound effects (and narration) to the exported videos.",
+    )
+    narration_enabled: bool = Field(
+        default=True, description="Gemini text-to-speech narration of the on-screen copy."
+    )
+    tts_model: str = Field(
+        default="gemini-3.8-flash-tts",
+        description="Gemini text-to-speech model (the id in Google's docs on 2026-10-03).",
+    )
+    narration_voice: str = Field(
+        default="Kore", description="Gemini prebuilt voice; the Live Director uses the same one."
+    )
+    ffmpeg_binary: str = Field(default="ffmpeg", description="ffmpeg for mixing and muxing.")
+    ffprobe_binary: str = Field(default="ffprobe", description="ffprobe to verify the output.")
+
     cors_origins: list[str] = Field(
         default_factory=lambda: ["http://localhost:3000"],
         description="Browser origins allowed to call the API (JSON list in the environment).",
