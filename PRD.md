@@ -1,6 +1,6 @@
 # Preflight · Product Requirements Document
 
-**Version:** 1.4 · **Date:** 3 Oct 2026 · **Status:** Hackathon build ({Tech: Europe} Agentic AI Hack, Norrsken Stockholm)
+**Version:** 1.5 · **Date:** 3 Oct 2026 · **Status:** Hackathon build ({Tech: Europe} Agentic AI Hack, Norrsken Stockholm)
 
 **Owner:** William (product) · **Tech owners:** see §14.3 and [TEAM.md](TEAM.md)
 
@@ -8,7 +8,9 @@
 
 **Built with (PRD plan):** Claude Opus 5.5 as the coding agent · Gemini · Condense · TRIBE v2 (Meta FAIR, research use)
 
-> This is the team's canonical, editable product specification. It supersedes earlier brainstorming and advisor briefs. The baseline was imported from the complete, 20-page [Preflight PRD v1.1.pdf](docs/source/Preflight-PRD-v1.1.pdf), which is preserved unchanged; see [source provenance](docs/source/README.md). Versions 1.2–1.4 incorporate the product owner's web-platform, reusable-brain, canvas and voice decisions, documented below and in §16. Actual implementation progress lives in [TEAM.md](TEAM.md), not in these requirements.
+> This is the team's canonical, editable product specification. It supersedes earlier brainstorming and advisor briefs. The baseline was imported from the complete, 20-page [Preflight PRD v1.1.pdf](docs/source/Preflight-PRD-v1.1.pdf), which is preserved unchanged; see [source provenance](docs/source/README.md). Versions 1.2–1.5 incorporate the product owner's web-platform, reusable-brain, canvas and voice decisions, documented below and in §16. Actual implementation progress lives in [TEAM.md](TEAM.md), not in these requirements.
+
+**What changed in 1.5:** William explicitly confirmed **two-way Gemini Live as mandatory FR-16/P0**. A female-sounding creative Director must listen, respond, handle interruption and help select/change the actual source-grounded storyboard through validated tools and visible canvas updates. TTS-only narration, a prerecorded conversation or text-only mode cannot pass this requirement. Captions, the standalone speaking-growth orb, explicit job confirmation, secure credentials and event-grounded progress/verdict remain required. Gemini Live uses a separate model/session transport from TTS; verify the proposed `gemini-3.8-live` model/account and Condense compatibility. No Condense exception has been approved. Pre-render storyboard editing is P0; revising a tested winner remains FR-11/P1, and the three-video cap is unchanged. The v1.4 notes/log below are historical and their optional-Live scope is superseded. See §8/§9/§10/§12.9/§14/§16.
 
 **What changed in 1.4:** the primary workspace is a pan/zoom flow canvas, not a dashboard of disconnected screens. First arrival opens a cinematic 3D brain intro, then the same brain docks persistently in a corner while storyboard branches and actual job status populate the canvas. The new supplied canvas image joins the tracked visual baseline. **A female Gemini voice is mandatory P0 (new FR-16), explicitly confirmed by the product owner**, with event-grounded narration, captions and mute. Visual direction is a standalone `ThinkingOrb`, without a surrounding card, enlarging during speech; `voice-glow` is a complementary prompt effect, not another required voice engine. Gemini TTS is distinct from optional two-way Gemini Live voice intake. Brain anatomy/entry/dock remain P0 even without GPU inference; response animation still requires genuine data. Large-scale experimentation is the architecture direction, not proof of 50×50×50 completed tests or approval to remove today's three-video/budget cap. See §8, §9.2, §12 and §16.
 
@@ -31,7 +33,7 @@
 
 Startups need a demo video for every launch, but agencies take weeks and nobody knows which version will actually work until after they have posted and paid for ads. Preflight's agent turns your product into several motion graphics demo videos, pretests them on simulated viewers (TRIBE v2 brain simulation plus a Gemini viewer panel), and hands you the winner, why it won, and the runner up for a live A/B test.
 
-The product feels like a creative mission-control workspace: a cinematic brain on entry, an explorable storyboard/experiment canvas, a persistent brain companion and a female Gemini voice explaining real progress and the verdict. These make the generation → pretest → decision loop understandable; they do not replace the finished-video outcome.
+The product feels like a creative mission-control workspace: a cinematic brain on entry, an explorable storyboard/experiment canvas, a persistent brain companion and a two-way female Gemini Live Director. Talk to her to select/refine the storyboard and ask about actual progress and the verdict; confirmed tool changes are visible on the canvas. These make the generation → pretest → decision loop understandable; they do not replace the finished-video outcome.
 
 ## 2. Working backwards
 
@@ -114,8 +116,8 @@ When a startup launches something, it needs a video that makes people understand
 
 | Stage | What happens | User sees |
 | --- | --- | --- |
-| 1. Trigger | "We launch Wednesday" | Cinematic brain entry, female voice welcome, then the brain docks in a corner |
-| 2. Brief (2 min) | Uploads screenshots, one sentence, goal, audience | Prompt/brief surface on the canvas; voice intake is an optional extension |
+| 1. Trigger | "We launch Wednesday" | Cinematic brain entry, then the brain docks; explicit Enable Live action starts the female Director |
+| 2. Brief (2 min) | Uploads screenshots, one sentence, goal, audience; talks with the Director to select/refine the storyboard | Validated brief and actual storyboard changes on the canvas; listening/responding, interruption and transcripts |
 | 3. Agent at work (under 8 min) | Agent plans 3 hypotheses, renders 3 videos, runs simulated viewers | Branching storyboard/experiment nodes, live job status, captions/voice and persistent brain |
 | 4. Verdict | Winner, why, where other variants differ in the simulation | Verdict/leaderboard on the canvas, synced video/curves/brain and optional focus sequence using genuine data |
 | 5. Export | Winner plus runner up plus launch brief | Downloads |
@@ -142,7 +144,7 @@ Journey rule: the user never sees "TRIBE output". They see: which video, why, wh
 
 ### 7.1 Hackathon MVP (today)
 
-Brain entry → flow canvas + brief → agent plans 3 variants → renders 3 motion graphics videos (one template) → pretest with TRIBE v2 and Gemini panel → ranking with reasons → export, with a persistent reusable brain and mandatory female Gemini voice throughout. Neural animation requires genuine data. P1: synchronized A/B/difference view, one iteration on the winner, and two-way Live voice intake after P0 passes. Scalable branching experiments are the longer-term architecture; today's number of actual rendered/tested videos is still bounded.
+Brain entry → flow canvas + brief → agent plans 3 variants → two-way female Gemini Live Director selects/refines the storyboard with the user → confirmed render of 3 motion graphics videos (one template) → pretest with TRIBE v2 and Gemini panel → ranking with reasons → export, with a persistent reusable brain and Live conversation throughout. Neural animation requires genuine data. P1: synchronized A/B/difference view and one iteration on the tested winner. Scalable branching experiments are the longer-term architecture; today's number of actual rendered/tested videos is still bounded.
 
 ### 7.2 V1 (only after validation, see §13)
 
@@ -248,11 +250,11 @@ Gemini for planning, viewer panel and explanations. All LLM calls go through Con
 
 **AC:** entry plays once per browser session (explicit Replay permitted); Skip is always visible; reduced motion uses fades/static framing; completion/Skip reaches the canvas and leaves the brain docked with its state preserved. Before the user's first run, any colored response must come from a genuine video-matched example labeled "Demo example · precomputed"; no example means gray anatomy and "No brain data". The run's analysis sequence only uses that run's genuine results, plays at most once per run and hands back to the canvas results inspector. No fake waves while waiting for inference.
 
-#### FR-16 Female Gemini voice companion
+#### FR-16 Two-way female Gemini Live Director
 
-**P0, explicitly required for the hackathon demo.** A female-sounding original assistant voice welcomes the user and narrates meaningful actual agent transitions and evidence-backed conclusions. Tone: concise, capable, cinematic mission control, not an imitation of a copyrighted character's voice. Gemini TTS provides real synthesized speech. Preferred visual is a standalone state-driven `ThinkingOrb`, growing during speech without a surrounding card; optional `voice-glow` may accent the prompt. Neither library supplies speech. See §12.9.
+**P0, explicitly required by William for the hackathon demo.** An original female-sounding Gemini Live creative Director listens and responds in a real two-way conversation, helps choose/refine the storyboard and explains actual agent transitions and evidence-backed conclusions. Tone: concise, capable, cinematic mission control, not an imitation of a copyrighted character's voice. Preferred visual is a standalone state-driven `ThinkingOrb`, growing during actual assistant speech without a surrounding card; optional `voice-glow` may accent the prompt. Neither library supplies speech or Live transport. See §12.9.
 
-**AC:** after an explicit user gesture, real Gemini-generated audio plays for welcome, a genuine job milestone and the final verdict; text/captions match what is spoken. Voice statements reference actual state/events/evidence and never claim an uncompleted simulation, made-up count, emotion or guaranteed outcome. Selected female-sounding voice is auditioned and recorded in README. Mute/stop and text-only fallback work; job execution never waits for audio. Orb work state and speech enlargement follow real state/audio; any sound-reactive glow follows actual amplitude, not random values. Missing key/quota/audio failure is visible and does not masquerade as a passed voice AC. No API key is exposed to the browser; microphone permission is not required for output-only narration. Two-way Live voice intake is not needed to pass this requirement.
+**AC:** after an explicit Enable Live gesture and mic permission in HTTPS/localhost, the user can speak, hear a real Gemini Live reply, interrupt assistant playback and receive a reply to the interruption without stale audio continuing. Input/output transcripts match the exchange; the chosen female-sounding preset is auditioned and documented in README. Demonstrate spoken selection of a real storyboard/scene and at least one source-grounded pre-render edit through validated tools: the persisted concept/draft and canvas update visibly, preserve FR-01/FR-02 constraints and report actual success/failure. Explicit confirmation of the summarized run is required before generation/render/pretest jobs; no duplicate job on reconnect/repeated tool call. Live welcome, an actual job milestone and an evidence-backed verdict are demonstrated; statements never invent completed tests, counts, emotion or guaranteed outcomes. Orb state/scale follows the real connection/mic/work/output audio; any amplitude glow is real, not random. Mute, stop/disconnect, mic release, captions and typed fallback work; jobs do not wait for audio, and missing credentials/quota/connection failures are visible. Long-lived keys stay server-side, with scoped short-lived tokens or a secure proxy for browser Live; provider/model/routing evidence is recorded. TTS-only narration, prerecorded dialogue, a reactive orb or text-only fallback does not pass FR-16. Editing a tested winner remains FR-11/P1; any changed video invalidates its old test evidence.
 
 ### P1
 
@@ -276,13 +278,15 @@ Upload 2 or more historical videos plus which one won in real life; Preflight ra
 
 ### P2
 
-Screen recording input, brand kit, more templates, ad account connection, live A/B launch, outcome ingestion. Verdict/progress narration moved out of P2 into FR-16/P0 in v1.4. Two-way Gemini Live voice intake is a P1 extension described in §12.9, not a second mandatory voice implementation.
+Screen recording input, brand kit, more templates, ad account connection, live A/B launch, outcome ingestion. Voice moved out of P2 into FR-16/P0 in v1.4; v1.5 requires two-way Gemini Live, not a separate optional voice-intake implementation.
 
 ## 9. Agent design
 
 **Pattern:** a deterministic state machine with LLM decisions at the planning, panel and explanation steps. Predictable, resumable, easy to show to judges.
 
 **States:** `BRIEF_RECEIVED → PLANNED → RENDERED → SIMULATED → SCORED → EXPLAINED → (ITERATED) → DONE or FAILED`
+
+**Live control boundary (FR-16/P0):** the Director is a conversational control surface for this workflow, not a second scheduler. Enable Live opts into bounded conversation, not pipeline jobs. Confirm bounded planning before generating concepts; expose a pre-render review/confirmation checkpoint while `PLANNED`: select a scene/variant and apply a source-backed hook/copy, screenshot or scene-order change to the validated draft, then approve that draft for render/pretest. Agree typed command/result schemas with Dashboard/backend owners. Include project/variant/scene IDs, draft revision and idempotent command IDs; reject stale/invalid edits, persist accepted changes and acknowledge only completed tool results. Enforce the three-concept/4–6-scene/15-second contract. After rendering, never patch a tested artifact/result in place; the tested-winner revision stays FR-11/P1 with re-render/retest. Live connection state is separate from job state; losing audio does not stop or duplicate a confirmed job.
 
 **Tools** (each with a typed input and output, see §10.3):
 
@@ -313,7 +317,7 @@ Screen recording input, brand kit, more templates, ad account connection, live A
 | --- | --- | --- |
 | Claude Opus 5.5 — coding agent | Builds the reusable 3D brain, shaders, interaction and cinematic sequence | Once as product code, then normal maintenance; no per-user brain-generation call |
 | Gemini — runtime agent | Plans variants, runs the viewer panel, explains results and proposes revisions | Per video job through Condense; today's cap stays three concepts and one P1 revision |
-| Gemini TTS — voice companion | Speaks event-grounded welcome, progress and verdict in a female-sounding voice | P0; bounded narration queue, independent of GPU jobs and optional microphone input |
+| Gemini Live — creative Director | Two-way female-sounding conversation, validated storyboard selection/edits, actual progress and evidence-backed verdict | FR-16/P0; bounded session/audio/event delivery, secure transport, independent of GPU jobs; TTS-only is degraded fallback |
 | TRIBE v2 — simulator | Predicts cortical response for the actual rendered video | Once per distinct analyzed video; stored results drive playback |
 | Opus — planned runtime finalization | Authors a validated motion-graphics composition for the selected final asset | A separately budgeted final-video step, not each candidate or brain-view render; not yet integrated |
 | Remotion — renderer | Converts the approved composition/template inputs into MP4 | Backend rendering, not an LLM producing video pixels |
@@ -347,9 +351,9 @@ Large visual trees may use viewport virtualization/level-of-detail and staged la
 | Renderer | Motion graphics template driven by concept JSON | Remotion (check its license for commercial use later) |
 | TRIBE worker | Runs TRIBE v2 on a GPU and returns `SimulationResult` | Python on a GPU with 40 GB+ VRAM |
 | Viewer panel | Gemini watches each video as 3 personas | Gemini API via Condense |
-| Voice service and playback | Event-grounded narration text, female-sounding TTS, captions and audio queue | Gemini `gemini-3.8-flash-tts` (verify account access), browser Web Audio, `thinking-orbs`; optional `voice-glow` |
+| Live Director service and playback | Two-way audio/transcripts, validated storyboard commands, actual job context, interruption and session lifecycle | Gemini Live (proposed `gemini-3.8-live`, verify model/account/transport), secure token service or proxy, browser Web Audio, `thinking-orbs`; optional `voice-glow` |
 
-Use the actual orchestrator's persisted events as the common input to canvas progress and voice narration. Agree the delivery mechanism (SSE, WebSocket or polling), event IDs and artifact/result identifiers with its owner; this PRD does not claim that a deployed streaming endpoint exists yet. TTS synthesis is off the critical render/simulation path. A graph library is an implementation choice, not a reason to replace the existing backend contracts.
+Use the actual orchestrator's persisted events as the common input to canvas progress and the Live Director's context. Agree the delivery mechanism (SSE, WebSocket or polling), event IDs and artifact/result identifiers with its owner; this PRD does not claim that a deployed streaming endpoint exists yet. Live's audio/session transport is separate from job event delivery. Tools call agreed application commands and return actual validated results; long jobs acknowledge accepted/queued, then report completion via persisted events. Audio is off the critical render/simulation path. A graph library or standalone voice prototype is not a reason to replace the existing backend contracts or Dashboard shell.
 
 ### 10.2 Simulator interface
 
@@ -441,7 +445,7 @@ Every simulator implements one function: video in, `SimulationResult` out. Scori
 
 Runtime Opus is separate from the Conductor coding agent. If integrated, supply its credentials only on the server (for a direct Anthropic integration, `ANTHROPIC_API_KEY`) and configure the verified API model independently. All runtime LLM calls still follow FR-10's Condense requirement; unsupported provider routing is an integration blocker, not permission to silently bypass it. The product owner reports that a Gemini key is now available; this is not verification that it is configured in every workspace or has TTS/Live/GPU entitlements. Missing credentials must show an explicit unavailable/not-configured state, never fabricated results. Never request keys in tracked documents or frontend source.
 
-Configure text, TTS and any optional Live model IDs separately. Google's speech documentation lists `gemini-3.8-flash-tts`; use the exact provider model ID rather than the spoken “3.8 TTM Flash”. Speech generation alone is not a bidirectional live conversation. Keep long-lived keys server-side; an optional browser Live connection requires scoped ephemeral tokens or a secure backend proxy. Verify Condense support for audio/Live explicitly: the current rule has not been waived, and a Gemini text-compression path does not prove audio/WebSocket support.
+Configure text and mandatory Live model IDs separately; if a TTS-only degraded fallback exists, give it a separate model configuration. The Voice workspace proposes `gemini-3.8-live`; verify the current provider ID, account access and supported female-sounding preset rather than treating a proposal or the spoken “3.8 TTM Flash” as a verified API contract. Speech generation alone is not a bidirectional live conversation. Keep long-lived keys server-side; browser Live requires scoped ephemeral tokens or a secure backend proxy, bounded session duration/usage and explicit teardown. Validate tool requests server-side against owned project/source IDs, current draft revision, allowed operations and confirmation; uploaded content cannot instruct tool execution. No default recording or audio/token/key logging. Verify Condense support for Live explicitly: FR-10 has not been waived, and a text-compression path does not prove audio/WebSocket support. If unsupported, record an integration blocker and obtain an explicit product-owner exception before direct Live routing; report that route and measured usage separately.
 
 ### 10.5 Reusable brain architecture
 
@@ -474,7 +478,7 @@ Implementation direction and visual quality bar: [visual baseline](docs/design/R
 
 - No emotion, desire or buying intent read from brain regions. Region cards describe what a region is known for, nothing more.
 - Never claim TRIBE predicts retention, virality or sales.
-- If TRIBE does not run by 12:30, it is dropped from live runs. In v1.4 keep the required canvas, anatomy/entry/dock and voice; show "Brain sim off" and no invented activity. Genuine disclosed example/precomputed data is separate from that run and cannot turn a failed live gate into a pass.
+- If TRIBE does not run by 12:30, it is dropped from live runs. In v1.5 keep the required canvas, anatomy/entry/dock and two-way Live Director; show "Brain sim off" and no invented activity. Genuine disclosed example/precomputed data is separate from that run and cannot turn a failed live gate into a pass.
 
 ## 12. UI and the analysis intro
 
@@ -488,7 +492,7 @@ Implementation direction and visual quality bar: [visual baseline](docs/design/R
 
 ### 12.2 Entry intro and analysis focus: the "Preflight sequence" (FR-14)
 
-**Entry, before the brief:** on first arrival this session, a 10–15 second hero reveals the shaded brain/silhouette, slowly orbits it, moves toward an atlas-backed region, then pulls back and docks the same brain in a corner as the canvas appears. No backend job or microphone starts on page load. A visible Start/Enable sound action unlocks the female Gemini welcome; the visual intro remains usable silently and skippable.
+**Entry, before the brief:** on first arrival this session, a 10–15 second hero reveals the shaded brain/silhouette, slowly orbits it, moves toward an atlas-backed region, then pulls back and docks the same brain in a corner as the canvas appears. No backend job or microphone starts on page load. A visible Enable Live action requests mic permission and unlocks the female Gemini conversation/welcome; the visual intro remains usable silently and skippable. The silent path is a fallback, not FR-16 acceptance.
 
 Red/orange/yellow “waves” before the user's run require genuine precomputed predictions for a specific example video, visibly labeled **Demo example · precomputed**, with its provenance/video available. Without that bundle, show gray anatomy and **No brain data**, using lighting/camera motion for the entry. Never portray a prerecorded/reference animation or fabricated pulse as the user's simulated response. The original reference images are inspiration, not analysis data.
 
@@ -504,7 +508,7 @@ Red/orange/yellow “waves” before the user's run require genuine precomputed 
 
 **Always:** a Skip button top right; reduced motion setting replaces the camera moves with fades; a small "precomputed" label if the TRIBE results were computed ahead of time.
 
-Entry plays once per session; analysis focus once per run. Explicit replay is allowed. TTS never blocks Skip, canvas access or result availability.
+Entry plays once per session; analysis focus once per run. Explicit replay is allowed. Live audio never blocks Skip, canvas access or result availability.
 
 ### 12.3 Interactive brain viewer (FR-12)
 
@@ -530,8 +534,8 @@ Bottom controls, as segmented pills like the reference:
 
 ### 12.4 Screens
 
-1. **Entry hero:** rotating brain intro and female-voice welcome, then the brain docks and reveals the workspace.
-2. **Canvas intake:** centered prompt/brief and source uploads; completed brief becomes the root node. Keep FR-01 validation, not prompt text alone.
+1. **Entry hero:** rotating brain intro and Enable Live/female-voice welcome, then the brain docks and reveals the workspace.
+2. **Canvas intake and storyboard review:** prompt/brief/source uploads plus two-way Live conversation; completed brief becomes the root node. Spoken/typed selection and edits share the actual validated draft/canvas state. Keep FR-01 validation, not prompt text alone; confirm the summarized run before jobs start.
 3. **Canvas at work:** connected storyboard/hook branches, rendered-video nodes and actual test states; selected path highlighted. Persistent corner brain, voice dock and accessible persisted activity log.
 4. **Canvas results:** recommendation node plus leaderboard/evidence inspector; selected video, time-aligned curves and expanded brain; actual Condense savings; verdict reachable at 1440 px without canvas hunting.
 5. **Compare (P1):** inspect two variant nodes with synchronized video/brain/difference view; return without losing canvas position.
@@ -565,19 +569,21 @@ Bottom controls, as segmented pills like the reference:
 
 **We never use:** "TRIBE output", "will go viral", "predicts sales", "reads emotions", "mind reading".
 
-### 12.9 Voice companion and glow (FR-16)
+### 12.9 Two-way Live Director, orb and glow (FR-16)
 
-**Required voice output:** Gemini TTS, configured initially to `gemini-3.8-flash-tts` after checking key/project access. Audition a supported female-sounding preset; use an original mission-control personality, not a clone of JARVIS or an actor. Speak short meaningful updates: planning has started, a rendered video is ready, a simulator is unavailable, genuine analysis has completed, and why the selected result was recommended. Text/captions stay visible even when muted.
+**Required experience:** real two-way Gemini Live, not narration-only TTS. After Enable Live and mic permission, the user can ask questions, hear replies, interrupt, choose a storyboard/scene and ask for a source-grounded pre-render change that updates the actual canvas/draft. Verify the proposed `gemini-3.8-live` model/account and audition a supported female-sounding preset (the Voice workspace proposes Kore; not yet verified). Use an original mission-control personality, not a clone of JARVIS or an actor. The Director can recommend and explain a tradeoff, but respects an explicit user choice within safety/source/budget constraints.
 
-Narration consumes the same persisted events/evidence as the canvas. Deduplicate event IDs, bound the audio queue, suppress stale progress after the verdict and never narrate every graph node. Label future intentions as future intentions. An audio/provider failure is separate from a failed video job; preserve silent typed operation while reporting that FR-16 voice acceptance is not yet met. Stop/mute works immediately and audio does not automatically restart against the user's preference.
+**Conversation and commands:** show input/output transcripts and actual connecting/listening/working/speaking/error states. Interruption stops queued assistant audio immediately and feeds the next user turn; do not replay interrupted/stale speech. Route typed and spoken commands to the same validated application state (§9), persist accepted changes and report the tool result, not merely “done” in speech. Selecting/changing a storyboard is P0 before rendering; a tested-winner revision remains P1. Filling fields/selecting nodes is not job authorization: summarize the current run and require an explicit confirmed Run action, clicked/typed or acknowledged spoken command. Reject invalid/stale/source-inventing commands and deduplicate execution on reconnect.
+
+**Actual work context:** consume the same persisted events/evidence as the canvas. Deduplicate event IDs, bound pending audio/context, suppress stale progress after the verdict and never narrate every graph node. Speak concise welcome, actual job milestones/unavailable states and why the selected result was recommended; allow follow-up questions. Label future intentions as future intentions. Long jobs do not occupy a blocking Live tool call: report accepted/queued then use persisted completion events. An audio/provider failure is separate from a failed video job; preserve typed operation but report FR-16 as unmet if the real two-way path fails. Stop/mute is immediate and audio/mic never restarts against the user's preference. TTS-only/text-only mode is degraded fallback, not a passing demo.
 
 **Orb-first visual direction:** a standalone [Libraries.dev Orb](https://libraries.dev/orbs.html), package `thinking-orbs` (registry v0.3.2 checked on 3 Oct 2026, MIT, React ≥18), is the assistant's visible identity. No enclosing chat card, bordered panel or bulky controls around the orb. It grows smoothly when the assistant speaks; captions/transcript and mute/stop remain accessible separately. The supported tuned sizes are 64 and 20; use the 64 preset and a presentation wrapper for larger speaking scale, with reduced-motion/performance checks. States such as composing/working/connecting reflect actual job/service state; listening is only shown while a permitted microphone is actually live. The package has no audio `level` prop: speech-responsive scale requires our own playback state/analyser binding, not a fictitious built-in feature.
 
-**Optional prompt glow:** [Libraries.dev Voice](https://libraries.dev/voice.html), package `voice-glow` (registry v0.2.1 checked on 3 Oct 2026, MIT, React/ReactDOM ≥18). `VoiceBeam` can wrap the prompt. For assistant speech, drive `level` from the actual output audio's Web Audio analyser (0–1); `processing` reflects actual pending agent/TTS work. `stream` would take precedence and belongs to optional microphone input, not the assistant's output meter. A glow/orb is not speech synthesis, speech recognition or neural activity. Use `useMicrophone` only for an explicitly enabled mic mode; do not add two competing large visualizers.
+**Optional prompt glow:** [Libraries.dev Voice](https://libraries.dev/voice.html), package `voice-glow` (registry v0.2.1 checked on 3 Oct 2026, MIT, React/ReactDOM ≥18). `VoiceBeam` can wrap the prompt. For assistant speech, drive `level` from the actual output audio's Web Audio analyser (0–1); `processing` reflects actual pending agent/session work. A mic `stream` overrides `level` and visualizes user input, not the assistant's output meter. A glow/orb is not speech synthesis, speech recognition, Live transport or neural activity. Share the explicitly enabled microphone capture with the Live owner rather than creating competing mic sessions/large visualizers.
 
-**Browser safety:** output audio and mic acquisition require an appropriate user gesture; microphone additionally requires HTTPS/localhost and permission. Never silently enable a mic on first visit. Release media tracks/audio nodes on stop/unmount, avoid recording by default and keep keys out of the client. Provide captions, mute/stop, reduced-motion behavior and plain-input fallback.
+**Browser safety:** output audio and mic acquisition require an appropriate user gesture; microphone additionally requires HTTPS/localhost and permission. Never silently enable a mic on first visit. Show listening/privacy state; release tracks/audio nodes and close the Live session on disconnect/unmount. Avoid recording by default and keep long-lived keys out of the client. Provide captions, distinct mute/stop/disconnect controls, reduced-motion behavior and plain-input fallback. Verify denied permission, disconnect/reconnect, expired token, quota and tool failure without falsely reporting a successful command.
 
-**P1 extension, after P0:** Gemini Live may enable natural brief intake, transcripts, VAD and interruption after one initial permission action. This is a separate model/transport integration, not something the TTS model or `voice-glow` supplies. Filling brief fields does not authorize expensive jobs: require an explicit confirmed “Run” action, typed/clicked or an acknowledged spoken command. Verify Condense compatibility or obtain/document a product-owner exception before a direct Live path. Do not wait for full duplex to deliver required P0 narration.
+**Provider gate:** Live uses its own model/session transport, not the TTS endpoint or a visual library. Verify key/project/model access and Condense Live support, or obtain/document a product-owner routing exception before a direct Live path. This v1.5 scope decision does not waive FR-10. Record the actual route, tested voice/model, session/budget controls and remaining provider blockers in README/TEAM; never include secrets.
 
 Technical handoff: [Canvas and voice integration brief](docs/design/CANVAS_VOICE_BRIEF.md). This PRD remains authoritative.
 
@@ -624,16 +630,16 @@ Show status per node: proposed/untested, queued, running, completed, failed or u
 | Time | Milestone |
 | --- | --- |
 | 12:00 | Idea locked. Owners assigned. Repo public. Team on platform. Gemini key. Condense form. Brain viewer work starts in parallel (mesh, controls, empty state, no data needed yet). |
-| 12:30 | Go/no-go: TRIBE runs on one clip; template renders one video; one real female-voice Gemini TTS response plays, with provider/Condense routing recorded. |
-| 14:00 | FR-01 to FR-03: brief, plan, 3 rendered videos. Canvas intake/lineage, brain entry/dock and FR-16 welcome/progress narration work. |
+| 12:30 | Go/no-go: TRIBE runs on one clip; template renders one video; a real two-way female Gemini Live exchange and interruption work, with model/account/Condense routing recorded. |
+| 14:00 | FR-01 to FR-03: brief, plan, 3 rendered videos. Canvas intake/lineage, brain entry/dock and FR-16 spoken storyboard selection/edit/confirmed Run work. |
 | 15:30 | FR-04 to FR-06: simulate, score, explain. First real TRIBE data shown in the brain viewer. |
 | 16:30 | FR-07 to FR-10: results UI, export, log, Condense. |
-| 17:15 | FR-14 genuine-data analysis focus and FR-16 spoken verdict verified. Then P1: compare view, iterate winner, optional Live intake. |
+| 17:15 | FR-14 genuine-data analysis focus and FR-16 actual milestone, spoken verdict/follow-up, interruption/reconnect/tool/error paths verified. Then P1: compare view, iterate winner. |
 | 17:45 | Code freeze. |
 | 18:00 to 18:40 | Record the 2 minute video (3 takes), finish README. |
 | 18:45 | Submit. |
 
-**Cut order if late:** optional Live intake/batch expansion, then winner iteration, compare/difference and elaborate camera moves (keep entry/dock with fades). If live TRIBE fails at 12:30, drop live neural inference and show the documented Gemini-only fallback; keep the required canvas, gray anatomy/entry/dock and voice. Any real disclosed example is separate from the run. Never cut brief → 3 videos → pretest → winner, or silently demote the product-owner-required FR-16 voice to a fake animation. If TTS cannot run, explicitly report the unmet P0 and obtain a scope decision.
+**Cut order if late:** batch expansion/runtime Opus finalization, then winner iteration, compare/difference and elaborate camera moves (keep entry/dock with fades). If live TRIBE fails at 12:30, drop live neural inference and show the documented Gemini-only fallback; keep the required canvas, gray anatomy/entry/dock and two-way Live Director. Any real disclosed example is separate from the run. Never cut brief → 3 videos → pretest → winner or silently demote FR-16 to TTS-only narration/fake animation. If Live cannot run, explicitly report the unmet P0 and obtain a product-owner scope decision.
 
 ### 14.3 Owners (fill in now)
 
@@ -651,10 +657,10 @@ The source PRD leaves technical owners blank. Assign and maintain the live assig
 
 ### 14.4 Two minute demo script
 
-- **0:00** "I'm launching my app tablehopp on Wednesday. I need a tested launch video." Show entry brain and a real female Gemini welcome, then dock into the canvas. Any example predictions are visibly disclosed.
-- **0:15** Brief with real tablehopp screenshots, then Run. Storyboard branches appear; the voice narrates an actual milestone. Fast-forward waiting only with clear disclosure.
+- **0:00** "I'm launching my app tablehopp on Wednesday. I need a tested launch video." Show entry brain, Enable Live and a real female Gemini reply to the presenter, then dock into the canvas. Any example predictions are visibly disclosed.
+- **0:15** Brief with real tablehopp screenshots/storyboard. Ask aloud to select a scene and change its hook using the brief; interrupt a reply and see the confirmed edit on the actual canvas. Confirm the summarized Run. Fast-forward waiting only with clear disclosure; show an actual job milestone.
 - **0:40** Genuine results populate the canvas. Expand the persistent brain and show a video-aligned region/timestamp; analysis focus if available. Distinguish actual tests from untested hypotheses.
-- **1:20** The female Gemini voice explains the verdict with timestamps. Show evidence and iteration delta if built; never claim retention/sales prediction.
+- **1:20** Ask the Live Director why this variant won; hear an evidence-backed answer with timestamps. Show evidence and iteration delta if built; never claim retention/sales prediction.
 - **1:45** Export. "This is the video we launch on Wednesday." Mention Gemini, Condense, and TRIBE as one of the simulated viewers.
 
 ### 14.5 Five minute final (if top 5)
@@ -683,7 +689,7 @@ Problem (40 s) → live demo (2 min 30) → how it works, the agent and the simu
 10. Primary coding agent for this repo: Claude Opus 5.5. Keep this PRD in the repo root as `PRD.md` and update the decision log when a requirement changes.
 11. Build Preflight as the browser-based web platform specified in §7.5 and §10. Do not scaffold Swift, SwiftUI, an Xcode project or a native client. References to a customer's mobile app, screenshots or vertical videos describe input/output, not Preflight's implementation platform.
 12. Read the shared visual baseline before changing the brain experience. Opus 5.5 owns its implementation; keep the reusable mesh/renderer separate from per-video data and from any planned runtime Opus video-composition calls (§9.1/§10.5). No random “brain waves”, no per-user regeneration of the brain.
-13. PRD v1.4 makes canvas and female Gemini narration core demo requirements. Do not substitute a huge static tree, browser/system voice or reactive glow for real generation/testing/Gemini speech. Distinguish entry example, real run data and test MOCK; do not retask other agents or bypass their ownership just because this document changed.
+13. PRD v1.5 makes the canvas and two-way female Gemini Live Director core demo requirements. TTS-only narration, prerecorded dialogue, browser/system voice, a huge static tree or reactive glow cannot substitute for real conversation, validated visible storyboard edits or generation/testing. Distinguish entry example, real run data and test MOCK; do not retask other agents or bypass their ownership just because this document changed. Live scope approval is not a Condense routing exception.
 
 ## 16. Decision log
 
@@ -705,6 +711,7 @@ The original entries below are retained from the supplied v1.1 PRD; later decisi
 | 3 Oct, v1.4 | Adopt the new flow-canvas image; make a connected pan/zoom storyline/experiment canvas the main workspace with entry brain intro and persistent corner brain. FR-07/FR-09/FR-12/FR-14 and §5/§7/§10/§12 updated. Anatomy/entry/dock remain P0; actual neural animation still needs genuine data and live TRIBE keeps its gate. | Product owner is refining the interface while frontend/backend builds proceed; replaces disconnected dashboard screens and allows a truthful first-visit experience before the user's predictions exist. |
 | 3 Oct, v1.4 | Female Gemini voice is mandatory demo P0, explicitly confirmed by William. Add FR-16; event-grounded TTS welcome/progress/verdict plus captions/mute. Orb-first direction: standalone `ThinkingOrb`, no enclosing card, grows during actual speech; prompt `voice-glow` is optional. Move narration out of P2; full two-way Live is a separate P1 extension. | Product owner's explicit wow-moment and visual direction, aligned with Gemini sponsor use. This is our requirement, not a verified event rule that voice is compulsory; an animation is not a voice engine. |
 | 3 Oct, v1.4 | Keep “realtime” as real job events plus synchronized presentation of stored predictions. Large-scale branching is an architecture direction; three full videos/one P1 revision remain the default until batch budget/GPU throughput are approved. Separate proposed nodes from rendered/tested artifacts. | Prevents visual prototype scale from being mistaken for 125,000 genuine neural tests and prevents unapproved exponential cost. |
+| 3 Oct, v1.5 | William explicitly confirmed two-way Gemini Live as FR-16/P0, superseding v1.4's TTS minimum/optional Live. Require listening/replies/interruption, transcripts, validated source-backed storyboard selection/pre-render editing with visible persisted canvas changes, explicit Run confirmation and actual progress/verdict. Preserve female original voice, standalone orb, secure session lifecycle and event truth. Update §5/§7/§8/§9/§10/§12.9/§14/§15. | Owner requires the interactive creative Director for the wow-moment demo; narration-only does not satisfy it. Three-video cap and FR-11/P1 tested-winner revision remain. Model/account/Condense Live transport are still unverified; this does not approve a routing exception or claim implementation acceptance. |
 
 ## 17. Open questions
 
@@ -714,7 +721,7 @@ The original entries below are retained from the supplied v1.1 PRD; later decisi
 - Template style. Reference: modern SaaS launch videos (for example the Lovable 2.0 launch video).
 - Lunch time (unclear in the opening talk).
 - Runtime Opus finalization: verify API model availability, Condense routing, server credentials, exact budget/latency and whether it fits today's P1 timebox. Coding-agent availability in Conductor alone does not resolve these.
-- Voice P0: choose/audition the female-sounding preset; verify the available Gemini key's TTS access and Condense audio routing. Optional Live additionally needs transport support or an explicit approved exception. No key material belongs in this document.
+- Voice P0: scope is resolved as two-way Gemini Live (FR-16), not TTS-only. Verify proposed Live model/account access, audition the female-sounding preset, agree typed tool/draft/event contracts and session/cost bounds, and verify Condense Live transport or obtain an explicit approved routing exception. No key material belongs in this document.
 - Batch scale: approve explicit hypothesis/render/simulation limits, pruning strategy, GPU concurrency, cost ceiling and measured latency before increasing today's three-video execution cap.
 - Shared UI/job integration: agree event IDs/transport, artifact hashes and the cortical adapter payload; merge current baseline so older branches do not continue on v1.1.
 
@@ -726,6 +733,6 @@ The original entries below are retained from the supplied v1.1 PRD; later decisi
 - **Preflight sequence:** the entry brain reveal/dock and, with genuine run data, the 10–15 second analysis focus.
 - **Canvas:** connected source/storyboard/variant/test/result nodes with lineage and actual evidence, not a count of executed jobs by itself.
 - **Realtime:** live job status and responsive playback of available predictions; not measured live EEG or inference per animation frame.
-- **Voice companion:** required female-sounding Gemini TTS narration; optional two-way Gemini Live is a separate integration.
+- **Live Director / voice companion:** mandatory female-sounding two-way Gemini Live assistant for storyboard selection/pre-render editing and actual progress/verdict; TTS-only is degraded fallback, not P0 acceptance.
 - **Launch brief:** exported Markdown with which video to post, which to A/B test, and what to change next time.
 - **Backtest:** running Preflight on historical A/B tests with known winners to measure its hit rate.

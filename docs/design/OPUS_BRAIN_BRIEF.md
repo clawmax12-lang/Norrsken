@@ -1,6 +1,6 @@
 # Opus 5.5 — browser brain implementation brief
 
-**Product:** Preflight, desktop-browser web platform, PRD v1.4. **Requested agent:** Claude Opus 5.5. **Scope:** FR-12 and FR-14; FR-15 only after all applicable P0 acceptance criteria pass. Read [AGENTS.md](../../AGENTS.md), [PRD.md](../../PRD.md) §15/§8/§9/§10/§12, [TEAM.md](../../TEAM.md), the entire [visual reference baseline](README.md) and [canvas/voice integration brief](CANVAS_VOICE_BRIEF.md) before implementing.
+**Product:** Preflight, desktop-browser web platform, PRD v1.5. **Requested agent:** Claude Opus 5.5. **Scope:** FR-12 and FR-14; FR-15 only after all applicable P0 acceptance criteria pass. Read [AGENTS.md](../../AGENTS.md), [PRD.md](../../PRD.md) §15/§8/§9/§10/§12, [TEAM.md](../../TEAM.md), the entire [visual reference baseline](README.md) and [canvas/voice integration brief](CANVAS_VOICE_BRIEF.md) before implementing.
 
 ## Outcome
 
@@ -9,6 +9,8 @@ Build the complete interactive brain experience in the existing Next.js/React/Ty
 Start from the existing Dashboard web branch, inspect its current layout and preserve its navigation/brief flow. Own the brain component and its scene code; do not overwrite another owner's dashboard, results, pipeline or worker files. Add only the necessary routing/integration surface and describe it in the handoff.
 
 **v1.4 handoff:** Dashboard is now building the flow canvas. Your reusable viewer must support entry hero → persistent corner dock → expanded selected-variant analysis/fullscreen with shared selection/time. Quality of anatomy, materials and purposeful cinematic framing is important: match the original brain references, not a generic blob or icon. The new canvas screenshot defines workspace structure, not brain geometry. Preserve Dashboard's canvas work and coordinate the integration seam; do not rebuild its graph or the voice owner's service.
+
+**v1.5 integration update:** two-way female Gemini Live is mandatory FR-16/P0, owned by the existing Voice workspace. Agree selection/project/variant/scene/time and entry/dock events with Dashboard/Voice so validated spoken storyboard changes update shared state. Preserve anatomy quality and exact-video evidence; a changed draft/video cannot keep another artifact's brain response. Keep the standalone voice orb separate from the brain; do not implement a second speech service or scheduler. TTS-only is no longer P0 acceptance.
 
 ## Build once, bind data repeatedly
 
@@ -39,7 +41,7 @@ Your Conductor coding-agent role is separate from the planned runtime Opus final
 
 Implement first-entry brain reveal/orbit/region focus → corner dock → canvas once per browser session, with Skip/reduced motion and explicit replay. Camera/material motion can run on gray anatomy. Before a user run, colored waves require a genuine video-matched example with visible "Demo example · precomputed" disclosure; no such bundle means "No brain data", not random response.
 
-For genuine run data, preserve PRD §12.2's analysis beats: dim → assemble → watch → lock on → hand over to the canvas inspector/corner dock, once per run. Preload actual results. Missing live TRIBE keeps anatomy/entry/dock but follows the no-data/Brain-sim-off rules. The female Gemini voice is mandatory FR-16, implemented by the voice owner; expose entry/completion/selection events without adding a competing speech service here.
+For genuine run data, preserve PRD §12.2's analysis beats: dim → assemble → watch → lock on → hand over to the canvas inspector/corner dock, once per run. Preload actual results. Missing live TRIBE keeps anatomy/entry/dock but follows the no-data/Brain-sim-off rules. The two-way female Gemini Live Director is mandatory FR-16, implemented by the voice owner; expose entry/completion/selection events without adding a competing speech service here.
 
 ## FR-15 — compare and difference (P1)
 

@@ -9,7 +9,7 @@
 
 ## Authority and scope
 
-- PRD v1.4 is the approved product baseline. The original v1.1 PDF is preserved at `docs/source/Preflight-PRD-v1.1.pdf` for provenance; subsequent approved decisions are in PRD.md and its §16 log.
+- PRD v1.5 is the approved product baseline. The original v1.1 PDF is preserved at `docs/source/Preflight-PRD-v1.1.pdf` for provenance; subsequent approved decisions are in PRD.md and its §16 log.
 - Preflight is a standard browser-based web platform. Build the frontend, including the 3D experience, with the web stack in PRD §10. Do not create an iOS app, Swift/SwiftUI code, an Xcode project or another native client. Customer app screenshots and vertical video exports do not determine Preflight's platform.
 - Earlier chats, advisor briefs and files under `.context/` do not override the adopted PRD. The product generates videos from screenshots for launch-week founders; editing existing videos and a creator/e-commerce-first product are not the current MVP.
 - README is the onboarding/run guide. TEAM.md tracks execution. Neither is a second product specification. If a summary disagrees with PRD.md, fix the summary.
@@ -28,10 +28,10 @@
 
 - Exactly three concepts; source-backed text; one template family; 15-second, 1080x1920, 30 fps MP4 output. Follow the complete criteria in PRD §8, not only this summary.
 - The primary UI is a connected flow canvas, with cinematic entry and persistent corner brain. Anatomy/entry/dock remain P0 if live TRIBE is unavailable; keep "Brain sim off"/"No brain data" and never animate fake response. Genuine introductory example data must be visibly separate from the current run.
-- Female Gemini TTS welcome/progress/verdict is mandatory P0 (FR-16), explicitly confirmed by the product owner. The assistant is a standalone `ThinkingOrb` without a surrounding card, growing during actual speech; prompt `voice-glow` is optional. Neither package is a voice engine or brain simulation. Optional Gemini Live microphone intake is P1 and must not block required narration.
+- Two-way female Gemini Live is mandatory P0 (FR-16), explicitly confirmed by the product owner. Require listening/replies/interruption, transcripts and validated source-backed storyboard selection/pre-render edits that visibly update persisted draft/canvas state; confirm the summarized Run before paid jobs. Actual progress/verdict use shared evidence. The assistant is a standalone `ThinkingOrb` without a surrounding card, growing during actual speech; prompt `voice-glow` is optional. Neither package is a voice engine or brain simulation. TTS-only/prerecorded/text fallback cannot pass FR-16. Tested-winner revision stays FR-11/P1; the default three-video cap remains.
 - Canvas and voice consume the same real persisted job events. Prototype trees, planned storyboards and completed neural tests are different states. “At scale” does not remove the three-video/default budget cap without an explicit decision and measured capacity.
 - Every simulator uses the shared `SimulationResult` boundary. Keep provider-specific output out of scoring and UI code.
-- Gemini powers planning, the viewer panel and explanations; route LLM calls through Condense. Report actual usage/savings, not invented metrics.
+- Gemini powers planning, the viewer panel, explanations and the two-way Live Director; route LLM calls through Condense. Live transport support is unverified; do not silently bypass FR-10 without an explicitly approved/logged owner exception. Report actual routes/usage/savings, not invented metrics.
 - Opus 5.5 builds the reusable browser brain once as product code. Per-user/video data updates the same renderer; A/B views reuse its geometry. Do not ask an LLM to regenerate anatomy on each run or display Gemini-authored values as neural response.
 - Runtime Opus final-video composition is a separate planned integration (§9.1), not authenticated by the Gemini key or required for P0. Remotion renders MP4s. If a final composition changes a tested video, re-simulate it before attaching a verdict; playback/compare controls never trigger new inference.
 - Never fake TRIBE or simulation output on the demo path. Test mocks are restricted to tests and must display **MOCK** if rendered. Precomputed real results require visible disclosure.

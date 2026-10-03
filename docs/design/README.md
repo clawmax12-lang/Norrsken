@@ -1,6 +1,6 @@
 # Preflight visual baseline
 
-**Approved direction:** the four original images and motion clip supplied by the product owner are the visual baseline for the browser-based brain and flow canvas. PRD v1.4 adds canvas-first layout, entry → corner brain and mandatory female Gemini narration. This document supports [PRD §12](../../PRD.md#12-ui-and-the-analysis-intro); it does not replace priorities, scientific constraints or acceptance criteria in the PRD.
+**Approved direction:** the four original images and motion clip supplied by the product owner are the visual baseline for the browser-based brain and flow canvas. PRD v1.4 added canvas-first layout and entry → corner brain; current v1.5 requires the two-way female Gemini Live Director. This document supports [PRD §12](../../PRD.md#12-ui-and-the-analysis-intro); it does not replace priorities, scientific constraints or acceptance criteria in the PRD.
 
 All originals are committed under `references/` so every teammate and Conductor workspace can access them. They are design references, not completed Preflight UI or brain simulation output. Preserve Meta/TRIBE source attribution; implement Preflight's own identity rather than copying their branding.
 
@@ -34,7 +34,7 @@ Use it for composition, transitions and response changing over time. PRD §12.2 
 
 Use this for the workspace structure: a large explorable canvas, source/storyboard/media nodes, visible connections/lineage, zoomed-out overview and a bottom prompt. Adopt the interaction idea in Preflight's near-black visual language; do not copy the example's branding or treat its generated footage as permission to broaden our one-template/screenshots MVP.
 
-Preflight opens with the brain hero, then docks the same brain in a persistent corner while the canvas expands. A female Gemini voice narrates real work, represented by a standalone `ThinkingOrb` without an enclosing card, growing during speech; prompt `voice-glow` is optional. A/B/variant nodes connect to real playable artifacts and matching TRIBE results; proposed branches remain untested until executed. The supplied image is a design reference, not a Preflight implementation or proof of scale. See the [canvas/voice integration brief](CANVAS_VOICE_BRIEF.md).
+Preflight opens with the brain hero, then docks the same brain in a persistent corner while the canvas expands. A female Gemini Live Director holds a real two-way conversation, selects/changes the actual source-backed storyboard and explains real work, represented by a standalone `ThinkingOrb` without an enclosing card, growing during speech; prompt `voice-glow` is optional. A/B/variant nodes connect to real playable artifacts and matching TRIBE results; proposed branches remain untested until executed. The supplied image is a design reference, not a Preflight implementation or proof of scale. See the [canvas/voice integration brief](CANVAS_VOICE_BRIEF.md).
 
 ## What "extremely cool, and you can see how it works" means
 
@@ -54,7 +54,7 @@ Use precise, readable controls and purposeful camera movement. Palette, rhythm, 
 
 **Build workspace:** [3D Brain — Opus 5.5](conductor://workspace?id=e14af4c4-eada-4c17-bc3b-42cd2ef08dcd&session=be40ac16-08d6-4ce4-999f-7e69ea8d4912), branch `conductor/3d-brain-opus-55`, isolated from the Dashboard. Started on 3 Oct 2026; the model was verified as `opus-5-5-1m` / `claude-opus-5-5[1m]` and the session was working. This records the assignment, not a completed renderer; implementation/preview evidence will be added to TEAM.md at handoff.
 
-The brain renderer runs in the web frontend. TRIBE remains the neuroscience model; the GPU worker and simulator contract belong to their designated owners. No SwiftUI or native application is involved. PRD v1.4 requires the entry/anatomy/dock even if live GPU inference is off; cortical animation still needs genuine data. A/B/difference mode remains FR-15/P1 under the current PRD; the visual direction does not silently promote it ahead of unfinished P0.
+The brain renderer runs in the web frontend. TRIBE remains the neuroscience model; the GPU worker and simulator contract belong to their designated owners. No SwiftUI or native application is involved. PRD v1.5 retains the entry/anatomy/dock even if live GPU inference is off; cortical animation still needs genuine data. A/B/difference mode remains FR-15/P1 under the current PRD; the visual direction does not silently promote it ahead of unfinished P0.
 
 ## Build once, reuse across video jobs
 

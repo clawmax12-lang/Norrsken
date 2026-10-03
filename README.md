@@ -8,7 +8,7 @@ Preflight turns a product brief and 3–6 screenshots into three 15-second motio
 
 **[TRIBE v2 by Meta FAIR](https://github.com/facebookresearch/tribev2) is a foundational component of Preflight's planned neural pretesting system.** It supplies the predicted brain responses behind the brain simulation, synchronized activity curves, interactive 3D brain and Preflight sequence. Gemini supplies the complementary viewer panel and the agent's planning/explanations; Preflight coordinates generation, simulation, comparison and export.
 
-**Current approved specification: [PRD v1.4](PRD.md).** It supersedes earlier brainstorming, including editing an existing customer video. The product is a web flow canvas with a cinematic brain entry, persistent brain companion and mandatory female Gemini voice, plus the genuine video-generation/pretest/export pipeline. This repository is the shared reference for the hackathon team and its coding agents.
+**Current approved specification: [PRD v1.5](PRD.md).** It supersedes earlier brainstorming, including editing an existing customer video. The product is a web flow canvas with a cinematic brain entry, persistent brain companion and mandatory two-way female Gemini Live Director, plus the genuine video-generation/pretest/export pipeline. This repository is the shared reference for the hackathon team and its coding agents.
 
 ## Start here
 
@@ -19,7 +19,7 @@ Preflight turns a product brief and 3–6 screenshots into three 15-second motio
 | [AGENTS.md](AGENTS.md) | Instructions every coding agent must follow. Claude loads these through [CLAUDE.md](CLAUDE.md). |
 | [Visual baseline](docs/design/README.md) | All four original reference images and the motion clip, shared brain/canvas direction, provenance and existing preview. |
 | [Opus 5.5 brain brief](docs/design/OPUS_BRAIN_BRIEF.md) | Complete interactive browser brain, reuse/data boundaries, A/B synchronization and verification/handoff. |
-| [Canvas and voice brief](docs/design/CANVAS_VOICE_BRIEF.md) | Integration of canvas, docked brain, actual job events and mandatory female Gemini TTS with voice glow. |
+| [Canvas and voice brief](docs/design/CANVAS_VOICE_BRIEF.md) | Mandatory two-way Gemini Live, validated storyboard edits, canvas/brain/job integration and standalone orb; optional prompt glow. |
 | [Build status audit](docs/status/2026-10-03-build-audit.md) | Timestamped evidence from all nine Norrsken workspaces; prototype, implementation and genuine-data gaps are separate. |
 | [Original PDF](docs/source/Preflight-PRD-v1.1.pdf) | Unchanged, 20-page source supplied by the product owner. [Provenance and checksum](docs/source/README.md). |
 
@@ -42,7 +42,9 @@ An existing Next.js Dashboard implementation is on the team's separate `williu16
 
 On first arrival, the anatomical brain rotates and focuses on regions, then docks in a corner while the flow canvas opens. Sources and the validated brief branch into storyboards/concepts, rendered videos, actual simulation results and a verdict/export. The corner brain follows the selected video's stored predictions; realtime job events update the canvas. Introductory colored response requires a genuine disclosed example, not fabricated waves before a run exists.
 
-**Female Gemini speech is required for the demo (FR-16/P0).** Gemini TTS voices welcome, actual progress and evidence-backed verdicts; captions/mute/stop remain available. The assistant's visual direction is a standalone `ThinkingOrb`, no surrounding card, growing during speech. Its work states are event-driven; audio-amplitude binding is our code, not a built-in orb feature. `voice-glow` is an optional prompt effect, not a speech engine. The selected target is `gemini-3.8-flash-tts` pending account/routing verification. Optional microphone conversation uses a separate Gemini Live integration and user permission. A supplied Gemini key is not proof that speech or Live is configured; all long-lived keys remain server-side.
+**Two-way female Gemini Live is required for the demo (FR-16/P0), explicitly confirmed by William.** After Enable Live/mic permission, talk to the Director, interrupt a reply, select a storyboard/scene and make a source-grounded pre-render edit that visibly updates the actual validated draft/canvas. Confirm the summarized Run before paid jobs. Actual job milestones and verdict answers come from shared persisted events/evidence; transcripts, mute/stop/disconnect and typed fallback remain available. TTS-only narration, prerecorded dialogue or a reactive visual cannot pass P0.
+
+The assistant is a standalone `ThinkingOrb`, no surrounding card, growing during actual speech. Its work states follow actual connection/mic/job state; audio-amplitude binding is our code, not a built-in orb feature. `voice-glow` is an optional prompt effect, not a voice engine. The Voice workspace proposes `gemini-3.8-live` and Kore; model/account/voice access and Condense Live routing remain unverified. No routing exception has been approved. A supplied Gemini key is not proof that Live is configured: long-lived keys remain server-side, with scoped ephemeral tokens or a secure proxy for browser Live. Pre-render editing is P0; editing/retesting a tested winner stays FR-11/P1. See the [integration brief](docs/design/CANVAS_VOICE_BRIEF.md).
 
 The large experiment tree is a design/architecture goal. Proposed nodes are not completed neural tests; today's three-video execution cap remains until the owner approves a batch budget and the backend team measures capacity. Keep prototype/untested states visible.
 
@@ -126,7 +128,7 @@ First use downloads model weights and extracts multimodal features. Record both 
 4. Expose the worker to the orchestrator and configure `TRIBE_ENDPOINT` with **our deployed worker's address**. It is not the GitHub URL or a hosted Meta inference API supplied by the upstream project. The Preflight endpoint and request/response transport still need implementation; this guide does not define a ready-made HTTP route.
 5. Verify one real clip for the go/no-go, then the actual 15-second rendered variants, including any silent/no-speech case produced by the template. Record output, timing, GPU environment and failures in TEAM.md before marking FR-04 complete.
 
-The v1.4 fallback applies: if live TRIBE fails the 12:30 gate, keep the Gemini path with **Brain sim off**, the gray anatomical entry/dock and the required voice/canvas. This is a degraded execution path, not equivalent neural evidence. Never replace missing brain activity with generated values. Genuine precomputed examples must be tied to the video they analyzed, visibly disclosed and kept separate from the current run.
+The v1.5 fallback applies: if live TRIBE fails the 12:30 gate, keep the Gemini path with **Brain sim off**, the gray anatomical entry/dock and the required two-way Live Director/canvas. This is a degraded execution path, not equivalent neural evidence. Never replace missing brain activity with generated values. Genuine precomputed examples must be tied to the video they analyzed, visibly disclosed and kept separate from the current run.
 
 ## Planned build stack
 
