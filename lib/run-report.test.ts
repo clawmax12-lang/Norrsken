@@ -9,7 +9,7 @@ const results: Results = {
   ranking: {
     order: ["B", "A"],
     scores: { B: 0.9, A: 0.6 },
-    per_simulator: { gemini_panel: { B: 1, A: 0.4 }, tribe_v2: { B: 0.8, A: 0.8 } },
+    per_simulator: { gemini_panel: { B: 1, A: 0.4 } },
     confidence: "low",
     rule: "High when every simulator ranks the same winner.",
     excluded: { C: "no tribe_v2 result" },
@@ -20,7 +20,7 @@ const results: Results = {
     reasons: { B: [{ t: 2, scene_index: 0, text: "Holds on the outcome." }] },
     next_time: ["Open with the screenshot that held longest."],
     token_savings: { calls: 6, input_tokens_original: 12000, input_tokens_sent: 7800, tokens_saved: 4200, percent: 35 },
-    brain_sim: true,
+    brain_sim: false,
   },
   variants: [
     {
@@ -79,7 +79,7 @@ describe("run report", () => {
       earliestOtherDrop: 3,
       tokensSaved: 4200,
     });
-    expect(report.numbers.simulators).toEqual(["gemini_panel", "tribe_v2"]);
+    expect(report.numbers.simulators).toEqual(["gemini_panel"]);
     expect(report.steps.map((step) => [step.step, step.status, step.seconds])).toEqual([
       ["plan", "succeeded", 20],
       ["render", "succeeded", 41.2],
@@ -137,6 +137,23 @@ describe("run report", () => {
     const report = buildRunReport(old)!;
     expect(report.scoreScale).toBe("relative");
     expect(report.variants.map((variant) => variant.score)).toEqual([0.9, 0.6, null]);
+    expect(report.numbers.winnerMargin).toBeNull();
+    expect(report.closeCall).toBe(false);
+  });
+
+  it("does not average uncalibrated neural activity with panel goal-fit", () => {
+    const mixed: Results = {
+      ...results,
+      ranking: { ...results.ranking!, per_simulator: { gemini_panel: { B: 1, A: 0.4 }, tribe_v2: { B: 0.8, A: 0.8 } } },
+      variants: results.variants.map((variant) => ({ ...variant, simulations: [
+        ...variant.simulations!,
+        { variant_id: variant.variant_id, simulator: "tribe_v2", duration_s: 15, primary_series: "neural_activity", series: { neural_activity: [-2, 3] }, events: [] },
+      ] })),
+    };
+    const report = buildRunReport(mixed)!;
+    expect(report.scoreScale).toBe("relative");
+    expect(report.variants[0].score).toBe(0.9);
+    expect(report.variants[0].perSimulator).toEqual([{ simulator: "gemini_panel", score: 1 }, { simulator: "tribe_v2", score: 0.8 }]);
     expect(report.numbers.winnerMargin).toBeNull();
     expect(report.closeCall).toBe(false);
   });

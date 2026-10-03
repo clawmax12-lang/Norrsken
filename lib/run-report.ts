@@ -198,7 +198,7 @@ function eventsOf(variant: VariantResults) {
   return (variant.simulations ?? []).flatMap((simulation) => simulation.events ?? []);
 }
 
-/** Winner and runner-up closer than this many points (0–100) are reported as a close call. */
+/** Display heuristic for Gemini-only goal-fit scores, not statistical significance. */
 export const CLOSE_CALL_POINTS = 5;
 
 export function points(score: number) {
@@ -217,9 +217,23 @@ export function measuredScores(variant: Pick<VariantResults, "simulations">) {
   const perSimulator = (variant.simulations ?? []).flatMap((simulation) => {
     const series = simulation.primary_series ? simulation.series?.[simulation.primary_series] : undefined;
     const value = series ? mean(series) : null;
-    return value == null ? [] : [{ simulator: simulation.simulator, score: value }];
+    return value == null || !Number.isFinite(value) ? [] : [{ simulator: simulation.simulator, score: value }];
   });
   return { score: mean(perSimulator.map((entry) => entry.score)), perSimulator };
+}
+
+/** Raw neural activity and panel goal-fit have different units; never average them. */
+export function usesPanelScoreScale(ranking: Ranking, variants: VariantResults[]) {
+  return ranking.order.length > 0
+    && Object.keys(ranking.per_simulator ?? {}).length === 1
+    && Boolean(ranking.per_simulator?.gemini_panel)
+    && ranking.order.every((id) => {
+      const simulations = variants.find((variant) => variant.variant_id === id)?.simulations;
+      return simulations?.length === 1 && simulations[0].simulator === "gemini_panel"
+        && simulations[0].primary_series === "goal_fit"
+        && Boolean(simulations[0].series?.goal_fit?.length)
+        && simulations[0].series!.goal_fit.every((value) => Number.isFinite(value) && value >= 0 && value <= 1);
+    });
 }
 
 export function leadOf(winner: number | null | undefined, other: number | null | undefined) {
@@ -249,7 +263,7 @@ export function buildRunReport(results: Results, events: ActivityEvent[] = []): 
   const excluded = ranking.excluded ?? {};
   const perSim = ranking.per_simulator ?? {};
   const measured = new Map(results.variants.map((variant) => [variant.variant_id, measuredScores(variant)]));
-  const scoreScale: ScoreScale = ranking.order.every((id) => measured.get(id)?.score != null) ? "measured" : "relative";
+  const scoreScale: ScoreScale = usesPanelScoreScale(ranking, results.variants) ? "measured" : "relative";
 
   const base = results.variants.map((variant) => {
     const id = variant.variant_id;
@@ -277,7 +291,7 @@ export function buildRunReport(results: Results, events: ActivityEvent[] = []): 
       outcome,
       rank: rankIndex >= 0 ? rankIndex + 1 : null,
       score: scoreScale === "measured" ? (measured.get(id)?.score ?? null) : rankIndex >= 0 ? (ranking.scores[id] ?? null) : null,
-      perSimulator: measured.get(id)?.perSimulator ?? [],
+      perSimulator: scoreScale === "measured" ? (measured.get(id)?.perSimulator ?? []) : Object.entries(perSim).flatMap(([simulator, scores]) => scores[id] == null ? [] : [{ simulator, score: scores[id] }]),
       renderSeconds: variant.render?.render_seconds ?? null,
       holds: evs.filter((event) => event.type === "hold").length,
       drops: drops.length,

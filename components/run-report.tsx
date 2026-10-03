@@ -162,7 +162,7 @@ export function RunReport({ apiBase, projectId, results, onClose }: {
         <div className="run-report-exports">
           {EXPORTS.map((item) => <a key={item.name} href={url(apiBase, `/api/projects/${encodeURIComponent(projectId)}/export/${item.name}`)} download>{item.label}</a>)}
         </div>
-        <p className="run-report-muted">Scores compare these films with each other. They are not a forecast of reach, downloads or revenue. Confirm the winner with a live A/B test.</p>
+        <p className="run-report-muted">Scores compare these films with each other. They are not a forecast of reach, downloads or revenue. Holds and drops are simulation signals, not observed retention. Close call is a five-point display heuristic, not statistical significance. Confirm the recommendation with a live A/B test.</p>
       </div>
     </div>,
     document.body,

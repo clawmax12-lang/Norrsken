@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { FinalVideoFinish } from "@/components/final-video-finish";
 
 import { RunReport } from "@/components/run-report";
-import { CLOSE_CALL_POINTS, leadOf, measuredScores, points, type RenderRecord, type SimulationResult } from "@/lib/run-report";
+import { CLOSE_CALL_POINTS, leadOf, measuredScores, points, usesPanelScoreScale, type RenderRecord, type SimulationResult } from "@/lib/run-report";
 
 type VariantId = "A" | "B" | "C";
 export type RunState = "BRIEF_RECEIVED" | "PLANNED" | "RENDERED" | "SIMULATED" | "SCORED" | "EXPLAINED" | "ITERATED" | "DONE" | "FAILED";
@@ -152,7 +152,7 @@ export function RunResults({ apiBase, projectId, runNonce, onClose, onProgress, 
   const winnerSourceHash = results?.variants.find((item) => item.variant_id === report?.winner)?.render?.video_sha256;
   const elapsed = Math.max(0, Math.round((now - startedAt) / 1000));
   const measured = new Map((results?.variants ?? []).map((item) => [item.variant_id, measuredScores(item).score]));
-  const isMeasured = Boolean(ranking?.order.every((id) => measured.get(id) != null));
+  const isMeasured = Boolean(ranking && results && usesPanelScoreScale(ranking, results.variants));
   const scoreOf = (id: VariantId) => points((isMeasured ? measured.get(id) : ranking?.scores[id]) ?? 0);
   const lead = isMeasured && report?.runner_up ? leadOf(measured.get(report.winner), measured.get(report.runner_up)) : null;
   const closeCall = lead != null && lead < CLOSE_CALL_POINTS;
@@ -174,10 +174,10 @@ export function RunResults({ apiBase, projectId, runNonce, onClose, onProgress, 
 
       {report && ranking && <>
         <p className="results-verdict">Launch <b>{report.winner}</b>. A/B test it against <b>{report.runner_up}</b>.<span className={`confidence ${ranking.confidence}`}>{ranking.confidence} confidence</span>{closeCall && <span className="confidence close-call">close call</span>}</p>
-        {closeCall && <p className="results-muted">{report.winner} leads {report.runner_up} by only {lead} of 100 points. That is too close to call, so treat it as a tie and let the live A/B test decide.</p>}
+        {closeCall && <p className="results-muted">{report.winner} leads {report.runner_up} by only {lead} of 100 points. Our display flags gaps below five points for live A/B follow-up; this is not a statistical tie.</p>}
         <div className="results-argument">
           <small>Where they leave</small>
-          <p>A bounce is a viewer who never sees the rest. The times under each film are that second. Launch the one that holds. Live money only has to settle it against the runner-up.{ranking.order.length > 2 ? ` ${ranking.order.length - 2 === 1 ? "One film never takes" : `${ranking.order.length - 2} films never take`} the boost.` : ""}</p>
+          <p>The moments below are simulated hold/drop signals, not observed viewer retention. Use this recommendation to choose a live A/B test, not as proof of consumer behaviour.</p>
         </div>
 
         <div className="results-board">

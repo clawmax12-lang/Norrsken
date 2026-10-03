@@ -19,10 +19,10 @@ export type LaunchMark = {
 
 export const adminDashboard = {
   eyebrow: "Launch math",
-  title: "They leave at three seconds. A guess pays to find that out.",
+  title: "What if they leave at three seconds? Test before you spend.",
   lede: "tablehopp launches on 7 Oct. One film chosen on instinct spends the invoice and the boost before anyone knows which second loses them. Preflight ranks three ideas first: which film to launch, which to test live, and the second the other one loses the room.",
   disclaimer:
-    "Counts from the product rules, dated 3 Oct. Not a measured run. A blank score stays blank. Not a forecast of downloads or revenue.",
+    "Illustrative launch scenario, dated 3 Oct. Three films and 15 seconds are product limits; the three-second split is hypothetical, not a measured run. A blank score stays blank. Not a forecast of downloads or revenue.",
   case: {
     product: "tablehopp",
     when: "7 Oct 2026",

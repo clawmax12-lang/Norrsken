@@ -64,7 +64,7 @@ export default function AdminPage() {
           </article>
           <article className={styles.split}>
             <b>{story.preflight.splitSecond}s</b>
-            <span>Where the other version loses them</span>
+            <span>Hypothetical drop moment, not a measured result</span>
           </article>
           <article>
             <b>{story.preflight.verdictMinutes} min</b>
@@ -121,8 +121,8 @@ export default function AdminPage() {
                     <i style={{ width: `${known}%` }} />
                   </div>
                   <small>
-                    Known structure through {story.preflight.splitSecond}s of {story.preflight.durationSeconds}s. A run
-                    draws who holds after that.
+                    Illustrative {story.preflight.splitSecond}s marker in a {story.preflight.durationSeconds}s film. Actual
+                    hold/drop signals require a simulation.
                   </small>
                 </div>
               </li>
