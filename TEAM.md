@@ -42,15 +42,15 @@ Statuses: `unclaimed` → `in_progress` → `in_review` → `done`. Use `blocked
 | ID | Requirement | Priority / gate | Owner | Status | Branch / PR / acceptance evidence |
 | --- | --- | --- | --- | --- | --- |
 | FR-01 | Brief intake and fixture | P0 | William / Codex | in_review | Original intake in merged PR #2; canvas integration on `williu16/fr-16-canvas-live` adds the shared typed/voice brief and approved-folder shelf. Unit/build/browser checks pass; real Gemini call remains unverified in this workspace. |
-| FR-02 | Three creative concepts | P0 | — | unclaimed | — |
-| FR-03 | Three rendered MP4s | P0 | — | unclaimed | — |
-| FR-04 | Simulators and Gemini fallback | P0 | — | unclaimed | — |
-| FR-05 | Deterministic score and rank | P0 | — | unclaimed | — |
-| FR-06 | Timestamped explanations | P0 | — | unclaimed | — |
+| FR-02 | Three creative concepts | P0 | studieapp2 | in_review | Gemini planner with archetypes and grounding checks merged in [PR #7](https://github.com/clawmax12-lang/Norrsken/pull/7). Backend suite passes; a live Gemini run on a deployed backend is not yet recorded here. |
+| FR-03 | Three rendered MP4s | P0 | studieapp2 | in_review | `CompositionSpec` composer, Remotion adapter and `workers/renderer` merged in [PR #7](https://github.com/clawmax12-lang/Norrsken/pull/7). Real 1080x1920 MP4 evidence not yet recorded here. |
+| FR-04 | Simulators and Gemini fallback | P0 | studieapp2 | in_review | Gemini viewer panel and TRIBE client behind `SimulationResult` merged in [PR #7](https://github.com/clawmax12-lang/Norrsken/pull/7); `workers/tribe` has CPU tests. TRIBE GPU go/no-go not yet recorded here. |
+| FR-05 | Deterministic score and rank | P0 | studieapp2 | in_review | Deterministic ranker merged in [PR #7](https://github.com/clawmax12-lang/Norrsken/pull/7); rule documented in [ARCHITECTURE.md](docs/backend/ARCHITECTURE.md#scoring-rule-fr-05-implementation-choice-logged-in-prd-16). |
+| FR-06 | Timestamped explanations | P0 | studieapp2 | in_review | Rule-based and Gemini explainers merged in [PR #7](https://github.com/clawmax12-lang/Norrsken/pull/7). |
 | FR-07 | Canvas/results UI and synced playback | P0 | William / Codex | in_review | PR #6 implements the FLORA-referenced pan/zoom A/B/C canvas, sparse first-arrival state, contextual drawers and honest proposed/no-data states. 1440×1000 browser check passed; real render/result binding, leaderboard, player and curves remain. |
-| FR-08 | Four export files | P0 | — | unclaimed | — |
+| FR-08 | Four export files | P0 | studieapp2 | in_review | Export bundle and launch brief (golden-file tests) merged in [PR #7](https://github.com/clawmax12-lang/Norrsken/pull/7); downloads surfaced in the Results panel ([PR #10](https://github.com/clawmax12-lang/Norrsken/pull/10)). |
 | FR-09 | Live persisted activity log | P0 | William / Codex + backend owner | in_progress | Canvas exposes an honest job state and confirmation-gated idempotency key. SSE event binding remains blocked on a deployed canonical project/orchestrator seam; no progress is simulated. |
-| FR-10 | Gemini via Condense, measured savings | P0 | — | unclaimed | — |
+| FR-10 | Gemini via Condense, measured savings | P0 | studieapp2 | in_review | Condense-routed client and token ledger merged in [PR #7](https://github.com/clawmax12-lang/Norrsken/pull/7); planner routing tracked in [PR #13](https://github.com/clawmax12-lang/Norrsken/pull/13). Live Condense savings not yet recorded here. |
 | FR-12 | Interactive 3D brain | P0 anatomy/dock; genuine activity needs TRIBE | Opus 5.5 | in_review | [PR #3](https://github.com/clawmax12-lang/Norrsken/pull/3), head `8e02f13`; PR #6 mounts its unmodified `CanvasBrain` once outside pan/zoom and shares only backend-accepted project plus A/B/C selection. Genuine TRIBE/backend-run verification remains. |
 | FR-14 | Preflight sequence | P0 entry; genuine analysis focus needs TRIBE | Opus 5.5 | in_review | PR #3 owns sequence implementation. PR #6 preserves entry/dock integration and browser reduced-motion behavior; genuine matched-data focus remains unverified. |
 | FR-11 | One revision of the winner | P1: all applicable P0 pass | — | unclaimed | — |

@@ -8,6 +8,23 @@ Preflight turns a product brief and 3–6 screenshots into three 15-second motio
 
 **[TRIBE v2 by Meta FAIR](https://github.com/facebookresearch/tribev2) is a foundational component of Preflight's planned neural pretesting system.** It supplies the predicted brain responses behind the brain simulation, synchronized activity curves, interactive 3D brain and Preflight sequence. Gemini supplies the complementary viewer panel and the agent's planning/explanations; Preflight coordinates generation, simulation, comparison and export.
 
+## At a glance
+
+**Problem.** A founder launching an app needs a demo video, but agencies take weeks, DIY looks amateur, and nobody knows which version works until ad money is spent.
+
+**What Preflight does.** Brief + 3–6 screenshots in, three source-grounded 15-second videos out, each pretested by simulated viewers (a Gemini viewer panel, plus TRIBE v2 predicted brain response when the GPU worker is up), ranked by a deterministic rule, with a winner, a runner-up for a live A/B test, and timestamped reasons.
+
+**How it is built.**
+
+| Subproject | Path | Stack | Checked by |
+| --- | --- | --- | --- |
+| Web canvas + Gemini Live Director | `app/`, `components/`, `hooks/`, `lib/` | Next.js 16, React 19, Zod, three.js | typecheck, ESLint, Vitest, build |
+| Pipeline orchestrator | `backend/` | Python 3.12, FastAPI, Pydantic | ruff, mypy (strict), pytest (≈97 % coverage) |
+| Video renderer | `workers/renderer/` | Remotion | typecheck |
+| Brain simulation worker | `workers/tribe/` | TRIBE v2 (Meta FAIR), FastAPI | ruff, mypy, pytest |
+
+The backend is ports-and-adapters: every stage (planner, renderer, simulators, explainer) implements a protocol in `backend/src/preflight/ports.py`, `wiring.py` binds the real adapters, and the resumable state machine in `orchestrator/` never knows which provider is behind a port. All simulators speak one `SimulationResult` contract, so scoring and UI are provider-agnostic. See [docs/backend/ARCHITECTURE.md](docs/backend/ARCHITECTURE.md). All four subprojects run in [CI](.github/workflows/ci.yml) on every pull request.
+
 **Current approved specification: [PRD v1.6](PRD.md).** It supersedes earlier brainstorming, including editing an existing customer video, and establishes the FLORA-referenced canvas, integrated Live Director and reusable-brain architecture. This repository is the shared reference for the hackathon team and its coding agents.
 
 ## Start here
