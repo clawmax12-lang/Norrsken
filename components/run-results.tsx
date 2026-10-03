@@ -46,7 +46,8 @@ function clock(seconds: number) {
   return `0:${String(Math.floor(seconds)).padStart(2, "0")}`;
 }
 
-export function RunResults({ apiBase, projectId, runNonce, onClose, onProgress }: {
+export function RunResults({ apiBase, projectId, runNonce, onClose, onProgress, visible = true }: {
+  visible?: boolean;
   apiBase: string | undefined;
   projectId: string;
   runNonce: number;
@@ -101,11 +102,10 @@ export function RunResults({ apiBase, projectId, runNonce, onClose, onProgress }
   const progressRef = useRef(onProgress);
   useEffect(() => { progressRef.current = onProgress; }, [onProgress]);
   const reportedState = results?.state;
-  const variantCount = results?.variants.length ?? 0;
   useEffect(() => {
-    if (reportedState && variantCount === 3 && results) progressRef.current?.(reportedState, results.variants);
+    if (reportedState && results) progressRef.current?.(reportedState, results.variants);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- report once per state change, not per poll
-  }, [reportedState, variantCount]);
+  }, [reportedState]);
 
   const running = !results || (results.state !== "DONE" && results.state !== "FAILED");
   useEffect(() => {
@@ -114,6 +114,7 @@ export function RunResults({ apiBase, projectId, runNonce, onClose, onProgress }
     return () => window.clearInterval(id);
   }, [running]);
 
+  if (!visible) return null;
   if (!apiBase) {
     return <aside className="side-drawer results-drawer"><Heading onClose={onClose} title="Results" /><p className="results-muted">NEXT_PUBLIC_PREFLIGHT_API_BASE is not set, so this page cannot read results from the backend.</p></aside>;
   }

@@ -6,6 +6,7 @@ import { ThinkingOrb } from "thinking-orbs";
 import { VoiceBeam } from "voice-glow";
 
 import { CanvasBrain } from "@/components/brain/CanvasBrain";
+import { DirectorConsole, type ConsoleEvent, type ConsoleEventKind, type JourneyStep } from "@/components/director-console";
 import { RunResults, type PlannedVariant, type RunState } from "@/components/run-results";
 import { useLiveDirector } from "@/hooks/use-live-director";
 import { briefSchema, emptyBrief, type BriefDraft, type BriefField, type SourceMap } from "@/lib/brief";
@@ -116,6 +117,11 @@ export function CanvasWorkspace() {
   const [visualsPaused, setVisualsPaused] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const [runNonce, setRunNonce] = useState(0);
+  const [runState, setRunState] = useState<RunState | null>(null);
+  const [showConsole, setShowConsole] = useState(false);
+  const [consoleEvents, setConsoleEvents] = useState<ConsoleEvent[]>([]);
+  const lastTypedRef = useRef("");
+  const loggedTranscriptRef = useRef(new Set<string>());
 
   const folderInputRef = useRef<HTMLInputElement | null>(null);
   const filesInputRef = useRef<HTMLInputElement | null>(null);
@@ -176,9 +182,15 @@ export function CanvasWorkspace() {
     for (const asset of assetsRef.current) URL.revokeObjectURL(asset.previewUrl);
   }, []);
 
+  const logEvent = useCallback((kind: ConsoleEventKind, title: string, detail?: unknown) => {
+    const text = detail === undefined ? undefined : typeof detail === "string" ? detail : JSON.stringify(detail, null, 2);
+    setConsoleEvents((current) => [...current, { id: crypto.randomUUID(), at: Date.now(), kind, title, detail: text }].slice(-200));
+  }, []);
+
   const addNotice = useCallback((role: Notice["role"], text: string) => {
     setNotices((current) => [...current, { id: crypto.randomUUID(), role, text }].slice(-16));
-  }, []);
+    if (role !== "user") logEvent("canvas", text);
+  }, [logEvent]);
 
   const persistDraft = useCallback(async (next: CanvasDraft) => {
     setDraft(next);
@@ -263,7 +275,7 @@ export function CanvasWorkspace() {
         const asset = assetsRef.current.find((item) => item.id === cleanString(args.asset_id));
         if (!asset) throw new Error("Asset is outside the approved folder or no longer available.");
         setShowAssets(true);
-        await shareAssetRef.current?.(asset.file, asset.name, false);
+        if (await shareAssetRef.current?.(asset.file, asset.name, false)) logEvent("sent", `Screenshot ${asset.name} sent to the AI (${Math.round(asset.file.size / 1024)} KB)`);
         return { asset: { id: asset.id, name: asset.name, relativePath: asset.relativePath }, evidence: "approved local screenshot" };
       }
       case "select_asset": {
@@ -324,9 +336,50 @@ export function CanvasWorkspace() {
       default:
         throw new Error("Unknown Director tool.");
     }
-  }, [addNotice, editSceneCopy, persistDraft, selectScene, updateField]);
+  }, [addNotice, editSceneCopy, logEvent, persistDraft, selectScene, updateField]);
 
-  const director = useLiveDirector({ onToolCall: handleToolCall });
+  const loggedToolCall = useCallback(async (call: FunctionCall) => {
+    const args = call.args ?? {};
+    const rationale = cleanString((args as Record<string, unknown>).rationale);
+    const summary = Object.entries(args).filter(([key]) => key !== "rationale" && key !== "summary").map(([key, value]) => `${key}: ${String(value).slice(0, 60)}`).join(", ");
+    logEvent("action", `${call.name}${summary ? ` (${summary})` : ""}${rationale ? ` · why: ${rationale}` : ""}`, args);
+    try {
+      const output = await handleToolCall(call);
+      logEvent("result", `${call.name} done`, output);
+      return output;
+    } catch (error) {
+      logEvent("error", `${call.name}: ${error instanceof Error ? error.message : "failed"}`);
+      throw error;
+    }
+  }, [handleToolCall, logEvent]);
+
+  const director = useLiveDirector({ onToolCall: loggedToolCall });
+
+  const liveListening = director.state === "listening";
+  const sendText = director.sendText;
+  useEffect(() => {
+    if (!liveListening) return;
+    // "listening" is set on socket open, slightly before the session handle exists.
+    const timer = window.setTimeout(() => {
+      const current = briefRef.current;
+      const facts = (["product_name", "one_liner", "audience", "goal"] as const).filter((field) => current[field]).map((field) => `${fieldLabels[field]}: ${current[field]}`);
+      const screens = selectedAssetsRef.current.length;
+      if (!facts.length && !screens) return;
+      const context = `Already confirmed on the canvas. ${facts.join(". ")}${facts.length ? "." : ""} ${screens} screenshots selected. Use these facts; do not ask for them again.`;
+      lastTypedRef.current = context;
+      if (sendText(context)) logEvent("sent", "Confirmed brief sent to the AI as context", context);
+    }, 1500);
+    return () => window.clearTimeout(timer);
+  }, [liveListening, logEvent, sendText]);
+
+  useEffect(() => {
+    for (const line of director.transcript) {
+      if (loggedTranscriptRef.current.has(line.id)) continue;
+      loggedTranscriptRef.current.add(line.id);
+      if (line.role === "user" && line.text.trim() === lastTypedRef.current) continue;
+      logEvent(line.role === "director" ? "said" : "heard", line.text);
+    }
+  }, [director.transcript, logEvent]);
 
   useEffect(() => { shareAssetRef.current = director.shareAsset; }, [director.shareAsset]);
 
@@ -419,8 +472,17 @@ export function CanvasWorkspace() {
     if (!text) return;
     setComposerText("");
     addNotice("user", text);
-    if (!director.sendText(text)) await runTypedFallback(text);
-  }, [addNotice, composerText, director, runTypedFallback]);
+    lastTypedRef.current = text;
+    const live = director.sendText(text);
+    logEvent("typed", text, live ? undefined : "Live is off: handled by the canvas command parser, not sent to the AI.");
+    if (!live) {
+      try {
+        await runTypedFallback(text);
+      } catch (error) {
+        addNotice("system", error instanceof Error ? error.message : "That command failed.");
+      }
+    }
+  }, [addNotice, composerText, director, logEvent, runTypedFallback]);
 
   const confirmRun = useCallback(async () => {
     if (!readyToConfirm || jobState === "saving") return;
@@ -435,6 +497,7 @@ export function CanvasWorkspace() {
       const uploadResponse = await fetch(`/api/projects/${PROJECT_ID}/assets`, { method: "POST", body: form });
       const upload = await uploadResponse.json() as { assets?: Array<{ storedPath: string }>; error?: string };
       if (!uploadResponse.ok || !upload.assets) throw new Error(upload.error ?? "Screenshot upload failed.");
+      logEvent("sent", `${selected.length} screenshots uploaded to the backend`, upload.assets.map((asset) => asset.storedPath));
 
       const assetPathById = new Map(selected.map((asset, index) => [asset.id, upload.assets?.[index]?.storedPath]));
       let finalDraft = structuredClone(draftRef.current);
@@ -448,9 +511,11 @@ export function CanvasWorkspace() {
       const finalBrief = briefSchema.parse({ ...briefRef.current, project_id: PROJECT_ID, screenshots: upload.assets.map((asset) => asset.storedPath) });
       const briefResponse = await fetch(`/api/projects/${PROJECT_ID}/brief`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(finalBrief) });
       if (!briefResponse.ok) throw new Error(((await briefResponse.json()) as { error?: string }).error ?? "Brief save failed.");
+      logEvent("sent", "Brief sent to the backend (brief.json)", finalBrief);
 
       const runResponse = await fetch(`/api/projects/${PROJECT_ID}/run`, { method: "POST", headers: { "Idempotency-Key": commandId } });
       const run = await runResponse.json() as { error?: string; status?: string; run_id?: string; project_id?: string };
+      logEvent(runResponse.ok ? "backend" : "error", runResponse.ok ? "Run accepted by the backend" : `Run refused (${runResponse.status})`, run);
       if (!runResponse.ok) {
         setJobState(runResponse.status === 503 ? "unavailable" : "error");
         setJobMessage(run.error ?? "No job was started.");
@@ -462,6 +527,7 @@ export function CanvasWorkspace() {
       localStorage.setItem(BACKEND_PROJECT_STORAGE, acceptedProjectId);
       setJobState("queued");
       setJobMessage("Run started · follow progress in Results");
+      setRunState(null);
       setRunNonce((current) => current + 1);
       setShowResults(true);
       setShowBrief(false);
@@ -470,10 +536,24 @@ export function CanvasWorkspace() {
     } catch (error) {
       setJobState("error");
       setJobMessage(error instanceof Error ? error.message : "No job was started.");
+      logEvent("error", error instanceof Error ? error.message : "No job was started.");
     }
-  }, [addNotice, assets, jobState, persistDraft, readyToConfirm, selectedAssetIds]);
+  }, [addNotice, assets, jobState, logEvent, persistDraft, readyToConfirm, selectedAssetIds]);
 
-  const syncPlannedConcepts = useCallback((state: RunState, variants: PlannedVariant[]) => {
+  const onRunProgress = useCallback((state: RunState, variants: PlannedVariant[]) => {
+    setRunState(state);
+    const messages: Partial<Record<RunState, string>> = {
+      BRIEF_RECEIVED: "Brief received · Gemini is planning three concepts",
+      PLANNED: "Planned A, B and C · rendering the videos",
+      RENDERED: "Rendered three 15 s videos · simulated viewers are watching",
+      SIMULATED: "Viewer panel finished · scoring",
+      SCORED: "Ranked · writing the explanations",
+      EXPLAINED: "Explanations written",
+      DONE: "Run complete · results are ready",
+      FAILED: "Run failed · press Run to resume",
+    };
+    if (messages[state]) logEvent(state === "FAILED" ? "error" : "backend", messages[state], state === "PLANNED" ? variants.map((variant) => ({ variant: variant.variant_id, hypothesis: variant.concept.hypothesis, hook: variant.concept.hook, scenes: variant.concept.scenes.map((scene) => scene.text) })) : undefined);
+    if (variants.length !== 3) return;
     const status = state === "DONE" || state === "EXPLAINED" || state === "SCORED" || state === "SIMULATED" ? "tested" : state === "RENDERED" ? "rendered" : state === "FAILED" ? "failed" : "rendering";
     const assetIdFor = (screenshot: string) => {
       const fileName = screenshot.split("/").pop()?.replace(/^[0-9a-f-]{36}-/, "");
@@ -508,7 +588,7 @@ export function CanvasWorkspace() {
     } catch {
       // A plan that does not fit the canvas draft stays visible in Results only.
     }
-  }, [persistDraft]);
+  }, [logEvent, persistDraft]);
 
   const startDrag = (event: PointerEvent<HTMLDivElement>) => {
     if ((event.target as HTMLElement).closest("button, input, select, textarea")) return;
@@ -534,6 +614,27 @@ export function CanvasWorkspace() {
   const latestLine = director.liveDirectorText || director.liveUserText || allTranscript.at(-1)?.text;
   const selectedAsset = assets.find((asset) => asset.id === selectedScene.asset_id);
   const hasProjectContent = Boolean(brief.product_name || brief.one_liner || brief.audience || assets.length || selectedAssetIds.length || Object.keys(sources).length);
+
+  const openFilePicker = useCallback(() => filesInputRef.current?.click(), []);
+  const order: RunState[] = ["BRIEF_RECEIVED", "PLANNED", "RENDERED", "SIMULATED", "SCORED", "EXPLAINED", "ITERATED", "DONE"];
+  const runIndex = runNonce > 0 && runState && runState !== "FAILED" ? order.indexOf(runState) : -1;
+  const runStep = (reachedAt: RunState, startsAt: RunState): JourneyStep["state"] => {
+    if (runNonce === 0) return "todo";
+    if (runState === "FAILED") return "failed";
+    if (runIndex >= order.indexOf(reachedAt)) return "done";
+    return runIndex >= order.indexOf(startsAt) || (startsAt === "BRIEF_RECEIVED" && runIndex === -1) ? "active" : "todo";
+  };
+  const journey: JourneyStep[] = [
+    { id: "screens", label: "Add screenshots", hint: readiness.screens ? `${selectedAssetIds.length} selected` : `${selectedAssetIds.length}/3–6 selected`, state: readiness.screens ? "done" : "active", action: openFilePicker, actionLabel: "Choose" },
+    { id: "brief", label: "Fill in the brief", hint: readiness.brief ? `${brief.product_name} · goal ${brief.goal}` : `Missing: ${missingBrief.join(", ")}`, state: readiness.brief ? "done" : readiness.screens ? "active" : "todo", action: () => { setShowResults(false); setShowBrief(true); }, actionLabel: "Open" },
+    { id: "run", label: "Confirm the run", hint: runNonce > 0 ? "Run started" : "Nothing runs until you confirm", state: runNonce > 0 ? "done" : readyToConfirm ? "active" : "todo", action: () => setConfirmSummary("Generate exactly three 15-second concepts, then render and pretest them using the connected pipeline."), actionLabel: "Run" },
+    { id: "plan", label: "Plan A, B and C", hint: "Gemini writes three concepts from your facts", state: runStep("PLANNED", "BRIEF_RECEIVED") },
+    { id: "render", label: "Render the videos", hint: "Three 15 s vertical videos", state: runStep("RENDERED", "PLANNED") },
+    { id: "test", label: "Simulated viewers watch", hint: "Gemini viewer panel via Condense", state: runStep("SIMULATED", "RENDERED") },
+    { id: "results", label: "Results ready", hint: "Winner, reasons, downloads", state: runStep("DONE", "SIMULATED"), action: () => { setShowBrief(false); setShowResults(true); }, actionLabel: "View" },
+  ];
+  const journeyStates = [readiness.screens, readiness.brief, runNonce > 0, runStep("PLANNED", "BRIEF_RECEIVED") === "done", runStep("RENDERED", "PLANNED") === "done", runStep("SIMULATED", "RENDERED") === "done", runStep("DONE", "SIMULATED") === "done"];
+  const journeyDone = journeyStates.filter(Boolean).length;
 
   return (
     <main className="canvas-app preflight-theme pf-canvas">
@@ -662,12 +763,22 @@ export function CanvasWorkspace() {
         <div className="asset-count">{selectedAssetIds.length}/3–6 selected for the run</div>
       </aside>}
 
-      {showResults && backendProjectId && <RunResults apiBase={process.env.NEXT_PUBLIC_PREFLIGHT_API_BASE} projectId={backendProjectId} runNonce={runNonce} onClose={() => setShowResults(false)} onProgress={syncPlannedConcepts} />}
+      {(showResults || runNonce > 0) && backendProjectId && <RunResults visible={showResults} apiBase={process.env.NEXT_PUBLIC_PREFLIGHT_API_BASE} projectId={backendProjectId} runNonce={runNonce} onClose={() => setShowResults(false)} onProgress={onRunProgress} />}
 
       {showTranscript && <aside className="transcript-drawer">
         <div className="drawer-heading"><div><small>One shared conversation</small><h2>Director transcript</h2></div><button onClick={() => setShowTranscript(false)}>×</button></div>
         <div>{allTranscript.length ? allTranscript.map((line) => <article key={line.id} className={line.role}><span>{line.role === "director" ? "Director" : line.role === "user" ? "You" : "Canvas"}</span><p>{line.text}</p></article>) : <p className="empty-transcript">Enable Live or type a command. Transcripts appear here.</p>}</div>
       </aside>}
+
+      {showConsole && <DirectorConsole
+        events={consoleEvents}
+        steps={journey}
+        liveUserText={director.liveUserText}
+        liveDirectorText={director.liveDirectorText}
+        liveState={liveLabel}
+        onClose={() => setShowConsole(false)}
+        narrow={showResults || showBrief || showAssets}
+      />}
 
       <section className="composer-dock">
         {latestLine && <button className="latest-caption" onClick={() => setShowTranscript(true)}><span>{director.liveDirectorText ? "Director" : director.liveUserText ? "You" : "Session"}</span>{latestLine}</button>}
@@ -702,7 +813,7 @@ export function CanvasWorkspace() {
             <button className="send-button" type="submit" disabled={!composerText.trim()} aria-label="Send">↗</button>
           </form>
         </VoiceBeam>
-        <div className="composer-meta" aria-live="polite"><button onClick={() => director.state === "listening" ? void director.stop() : void director.start()}>{liveLabel}</button>{director.state === "listening" && <><span>Mic {Math.round(director.inputLevel * 100)}%</span><span>Voice {Math.round(director.outputLevel * 100)}%</span><button onClick={director.toggleMute}>{director.isMuted ? "Unmute Director" : "Mute Director"}</button><button onClick={() => void director.stop()}>Disconnect</button></>}<span className={`job-state ${jobState}`}>{jobMessage}</span></div>
+        <div className="composer-meta" aria-live="polite"><button onClick={() => director.state === "listening" ? void director.stop() : void director.start()}>{liveLabel}</button><button className="console-toggle" onClick={() => setShowConsole((current) => !current)}>{showConsole ? "▾ Hide console" : `▴ Console · ${journeyDone}/${journeyStates.length}`}</button>{director.state === "listening" && <><span>Mic {Math.round(director.inputLevel * 100)}%</span><span>Voice {Math.round(director.outputLevel * 100)}%</span><button onClick={director.toggleMute}>{director.isMuted ? "Unmute Director" : "Mute Director"}</button><button onClick={() => void director.stop()}>Disconnect</button></>}<span className={`job-state ${jobState}`}>{jobMessage}</span></div>
         {director.error && <div className="composer-error" role="alert">{director.error}</div>}
       </section>
 
