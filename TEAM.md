@@ -30,7 +30,7 @@ Fill in real people rather than assigning all work to an unnamed agent. Record a
 | Agent, Gemini, Condense | FR-02, FR-04 (panel), FR-05, FR-06, FR-10 | Unassigned | — |
 | Web app, results, export and log | FR-07, FR-08, FR-09 | Unassigned | — |
 | Brain viewer and Preflight sequence | FR-12, FR-14, FR-15 | Claude Opus 5.5 (implementation); William (product review) | [3D Brain — Opus 5.5](conductor://workspace?id=e14af4c4-eada-4c17-bc3b-42cd2ef08dcd) / `conductor/3d-brain-opus-55`, [PR #3](https://github.com/clawmax12-lang/Norrsken/pull/3); reusable viewer/scene and assets. PR #6 only changes the canvas host seam. FR-15 remains gated P1. |
-| Integration and release | Shared contracts, clean-clone run, final demo path | Unassigned | — |
+| Integration and release | Shared contracts, clean-clone run, final demo path | William / Codex | `feat/voice-first-director`; owner authorizes resolving all open PRs and deploying integrated frontend/backend. Preserve current bottom-orb layout and teammate runtime data/secrets. |
 | Demo video and pitch | PRD §14.4–§14.6 | William | — |
 | Selected-winner Opus finalization | FR-17; preserves FR-03/FR-04/FR-08/FR-10 | William / Codex | `feat/voice-first-director` / PR #11; backend finalization/contracts/API/wiring, Next approval proxy and Results action, tests/config/docs |
 
@@ -63,6 +63,8 @@ Statuses: `unclaimed` → `in_progress` → `in_review` → `done`. Use `blocked
 P2 stays outside today's build. The broader validation programme also has the explicit prerequisite in PRD §13; do not silently start it as part of the MVP.
 
 ## Integration and acceptance handoff
+
+**RELEASE-ALL — claimed by William / Codex, 3 Oct:** William explicitly requests deployment of all changes, including voice, and resolution of every open PR. Review/integrate PR #11 (voice/Opus), #3 (newer brain), #1 (approved product/docs corrections, retaining later bottom-voice decisions) and #4 (retain any unique asset-access change or close as superseded with evidence). Fix the backend/TRIBE NumPy dependency incompatibility without changing upstream vendor pins, rerun all four CI suites and coordinate the running tunnel origin with its existing owner before restarting. Deployment, configured provider keys and genuine Live/Opus acceptance are separate gates; do not claim them from a successful merge/build.
 
 **Cloudflare location verified 3 Oct:** backend session `182e98c6-cd95-4400-958b-3480b152fe9a` reports the running Python/Node server behind quick tunnels. Backend origin: https://dans-projectors-starsmerchant-dispatched.trycloudflare.com (`GET /api/health` → 200). Frontend: https://modification-nomination-ethical-governments.trycloudflare.com (`GET /preflight-api/api/health` → 200 through its one-origin proxy). Both report `runs/gemini/condense=true`, `brain_sim=false`; OpenAPI has no finalization routes, confirming FR-17 is not deployed there yet. The owner's Vercel main `/preflight-api/api/health` returns 404. Configure `ANTHROPIC_API_KEY` on the backend team's origin, deploy/restart this branch's backend code, and configure Vercel's backend URL/rebuild if using Vercel. These ephemeral tunnel URLs are handoff evidence, not committed defaults or a verified live Opus render. No secrets accessed, moved or logged.
 
