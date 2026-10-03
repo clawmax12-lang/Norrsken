@@ -30,7 +30,7 @@ Fill in real people rather than assigning all work to an unnamed agent. Record a
 | Agent, Gemini, Condense | FR-02, FR-04 (panel), FR-05, FR-06, FR-10 | Unassigned | — |
 | Web app, results, export and log | FR-07, FR-08, FR-09 | Unassigned | — |
 | Brain viewer and Preflight sequence | FR-12, FR-14, FR-15 | Unassigned | — |
-| iOS dashboard shell | FR-01 entry point, §12.6 visual tokens | Codex | Dashboard workspace / `williu16/preflight-swiftui-dashboard`; `Preflight.xcodeproj`, `Preflight/*.swift` |
+| Web dashboard shell | FR-01 entry point, §12.6 visual tokens | Codex | Dashboard workspace / `williu16/preflight-swiftui-dashboard`; `app/*.tsx`, `app/*.css` |
 | Integration and release | Shared contracts, clean-clone run, final demo path | Unassigned | — |
 | Demo video and pitch | PRD §14.4–§14.6 | William | — |
 
@@ -66,7 +66,7 @@ P2 stays outside today's build. The broader validation programme also has the ex
 
 | Date | Scope | Owner / branch | Status and evidence | Remaining work |
 | --- | --- | --- | --- | --- |
-| 3 Oct 2026 | iOS dashboard shell; FR-01 entry point and §12.6 visual tokens | Codex / `williu16/preflight-swiftui-dashboard` | In review. Added the SwiftUI app/project, responsive dashboard, pipeline explanation, empty recent-brief state and new-preflight entry surface. `xcodebuild -project Preflight.xcodeproj -scheme Preflight -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build` passed on Xcode with iOS Simulator SDK 27.0. | Dashboard only. Brief persistence and every render, simulator, score, result, and export acceptance criterion remain unimplemented. No FR is marked done. |
+| 3 Oct 2026 | TypeScript web dashboard shell; FR-01 entry point and §12.6 visual tokens | Codex / `williu16/preflight-swiftui-dashboard` | In review. Added the responsive Next.js dashboard, pipeline explanation, empty recent-brief state and new-preflight entry surface. `npm run build` passed on Next.js 16.3.8, including strict TypeScript validation; desktop and 390 px mobile layouts were visually checked. | Dashboard only. Brief persistence and every render, simulator, score, result, and export acceptance criterion remain unimplemented. No FR is marked done. |
 
 For each task, record:
 

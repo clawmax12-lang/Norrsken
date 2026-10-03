@@ -15,8 +15,9 @@ model-cache/
 *.pth
 *.safetensors
 
-# Xcode user state and build products
+# Web dependencies and build products
+node_modules/
+.next/
+out/
 .DS_Store
-DerivedData/
-*.xcuserstate
-xcuserdata/
+npm-debug.log*
