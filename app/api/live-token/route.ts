@@ -1,7 +1,7 @@
 import { GoogleGenAI, Modality } from "@google/genai";
 import { NextRequest, NextResponse } from "next/server";
 
-import { DIRECTOR_INSTRUCTION, directorTools, LIVE_MODEL, LIVE_VOICE } from "@/lib/director";
+import { DIRECTOR_INSTRUCTION, LIVE_MODEL, LIVE_VOICE } from "@/lib/director";
 import { getGoogleApiKey } from "@/lib/google-api-key";
 import { LIVE_TOKEN_ERRORS, liveTokenFailure } from "@/lib/live-token-errors";
 
@@ -63,7 +63,6 @@ export async function POST(request: NextRequest) {
             },
             inputAudioTranscription: {},
             outputAudioTranscription: {},
-            tools: [{ functionDeclarations: directorTools }],
           },
         },
         lockAdditionalFields: [],

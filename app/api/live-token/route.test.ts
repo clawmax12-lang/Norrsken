@@ -20,6 +20,8 @@ describe("Live token route (MOCK)", () => {
     expect(response.status).toBe(200);
     expect(provider.options).toHaveBeenLastCalledWith({ apiKey: "MOCK_server_only", httpOptions: { apiVersion: "v1alpha" } });
     expect(provider.create.mock.calls.at(-1)?.[0].config.uses).toBe(1);
+    // Google rejects tools in token field masks; the Live client supplies them at connect.
+    expect(provider.create.mock.calls.at(-1)?.[0].config.liveConnectConstraints.config).not.toHaveProperty("tools");
     expect(response.headers.get("Cache-Control")).toBe("no-store");
     expect(await response.json()).toMatchObject({ token: "MOCK_ephemeral", model: "gemini-3.8-live" });
   });
