@@ -1,0 +1,16 @@
+# Workspace-local notes, attachments and inspection tools
+.context/
+
+# Credentials; only an example with placeholders belongs in Git
+.env
+.env.*
+!.env.example
+
+# Generated project runs and model downloads
+data/projects/
+.cache/
+model-cache/
+*.ckpt
+*.pt
+*.pth
+*.safetensors
