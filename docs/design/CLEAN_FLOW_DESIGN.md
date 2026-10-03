@@ -1,10 +1,10 @@
 # Preflight — clean black flow canvas
 
-Approved owner direction, 3 Oct 2026. Implements [PRD v1.6 §12](../../PRD.md#12-ui-and-the-analysis-intro); this brief does not change pipeline scope. **Primary design reference: [FLORA](https://flora.ai/) and the owner's [FLORA workspace screenshot, reference 08](README.md#reference-08--flora-primary-product-layout).** References [06/07](README.md#references-06-and-07--clean-flows-and-dark-canvas) remain supporting flow references. The old radial/sidebar layout is superseded, not the brain anatomy references.
+Approved owner direction, 3 Oct 2026. Implements [PRD v1.7 §12](../../PRD.md#12-ui-and-the-analysis-intro). [Existing-video correction](PRODUCT_RESET_HANDOFF.md) supersedes screenshots-first. **Primary reference: [FLORA](https://flora.ai/) / [reference 08](README.md#reference-08--flora-primary-product-layout).** References 06/07 support flows; original brain references still define anatomy.
 
 ## Design in one sentence
 
-A quiet black dotted workspace where real product screenshots become readable storyboard branches, playable videos, simulated comparisons and one clear launch recommendation — with a cinematic brain and a conversational Director as companions.
+A quiet black dotted workspace where an existing company video becomes a baseline analysis, grounded edit branches, playable candidates, new pretests and one recommendation with an original comparison — accompanied by cinematic brain and Gemini Live.
 
 ## Minimum interface, complete capability
 
@@ -14,7 +14,7 @@ The default view must answer **what am I making, what is happening, and what can
 
 | Context | Primary visible content / action | Detail on demand |
 | --- | --- | --- |
-| Empty project | Short upload invitation, source upload, Enable Live | Validated brief fields and help |
+| Empty project | Short existing-video upload/drop invitation, Enable Live; no empty scene tree | Validated facts/audience/goal and help |
 | Storyboard review | Readable source/hook/scene cards and A/B/C choices; approve the bounded Run | Full scene editor, source traceability |
 | Actual work | Real running node/status and current path | Persisted log, retries, durations |
 | Result | Recommended video, short evidence-backed reason, runner-up and Export | Curves, full explanations, detailed brain analysis |
@@ -29,7 +29,7 @@ Minimalism must not hide active microphone/privacy state, mute/stop, failures, j
 - Top-left: small Preflight/project identity; brain companion sits below it with room for hover/pin enlargement. No permanent navigation sidebar or full-width dashboard header.
 - Top-right: compact actual run/status/actions; Export becomes available only with real files. Do not copy account, share or template-management features from the reference.
 - Left-center: a narrow floating vertical tool pill, approximately 48–56 px wide (add/upload, assets, select, pan, fit/search). This is a lightweight tool rail on the canvas, not a navigation sidebar. Only implement actions the product actually supports.
-- Bottom-center: a compact prompt with the customized VoiceBeam. The standalone Director orb sits just above/alongside it, with separate captions and accessible mic/mute/stop controls. No giant chat card.
+- Bottom-center: compact prompt/VoiceBeam and small inactive Director orb. During engaged conversation, the same standalone orb moves/enlarges centrally; separate captions and mic/mute/stop controls remain reachable. No giant chat card; no second voice engine.
 - Bottom-left: zoom/fit controls. On-demand inspector for the selected brief, storyboard, result or transcript; close it without losing canvas position or selection.
 - Bottom-right: small queue/activity control if backed by real job state, not a persistent log panel or an invented active-job count.
 
@@ -38,12 +38,12 @@ Match FLORA's spatial hierarchy, light-touch chrome, open black dot grid and con
 ## Branches, not a radial universe
 
 ```text
-                     ┌─ Storyboard A → Video A → Pretest A ─┐
-Product + sources ───┼─ Storyboard B → Video B → Pretest B ─┼─ Recommendation → Export
-                     └─ Storyboard C → Video C → Pretest C ─┘
+                                      ┌─ Edit A → Video A → Retest A ─┐
+Original + facts → Baseline analysis ──┼─ Edit B → Video B → Retest B ─┼─ Compare original → Recommend/export
+                                      └─ Edit C → Video C → Retest C ─┘
 ```
 
-Use left-to-right curved connectors and vertically spaced A/B/C lanes. A storyboard card contains its 4–6 source-backed scenes; expanding it reveals detail rather than spawning many unrelated videos. The pretest contains actual TRIBE/Gemini evidence, including unavailable states. This is simulated comparison; live audience A/B confirmation and P1 synchronized brain difference are separate.
+Use left-to-right curved connectors and spaced A/B/C lanes after real intake/planning. Original is playable with actual duration; baseline evidence precedes edit hypotheses. Storyboards contain 4–6 grounded scenes/source clips, expanded on demand. Retest has exact-output TRIBE/Gemini evidence, including unavailable states. Source/output time mapping survives edits. Simulation comparison is not live audience A/B or P1 dual-brain difference.
 
 Start with readable cards, roughly 220–280 px wide, 12–16 px radii and ample lane spacing. Source cards show real media; storyboard cards show the hook and scene strip; video cards open actual playable MP4s. Relevant metadata: variant ID, duration, hypothesis and written state. Proposed plans remain clearly untested. No tiny anonymous dots, fake score thumbnails, unsupported test counts or exploded 156-node initial view.
 
@@ -63,11 +63,11 @@ Shared ready-to-import assets: [Redaction font handoff](../../public/fonts/redac
 
 Do not set tiny controls in heavily distressed Redaction variants. Orange-red on the canvas has about 6.38:1 contrast; off-white on the canvas about 17.28:1. Small white text on an orange-red fill is only about 3.10:1, so use dark text. Thin decorative borders do not replace visible focus rings. Exact dimensions/tokens are logged implementation choices, not new scientific claims.
 
-The interface is predominantly neutral. No lime theme, rainbow panels, always-glowing borders, constant particle storms or walls of telemetry. High-tech polish comes from excellent transitions and truthful interactions. The UI accent is separate from the brain's scientifically normalized heat/difference scales.
+Predominantly neutral: no lime, rainbow panels, constant glow/particle storms or telemetry walls. A localized multicolor **voice beam** is allowed by v1.7; not rainbow cards or cortical response. UI accent and scientific scales remain distinct.
 
 ## Cinematic companions
 
-Opus builds the reusable brain once. Entry → top-left dock → hover/pin/expand. Actual meaningful milestone → approximately three seconds of slower camera/detail with concise text → resume. Manual inspection wins; reduced motion keeps information without camera rushes. Do not slow the video or invent neural activity while work runs.
+Opus builds once. Seamless full-viewport entry (host hidden/inert, scroll locked, Skip during loading) → same top-left dock → hover/pin/expand. Real milestone → three-second slower camera/detail/text → resume. Manual inspection/reduced motion wins. No invented neural activity or altered video/sample time. Intro color needs genuine disclosed matched example; absence is a data dependency.
 
 The Director uses both requested Libraries.dev effects, adapted to our warm palette. Details, exact package APIs and a controlled integration example are in [DIRECTOR_VISUALS.md](DIRECTOR_VISUALS.md). Gemini Live remains the two-way voice provider; these packages provide only presentation.
 
@@ -79,4 +79,4 @@ At 1440 px wide, verify: readable three-lane initial flow; no permanent sidebar;
 
 Relay to the existing frontend owner:
 
-> Read PR #1's PRD v1.6 and docs/design/CLEAN_FLOW_DESIGN.md + DIRECTOR_VISUALS.md. FLORA (flora.ai and reference 08) is William's exact primary layout target: black dotted canvas, narrow floating left tools, compact corner controls and readable left-to-right source → A/B/C storyboard → video → pretest → verdict branches. Replace the radial/sidebar/panel-heavy shell. Use the supplied Redaction WOFF2 files and orange-red tokens. Embed the existing Opus top-left brain and Gemini Live orb/beam; preserve all existing Live, draft, source, backend and job logic. No FLORA branding/survey/external-agent buttons, extra mic/service, fake neural response or unbounded runs. Verify desktop interactions, real visual-state binding and publish a fresh preview. Coordinate overlapping integration files before editing.
+> Read PRD v1.7, PRODUCT_RESET_HANDOFF.md, CLEAN_FLOW_DESIGN.md and DIRECTOR_VISUALS.md. Existing company video is main input: Original → baseline analysis → three candidate-edit/video/retest lanes → comparison/recommendation/export. FLORA reference08, black dots, Redaction, minimal floating tools/orange-red. Empty state is upload, not empty scenes. Embed the same Opus full-viewport-entry/top-left brain and Gemini Live orb (central conversation/bottom idle)/VoiceBeam. Preserve services but migrate contracts with owners; test ACTUAL ROUTE, not injected fixture, publish fresh preview. No fake response/results, extra mic, unlimited runs or automatic merges.

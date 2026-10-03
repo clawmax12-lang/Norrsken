@@ -97,10 +97,21 @@
 }
 
 .preflight-theme .pf-director-orb-space {
+  position: fixed;
+  z-index: 80;
+  top: calc(100dvh - 156px);
+  left: 50%;
   display: grid;
   place-items: center;
-  width: 104px;
-  height: 104px;
+  width: 64px;
+  height: 64px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  transition: top 560ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.preflight-theme .pf-director-orb-space[data-engaged="true"] {
+  top: 50dvh;
 }
 
 .preflight-theme .pf-director-orb {
@@ -110,8 +121,12 @@
   transition: transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-.preflight-theme .pf-director-orb[data-speaking="true"] {
-  transform: scale(1.5);
+.preflight-theme .pf-director-orb-space[data-engaged="true"] .pf-director-orb {
+  transform: scale(3.5);
+}
+
+.preflight-theme .pf-director-orb-space[data-engaged="true"] .pf-director-orb[data-speaking="true"] {
+  transform: scale(3.7);
 }
 
 .preflight-theme .pf-director-status {
@@ -126,12 +141,12 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .preflight-theme .pf-director-orb-space,
   .preflight-theme .pf-director-orb {
     transition: none;
-    transform: none;
   }
 
-  .preflight-theme .pf-director-orb[data-speaking="true"] {
-    transform: none;
+  .preflight-theme .pf-director-orb-space[data-engaged="true"] .pf-director-orb[data-speaking="true"] {
+    transform: scale(3.5);
   }
 }

@@ -1,12 +1,12 @@
 # Canvas, persistent brain and two-way Gemini Live — integration brief
 
-Authoritative scope: [PRD v1.6](../../PRD.md) §8/§9/§10/§12.9. This is an implementation handoff, not a second product specification. Visuals: [all supplied references](README.md), [FLORA-style layout](CLEAN_FLOW_DESIGN.md) and [Director effects](DIRECTOR_VISUALS.md). Execution evidence: [historical status audit](../status/2026-10-03-build-audit.md) and [TEAM.md](../../TEAM.md).
+Authoritative scope: [PRD v1.7](../../PRD.md) §8/§9/§10/§12.9. This handoff is not a second spec. Read [the video-first/live correction](PRODUCT_RESET_HANDOFF.md) first; it supersedes older screenshots-first examples and 64→96-only bottom-orb placement. Visuals: [references](README.md), [FLORA layout](CLEAN_FLOW_DESIGN.md), [Director effects](DIRECTOR_VISUALS.md). Evidence: historical audit and TEAM, not documentation alone.
 
 Latest owner clarification: FLORA is the primary layout reference and ElevenLabs is a supporting UI reference only, not a voice-provider change. See the [Canvas integration handoff](CANVAS_INTEGRATION_HANDOFF.md) for the top-left hover/three-second brain-focus direction, actual backend routes/artifact mismatches, merge snapshot and short voice brief to relay. Merged PR #2 records a direct-Live policy exception; that decision must be reconciled with this docs baseline's routing rule before claiming one synchronized baseline.
 
 ## Target experience
 
-Entry brain hero → dock in a corner → Enable Live and prompt/validated brief on a flow canvas → conversational storyboard selection/refinement → confirmed run → actual variant/job/pretest nodes → recommended tested export. A female Gemini Live Director listens, replies, handles interruption and explains actual work throughout, represented by a standalone orb without a surrounding card, enlarging while speaking. The brain and voice are persistent companions; node selection drives their shared context. The finished video remains the outcome.
+Full-viewport brain cinema → same top-left brain → quiet FLORA canvas/video intake → Enable Live/confirm facts → confirmed original pretest → three grounded candidate edits → confirmed render/retest → original comparison/recommended export. Female Gemini Live replies and handles interruption, with the same standalone orb **large/central during engaged conversation**, **small near the bottom when inactive**. No enclosing card. Selection/evidence are shared; finished video is the outcome, not only analysis.
 
 Use the owner's primary FLORA/reference-08 layout: black dotted full-screen canvas, narrow floating left tool rail, compact corner controls and readable left-to-right branching media/storyboard cards. Remove the permanent sidebar/top-bar and large idle Director-panel shell while preserving existing logic. Keep pan/zoom, fit-to-flow, readable lineage and bottom prompt. A zoomed-out tree and focused individual scene should both be understandable. Large-graph virtualization is permitted; fake completed-test counts or a “+47” badge standing in for generated evidence are not. Proposed/example nodes must be distinguishable from actual rendered/tested artifacts.
 
@@ -101,13 +101,13 @@ Enable Live → speak a brief/question and hear a female reply → interrupt and
 
 Share with the existing Voice session owner if direct Conductor messaging is restricted:
 
-> William confirmed two-way Gemini Live is FR-16/P0; TTS-only is insufficient. Read PR #1's current PRD v1.6, this integration brief, CLEAN_FLOW_DESIGN.md and DIRECTOR_VISUALS.md. Both requested warm orb/beam effects belong inside the FLORA-style black canvas; preserve existing Live/validated tools rather than another app. Reconcile older local PRD changes non-destructively, preserve run instructions and agree shared draft/tool/event contracts with Dashboard/backend/Opus. Demonstrate real conversation/interruption plus persisted visible source-backed storyboard edits. Confirm paid jobs and keep Condense routing unresolved until verified or explicitly approved; do not replace another owner's shell or expose credentials.
+> Read PRD v1.7 and PRODUCT_RESET_HANDOFF.md: existing company video is the main input; Original/baseline → grounded candidate edits → retest/export. Preserve Gemini Live/validated tools, but coordinate source-video/clip/original-ID contract migration. Both required packages: central large conversation orb → bottom small inactive orb, localized real-audio beam. Embed one Opus renderer outside pan/zoom; root entry must cover host/inert it. Verify actual conversation/interruption/persisted edits and exact-video evidence; confirm jobs, preserve run instructions, no fake results or credentials. Owner must relay if Conductor access prevents direct messages.
 
 ## Brain honesty and reuse
 
 Entry, corner and fullscreen share the licensed fsaverage5 geometry and viewer code. Docking changes presentation, not anatomy or inference. Only genuine per-video TRIBE samples change heat/region curves. Before the first run, a genuine disclosed example can provide colored response; otherwise show gray anatomy and "No brain data". An audio waveform/glow cannot masquerade as cortical response.
 
-"Realtime" means actual job events plus immediate playback/scrub response on stored data. Queued jobs do not have results yet. Large branching plans do not mean thousands of neural tests have run. Today the real execution cap is still three videos/one P1 revision; expanded batches need an approved budget, measured throughput and bounded queue/pruning.
+"Realtime" means persisted job events plus responsive stored-data playback, not new inference per frame. Default is one original baseline/three generated candidates and one optional P1 winner revision; higher batches need approved budget/capacity. Update original/source-clip command examples accordingly, preserving strict validation and no fabricated evidence.
 
 ## Handoff checks
 

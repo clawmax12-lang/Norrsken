@@ -1,6 +1,8 @@
 # Opus 5.5 — browser brain implementation brief
 
-**Product:** Preflight, desktop-browser web platform, PRD v1.6. **Requested agent:** Claude Opus 5.5. **Scope:** FR-12 and FR-14; FR-15 only after all applicable P0 acceptance criteria pass. Read [AGENTS.md](../../AGENTS.md), [PRD.md](../../PRD.md) §15/§8/§9/§10/§12, [TEAM.md](../../TEAM.md), the entire [visual reference baseline](README.md), [canvas/voice integration brief](CANVAS_VOICE_BRIEF.md) and [clean-flow layout](CLEAN_FLOW_DESIGN.md) before implementing.
+**Product:** Preflight, desktop-browser web, PRD v1.7. **Agent:** Claude Opus 5.5. **Scope:** FR-12/FR-14; FR-15 after applicable P0. Read AGENTS/PRD §15/§8/§9/§10/§12, TEAM and the complete visual/canvas/design briefs below, plus [the live implementation correction](PRODUCT_RESET_HANDOFF.md).
+
+**v1.7 owner correction:** existing company video → baseline pretest → improved candidate edits → retest → original comparison is primary, not screenshots-first. Entry is seamless full viewport without old host panels, scroll or raw loading box; hide/inert host controls and preserve Skip even before geometry/WebGL. Same renderer then rotates quietly top-left. Cinematic material/camera quality must be verified on the ACTUAL root route, not an injected FLORA fixture. Colored response still needs genuine exact-video data; do not invent waves to cover missing backend output. Voice owns large-central-conversation → bottom-idle orb. Coordinate original/artifact/time contract migration; do not mislabel Original as A.
 
 ## Outcome
 

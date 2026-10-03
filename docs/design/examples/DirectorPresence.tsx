@@ -11,6 +11,9 @@ export type DirectorPresenceProps = {
   phase: DirectorPhase;
   micActive: boolean;
   outputMuted: boolean;
+  // Actual engaged conversation or intentional focus; not just an enabled mic.
+  conversationActive: boolean;
+  beamPalette?: "warm" | "multicolor";
   inputLevel: () => number;
   outputLevel: () => number;
   // Host supplies reduced-motion, hidden-tab and manual visual-pause state.
@@ -33,7 +36,7 @@ function normalizedLevel(read: () => number) {
 }
 
 export function DirectorPresence({
-  phase, micActive, outputMuted, inputLevel, outputLevel, paused, children,
+  phase, micActive, outputMuted, conversationActive, beamPalette = "multicolor", inputLevel, outputLevel, paused, children,
 }: DirectorPresenceProps) {
   const speaking = phase === "speaking" && !outputMuted;
   const listening = phase === "listening" && micActive;
@@ -46,7 +49,7 @@ export function DirectorPresence({
 
   return (
     <div className="pf-director-presence">
-      <div className="pf-director-orb-space" aria-hidden="true">
+      <div className="pf-director-orb-space" data-engaged={conversationActive} aria-hidden="true">
         <div className="pf-director-orb" data-speaking={speaking && !frozen}>
           <ThinkingOrb
             state={orbState}
@@ -62,9 +65,9 @@ export function DirectorPresence({
         className="pf-director-prompt"
         type="default"
         theme="dark"
-        colorVariant="sunset"
-        colors={["#FF5A36", "#F2472C", "#FF773F", "#CB3828", "#FF9650", "#A82923", "#E45432"]}
-        bandColors={{ core: "#FFE1C7", above: "#FF773F", mid: "#FF5A36", below: "#CB3828" }}
+        colorVariant={beamPalette === "multicolor" ? "colorful" : "sunset"}
+        colors={beamPalette === "warm" ? ["#FF5A36", "#F2472C", "#FF773F", "#CB3828", "#FF9650", "#A82923", "#E45432"] : undefined}
+        bandColors={beamPalette === "warm" ? { core: "#FFE1C7", above: "#FF773F", mid: "#FF5A36", below: "#CB3828" } : undefined}
         staticColors
         strength={0.45}
         idle={0}

@@ -2,6 +2,8 @@
 
 Product-owner direction, 3 Oct 2026: **ElevenLabs is a UI reference only; Gemini Live remains mandatory two-way voice.** This handoff records requested interaction and inspected seams, not completed acceptance or permission to overwrite/merge another branch. [PRD.md](../../PRD.md) remains the specification; [TEAM.md](../../TEAM.md) tracks evidence.
 
+**v1.7 update:** [PRODUCT_RESET_HANDOFF.md](PRODUCT_RESET_HANDOFF.md) records the existing-video-first decision and current browser defects. It supersedes this older merge snapshot and screenshots-first/always-bottom-orb examples. Baseline/candidate artifact/clip migration is required; preserve owners and actual runtime run instructions.
+
 **Latest design direction, PRD v1.6:** [FLORA and reference 08](README.md#reference-08--flora-primary-product-layout) supersede the earlier shell references. Use a black dotted open canvas, narrow floating left tools, compact corner actions, Redaction/warm orange-red identity and readable media/storyboard/pretest branches. Both [standalone orb and prompt beam](DIRECTOR_VISUALS.md) are requested, preserving existing real Gemini Live/audio/tool logic. See [CLEAN_FLOW_DESIGN.md](CLEAN_FLOW_DESIGN.md) for the relay-ready frontend brief. This does not change the backend contracts or authorize automatic merges.
 
 ## Voice brief to relay
