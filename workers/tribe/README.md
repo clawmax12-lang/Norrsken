@@ -1,5 +1,16 @@
 # TRIBE worker
 
+## Any GPU machine
+
+On a CUDA machine with roughly 32 GB+ of GPU memory and `HF_TOKEN` set in its environment (approved Llama-3.2-3B access), run `make install-gpu && make run` here. Then, from any machine that can reach it:
+
+```bash
+python workers/tribe/deploy/demo_bundle.py --endpoint http://<gpu-host>:8001 --video owned.mp4 \
+  --title "Example" --license "Owned by <company>; shown with permission"
+```
+
+It uses only the worker's own routes, checks that the result belongs to exactly the uploaded bytes and writes the same bundle as below. The same address is what the backend's `TRIBE_ENDPOINT` points to.
+
 ## Cloud GPU run (Modal)
 
 `deploy/modal_app.py` runs this unmodified worker on a Modal cloud GPU (L40S, 48 GB) and turns one genuine TRIBE v2 inference into a `preflight.demo-bundle.v1` that the brain's `CanvasBrain demoBundleUrl` seam loads as **Demo example · precomputed**. It does not deploy a public endpoint and adds no model behaviour.
