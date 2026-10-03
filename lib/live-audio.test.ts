@@ -1,8 +1,19 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { normalizedRms, outputVisualState, stopQueuedPlayback } from "./live-audio";
+import { normalizedRms, outputVisualState, Pcm16StreamEncoder, stopQueuedPlayback } from "./live-audio";
 
 describe("Gemini Live audio presentation", () => {
+  it.each([44_100, 48_000])("encodes exactly one second of %i Hz input at 16 kHz without chunk drift", (rate) => {
+    const encoder = new Pcm16StreamEncoder(rate);
+    let bytes = 0;
+    for (let offset = 0; offset < rate; offset += 128) bytes += encoder.encode(new Float32Array(Math.min(128, rate - offset))).length;
+    expect(bytes).toBe(32_000);
+  });
+
+  it("encodes signed-16 little-endian, clipping invalid/amplified samples safely", () => {
+    const bytes = new Pcm16StreamEncoder(16_000).encode(new Float32Array([-1, 1, Number.NaN, 2, -2]));
+    expect([...bytes]).toEqual([0, 128, 255, 127, 0, 0, 255, 127, 0, 128]);
+  });
   it("normalizes measured samples without inventing activity", () => {
     expect(normalizedRms(new Float32Array())).toBe(0);
     expect(normalizedRms(new Float32Array([0, 0, 0]))).toBe(0);

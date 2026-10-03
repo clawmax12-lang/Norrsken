@@ -6,6 +6,7 @@ import { ThinkingOrb } from "thinking-orbs";
 import { VoiceBeam } from "voice-glow";
 
 import { CanvasBrain } from "@/components/brain/CanvasBrain";
+import { DirectorVoicePresence, VoiceIcon } from "@/components/director-voice-presence";
 import { useLiveDirector } from "@/hooks/use-live-director";
 import { briefSchema, emptyBrief, type BriefDraft, type BriefField, type SourceMap } from "@/lib/brief";
 import {
@@ -19,7 +20,10 @@ import {
   type VariantId,
   variantIds,
 } from "@/lib/canvas-draft";
-import { directorOrbState } from "@/lib/director-presence";
+import { buildDirectorContext } from "@/lib/director-context";
+import { assertEditableScene } from "@/lib/director-edit";
+import { DirectorRunBoundary, isExplicitRunConsent } from "@/lib/director-run";
+import type { DirectorUserTurn } from "@/lib/director-tool-queue";
 
 type LocalAsset = {
   id: string;
@@ -71,7 +75,7 @@ function valueForSource(brief: BriefDraft, field: SourceField) {
 }
 
 function isGroundedCopy(text: string, source: string) {
-  const normalize = (value: string) => value.toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
+  const normalize = (value: string) => value.toLocaleLowerCase().replace(/[^\p{L}\p{N}\s]/gu, " ").replace(/\s+/g, " ").trim();
   const candidate = normalize(text);
   const evidence = normalize(source);
   if (!candidate || !evidence) return false;
@@ -113,13 +117,22 @@ export function CanvasWorkspace() {
   const [view, setView] = useState({ x: 0, y: 0, zoom: 0.82 });
   const [dragging, setDragging] = useState(false);
   const [visualsPaused, setVisualsPaused] = useState(false);
+  const [voiceOpen, setVoiceOpen] = useState(false);
 
   const folderInputRef = useRef<HTMLInputElement | null>(null);
+  const voiceButtonRef = useRef<HTMLButtonElement | null>(null);
   const dragRef = useRef({ x: 0, y: 0, viewX: 0, viewY: 0, moved: false });
   const assetsRef = useRef(assets);
   const selectedAssetsRef = useRef(selectedAssetIds);
   const draftRef = useRef(draft);
   const briefRef = useRef(brief);
+  const sourcesRef = useRef(sources);
+  const draftStateRef = useRef(draftState);
+  const jobRef = useRef({ status: jobState as string, message: jobMessage, project_id: backendProjectId });
+  const runBoundaryRef = useRef(new DirectorRunBoundary());
+  const runApprovalRef = useRef<string | null>(null);
+  const voiceApprovalTurnRef = useRef<number | null>(null);
+  const confirmRunRef = useRef<((id: string) => Promise<Record<string, unknown>>) | null>(null);
   const shareAssetRef = useRef<((file: File, label: string, requestResponse?: boolean) => Promise<boolean>) | null>(null);
 
   useEffect(() => {
@@ -143,6 +156,9 @@ export function CanvasWorkspace() {
   useEffect(() => { selectedAssetsRef.current = selectedAssetIds; }, [selectedAssetIds]);
   useEffect(() => { draftRef.current = draft; }, [draft]);
   useEffect(() => { briefRef.current = brief; }, [brief]);
+  useEffect(() => { sourcesRef.current = sources; }, [sources]);
+  useEffect(() => { draftStateRef.current = draftState; }, [draftState]);
+  useEffect(() => { jobRef.current = { status: jobState, message: jobMessage, project_id: backendProjectId }; }, [jobState, jobMessage, backendProjectId]);
 
   useEffect(() => {
     const storedBrief = readStored(BRIEF_STORAGE, (value) => {
@@ -176,11 +192,16 @@ export function CanvasWorkspace() {
     setNotices((current) => [...current, { id: crypto.randomUUID(), role, text }].slice(-16));
   }, []);
 
+  const reportAction = useCallback((action: Promise<unknown>) => {
+    void action.catch((error) => addNotice("system", error instanceof Error ? error.message : "Action could not be confirmed."));
+  }, [addNotice]);
+
   const persistDraft = useCallback(async (next: CanvasDraft) => {
     setDraft(next);
     draftRef.current = next;
     localStorage.setItem(DRAFT_STORAGE, JSON.stringify(next));
     setDraftState("saving");
+    draftStateRef.current = "saving";
     try {
       const response = await fetch(`/api/projects/${PROJECT_ID}/draft`, {
         method: "PUT",
@@ -198,27 +219,52 @@ export function CanvasWorkspace() {
         setDraftState("error");
         throw new Error("This edit used a stale draft revision. The latest saved draft has been restored.");
       }
-      if (!response.ok) throw new Error("Draft validation failed.");
+      if (!response.ok) throw new Error("The server did not save this edit. The browser preview is not a confirmed saved draft.");
       setDraftState("saved");
+      draftStateRef.current = "saved";
     } catch (error) {
       setDraftState("error");
-      if (error instanceof Error && error.message.includes("stale draft")) throw error;
+      draftStateRef.current = "error";
+      addNotice("system", error instanceof Error ? error.message : "Server save failed; this edit is browser-only.");
+      throw error;
     }
     return next;
-  }, []);
+  }, [addNotice]);
 
   const updateField = useCallback((field: BriefField, rawValue: string, source: "voice" | "typed") => {
     const value = field === "goal" ? normalizeGoal(rawValue) : rawValue.trim();
     if (value === null) throw new Error("Goal must be signups, downloads, understanding, or purchase.");
     if (field === "one_liner" && value.length > 140) throw new Error("Description must be 140 characters or fewer.");
     const nextBrief = { ...briefRef.current, [field]: value } as BriefDraft;
-    const nextSources = { ...sources, [field]: source };
+    const nextSources = { ...sourcesRef.current, [field]: source };
     setBrief(nextBrief);
     setSources(nextSources);
     briefRef.current = nextBrief;
+    sourcesRef.current = nextSources;
     localStorage.setItem(BRIEF_STORAGE, JSON.stringify({ brief: nextBrief, sources: nextSources }));
     return value;
-  }, [sources]);
+  }, []);
+
+  const getProjectContext = useCallback(() => buildDirectorContext({
+    brief: briefRef.current, sources: sourcesRef.current, draft: draftRef.current,
+    assets: assetsRef.current, selectedAssetIds: selectedAssetsRef.current,
+    persistence: draftStateRef.current, job: jobRef.current,
+  }), []);
+
+  const runSignature = useCallback(() => JSON.stringify({
+    brief: briefRef.current, sources: sourcesRef.current,
+    revision: draftRef.current.revision, assets: selectedAssetsRef.current,
+  }), []);
+
+  const requestRunConfirmation = useCallback(() => {
+    const current = getProjectContext();
+    const ready = current.missing_brief_fields.length === 0 && selectedAssetsRef.current.length >= 3 && selectedAssetsRef.current.length <= 6;
+    const summary = `Upload ${selectedAssetsRef.current.length} selected screenshots and submit one run of exactly three 15-second A/B/C candidate videos for ${briefRef.current.product_name || "this project"}, aimed at ${briefRef.current.audience || "the unconfirmed audience"}. Rendering and pretesting require the connected backend. Existing-video baseline analysis is not connected in this build.`;
+    const approval = runBoundaryRef.current.request(runSignature(), summary);
+    runApprovalRef.current = approval.id;
+    setConfirmSummary(summary);
+    return { confirmation_id: approval.id, revision: draftRef.current.revision, summary, ready, job_started: false, missing_brief_fields: current.missing_brief_fields };
+  }, [getProjectContext, runSignature]);
 
   const selectScene = useCallback(async (variantId: VariantId, sceneId: string) => {
     const concept = draftRef.current.concepts.find((item) => item.variant_id === variantId);
@@ -229,6 +275,8 @@ export function CanvasWorkspace() {
   }, [persistDraft]);
 
   const editSceneCopy = useCallback(async (sceneId: string, text: string, sourceField: SourceField) => {
+    assertEditableScene(draftRef.current, sceneId);
+    if (!sourcesRef.current[sourceField]) throw new Error("That brief field has not been confirmed by the user.");
     const sourceValue = valueForSource(briefRef.current, sourceField);
     if (!sourceValue) throw new Error(`The ${sourceLabel[sourceField]} field is empty.`);
     if (!isGroundedCopy(text, sourceValue)) throw new Error(`Copy must use words from the confirmed ${sourceLabel[sourceField]}.`);
@@ -238,9 +286,11 @@ export function CanvasWorkspace() {
     return next;
   }, [addNotice, persistDraft]);
 
-  const handleToolCall = useCallback(async (call: FunctionCall): Promise<Record<string, unknown>> => {
+  const handleToolCall = useCallback(async (call: FunctionCall, userTurn?: DirectorUserTurn | null): Promise<Record<string, unknown>> => {
     const args = call.args ?? {};
     switch (call.name) {
+      case "get_project_context":
+        return getProjectContext();
       case "update_brief": {
         const field = cleanString(args.field) as BriefField;
         if (!(field in fieldLabels)) throw new Error("Unknown brief field.");
@@ -259,7 +309,8 @@ export function CanvasWorkspace() {
         const asset = assetsRef.current.find((item) => item.id === cleanString(args.asset_id));
         if (!asset) throw new Error("Asset is outside the approved folder or no longer available.");
         setShowAssets(true);
-        await shareAssetRef.current?.(asset.file, asset.name, false);
+        const shared = await shareAssetRef.current?.(asset.file, asset.name, false);
+        if (!shared) throw new Error("The image was not shared with Live. Check connection, PNG/JPG format and the 10 MB limit.");
         return { asset: { id: asset.id, name: asset.name, relativePath: asset.relativePath }, evidence: "approved local screenshot" };
       }
       case "select_asset": {
@@ -289,6 +340,7 @@ export function CanvasWorkspace() {
       }
       case "set_scene_asset": {
         const sceneId = cleanString(args.scene_id);
+        assertEditableScene(draftRef.current, sceneId);
         const assetId = cleanString(args.asset_id);
         if (!selectedAssetsRef.current.includes(assetId)) throw new Error("Select the approved asset before placing it.");
         const next = replaceScene(draftRef.current, sceneId, { asset_id: assetId });
@@ -298,6 +350,8 @@ export function CanvasWorkspace() {
         return { saved: true, scene_id: sceneId, asset_id: assetId, revision: next.revision };
       }
       case "reorder_scene": {
+        assertEditableScene(draftRef.current, draftRef.current.selected_scene_id);
+        if (cleanString(args.variant_id) !== draftRef.current.selected_variant_id) throw new Error("Select this concept before reordering its scenes.");
         const next = reorderScenes(draftRef.current, cleanString(args.variant_id) as VariantId, Number(args.from), Number(args.to));
         await persistDraft(next);
         return { saved: true, revision: next.revision };
@@ -313,16 +367,35 @@ export function CanvasWorkspace() {
         return { recorded: true, revision: next.revision };
       }
       case "request_run_confirmation": {
-        const summary = cleanString(args.summary) || "Generate and pretest exactly three 15-second concepts from this approved draft.";
-        setConfirmSummary(summary);
-        return { confirmation_required: true, job_started: false, summary };
+        voiceApprovalTurnRef.current = userTurn?.number ?? null;
+        return { confirmation_required: true, ...requestRunConfirmation() };
+      }
+      case "confirm_run": {
+        if (!userTurn || voiceApprovalTurnRef.current === null || userTurn.number <= voiceApprovalTurnRef.current || !isExplicitRunConsent(userTurn.text)) {
+          throw new Error("A new explicit user confirmation after the bounded summary is required. No job was started.");
+        }
+        if (!confirmRunRef.current) throw new Error("The run controller is not ready. Ask for a fresh summary.");
+        return confirmRunRef.current(cleanString(args.confirmation_id));
       }
       default:
         throw new Error("Unknown Director tool.");
     }
-  }, [addNotice, editSceneCopy, persistDraft, selectScene, updateField]);
+  }, [addNotice, editSceneCopy, getProjectContext, persistDraft, requestRunConfirmation, selectScene, updateField]);
 
-  const director = useLiveDirector({ onToolCall: handleToolCall });
+  const director = useLiveDirector({ onToolCall: handleToolCall, getProjectContext });
+
+  const startVoice = director.start;
+  const stopVoice = director.stop;
+  const openVoice = useCallback(() => {
+    setVoiceOpen(true);
+    void startVoice();
+  }, [startVoice]);
+
+  const closeVoice = useCallback(() => {
+    setVoiceOpen(false);
+    void stopVoice();
+    voiceButtonRef.current?.focus();
+  }, [stopVoice]);
 
   useEffect(() => { shareAssetRef.current = director.shareAsset; }, [director.shareAsset]);
 
@@ -394,18 +467,19 @@ export function CanvasWorkspace() {
       return;
     }
     if ((match = text.match(/^move\s+scene\s+(\d)\s+(?:to|before)\s+(\d)$/i))) {
+      assertEditableScene(draftRef.current, draftRef.current.selected_scene_id);
       const next = reorderScenes(draftRef.current, draftRef.current.selected_variant_id, Number(match[1]), Number(match[2]));
       await persistDraft(next);
       addNotice("director", `Reordered concept ${next.selected_variant_id} and saved revision ${next.revision}.`);
       return;
     }
     if (/^(?:run|run preflight|start run)$/i.test(text)) {
-      setConfirmSummary("Generate exactly three 15-second concepts, then render and pretest them using the connected pipeline.");
+      requestRunConfirmation();
       addNotice("director", "I opened the run confirmation. Nothing has started yet.");
       return;
     }
     addNotice("director", "Typed fallback understands brief fields, scene selection, source-backed copy, reordering, and Run. Enable Live for open-ended creative conversation.");
-  }, [addNotice, editSceneCopy, persistDraft, selectScene, updateField]);
+  }, [addNotice, editSceneCopy, persistDraft, requestRunConfirmation, selectScene, updateField]);
 
   const submitComposer = useCallback(async (event: FormEvent) => {
     event.preventDefault();
@@ -413,15 +487,16 @@ export function CanvasWorkspace() {
     if (!text) return;
     setComposerText("");
     addNotice("user", text);
-    if (!director.sendText(text)) await runTypedFallback(text);
+    if (!director.sendText(text)) {
+      try { await runTypedFallback(text); }
+      catch (error) { addNotice("system", error instanceof Error ? error.message : "Command failed."); }
+    }
   }, [addNotice, composerText, director, runTypedFallback]);
 
-  const confirmRun = useCallback(async () => {
-    if (!readyToConfirm || jobState === "saving") return;
+  const submitRun = useCallback(async (commandId: string): Promise<Record<string, unknown>> => {
     setConfirmSummary(null);
     setJobState("saving");
     setJobMessage("Validating and saving the approved draft…");
-    const commandId = crypto.randomUUID();
     try {
       const selected = selectedAssetIds.map((id) => assets.find((asset) => asset.id === id)).filter(Boolean) as LocalAsset[];
       const form = new FormData();
@@ -449,7 +524,7 @@ export function CanvasWorkspace() {
         setJobState(runResponse.status === 503 ? "unavailable" : "error");
         setJobMessage(run.error ?? "No job was started.");
         addNotice("system", run.error ?? "No job was started.");
-        return;
+        return { accepted: false, job_started: false, error: run.error ?? "Run rejected by the backend." };
       }
       const acceptedProjectId = run.project_id && /^[A-Za-z0-9_-]{1,128}$/.test(run.project_id) ? run.project_id : PROJECT_ID;
       setBackendProjectId(acceptedProjectId);
@@ -457,11 +532,20 @@ export function CanvasWorkspace() {
       setJobState("queued");
       setJobMessage(`Run ${run.run_id ?? "queued"} · waiting for genuine backend events`);
       addNotice("system", "Run accepted by the connected pipeline. Progress will only follow persisted backend events.");
+      return { accepted: true, status: run.status ?? "queued", run_id: run.run_id, project_id: acceptedProjectId };
     } catch (error) {
       setJobState("error");
       setJobMessage(error instanceof Error ? error.message : "No job was started.");
+      throw new Error("Run submission could not be confirmed. Inspect the canvas before attempting another run.");
     }
-  }, [addNotice, assets, jobState, persistDraft, readyToConfirm, selectedAssetIds]);
+  }, [addNotice, assets, persistDraft, selectedAssetIds]);
+
+  const confirmRun = useCallback(async (id: string) => {
+    if (!readyToConfirm) throw new Error("Required confirmed brief fields and 3–6 selected screenshots are missing.");
+    return runBoundaryRef.current.confirm(id, runSignature(), submitRun);
+  }, [readyToConfirm, runSignature, submitRun]);
+
+  useEffect(() => { confirmRunRef.current = confirmRun; }, [confirmRun]);
 
   const startDrag = (event: PointerEvent<HTMLDivElement>) => {
     if ((event.target as HTMLElement).closest("button, input, select, textarea")) return;
@@ -482,20 +566,19 @@ export function CanvasWorkspace() {
     ...notices,
   ].slice(-12), [director.transcript, notices]);
 
-  const orbState = directorOrbState(director.state, director.isSpeaking, director.isProcessing);
   const liveLabel = director.isSpeaking ? "Live · Director speaking" : director.isProcessing ? "Live · working" : director.state === "listening" ? "Live · listening" : director.state === "connecting" || director.state === "requesting" ? "Connecting…" : director.state === "error" ? "Live unavailable" : "Enable Live";
   const latestLine = director.liveDirectorText || director.liveUserText || allTranscript.at(-1)?.text;
   const selectedAsset = assets.find((asset) => asset.id === selectedScene.asset_id);
   const hasProjectContent = Boolean(brief.product_name || brief.one_liner || brief.audience || assets.length || selectedAssetIds.length || Object.keys(sources).length);
 
   return (
-    <main className="canvas-app preflight-theme pf-canvas">
+    <main className="canvas-app preflight-theme pf-canvas" data-voice-open={voiceOpen}>
       <header className="canvas-header">
         <div className="project-identity"><span className="preflight-mark">P</span><div><strong>Preflight</strong><small>{brief.product_name || "Untitled launch"} · storyboard</small></div></div>
         <div className="header-actions">
           <span className={`draft-state ${draftState}`}>{draftState === "saving" ? "Saving…" : draftState === "error" ? "Saved in browser" : `Draft r${draft.revision}`}</span>
           <button onClick={() => setShowBrief((current) => !current)}>Brief</button>
-          <button className="run-top" onClick={() => setConfirmSummary("Generate exactly three 15-second concepts, then render and pretest them using the connected pipeline.")}>Run</button>
+          <button className="run-top" onClick={() => { try { requestRunConfirmation(); } catch (error) { addNotice("system", error instanceof Error ? error.message : "Run unavailable."); } }}>Run</button>
         </div>
       </header>
 
@@ -523,7 +606,7 @@ export function CanvasWorkspace() {
           <small>New preflight</small>
           <h1 id="empty-canvas-title">Bring your launch screens.</h1>
           <p>Choose 3–6 screenshots, or enable Live and describe what you are shipping.</p>
-          <div><button onClick={() => folderInputRef.current?.click()}>Choose screenshots</button><button className="enable-live-empty" onClick={() => void director.start()}>Enable Live</button></div>
+          <div><button onClick={() => folderInputRef.current?.click()}>Choose screenshots</button><button className="enable-live-empty" onClick={openVoice}>Talk to Director</button></div>
         </section>}
 
         {hasProjectContent && <div className="flow-plane" style={{ transform: `translate(${view.x}px, ${view.y}px) scale(${view.zoom})` }}>
@@ -545,7 +628,7 @@ export function CanvasWorkspace() {
               <button
                 className={`concept-card ${draft.selected_variant_id === concept.variant_id ? "selected" : ""}`}
                 key={concept.variant_id}
-                onClick={() => void selectScene(concept.variant_id, concept.scenes[0].id)}
+                onClick={() => reportAction(selectScene(concept.variant_id, concept.scenes[0].id))}
               >
                 <span className="variant-letter">{concept.variant_id}</span>
                 <span><small>Proposed · not rendered</small><strong>{concept.hypothesis.split(" — ")[0]}</strong><em>{concept.scenes.length} scenes · 15 seconds</em></span>
@@ -557,7 +640,7 @@ export function CanvasWorkspace() {
             {selectedConcept.scenes.map((scene, index) => {
               const sceneAsset = assets.find((asset) => asset.id === scene.asset_id);
               return (
-                <button className={`scene-card ${scene.id === selectedScene.id ? "selected" : ""}`} key={scene.id} onClick={() => void selectScene(selectedConcept.variant_id, scene.id)}>
+                <button className={`scene-card ${scene.id === selectedScene.id ? "selected" : ""}`} key={scene.id} onClick={() => reportAction(selectScene(selectedConcept.variant_id, scene.id))}>
                   <span className="scene-index">{String(index + 1).padStart(2, "0")}</span>
                   <span className="scene-preview">
                     {sceneAsset ? <><span className="asset-thumb" style={{ backgroundImage: `url(${sceneAsset.previewUrl})` }} /><small>{sceneAsset.name}</small></> : <span className="empty-screen">Add screen</span>}
@@ -572,8 +655,8 @@ export function CanvasWorkspace() {
             <div><small>Editing</small><strong>{selectedScene.id.replace("-scene-", " · scene ")}</strong></div>
             <p>{selectedScene.text || "Apply a confirmed brief field as source-backed copy."}</p>
             <div className="source-buttons">
-              <button disabled={!brief.one_liner} onClick={() => void editSceneCopy(selectedScene.id, brief.one_liner, "one_liner")}>Use description</button>
-              <button disabled={!brief.product_name} onClick={() => void editSceneCopy(selectedScene.id, brief.product_name, "product_name")}>Use product</button>
+              <button disabled={!brief.one_liner} onClick={() => reportAction(editSceneCopy(selectedScene.id, brief.one_liner, "one_liner"))}>Use description</button>
+              <button disabled={!brief.product_name} onClick={() => reportAction(editSceneCopy(selectedScene.id, brief.product_name, "product_name"))}>Use product</button>
             </div>
             <button className="asset-picker-button" onClick={() => setShowAssets(true)}>{selectedAsset ? "Change screenshot" : "Choose screenshot"}</button>
           </aside>
@@ -585,7 +668,7 @@ export function CanvasWorkspace() {
             selectedVariant={draft.selected_variant_id}
             onSelectVariant={(variant) => {
               const concept = draftRef.current.concepts.find((item) => item.variant_id === variant);
-              if (concept) void selectScene(variant, concept.scenes[0].id);
+              if (concept) reportAction(selectScene(variant, concept.scenes[0].id));
             }}
             entry
           />
@@ -607,7 +690,7 @@ export function CanvasWorkspace() {
         <div className="asset-tools"><button onClick={() => folderInputRef.current?.click()}>Choose folder</button><input value={assetQuery} onChange={(event) => setAssetQuery(event.target.value)} placeholder="Search filenames" /></div>
         {assets.length === 0 ? <button className="empty-assets" onClick={() => folderInputRef.current?.click()}><strong>Grant one folder</strong><span>PNG/JPG filenames stay local until you confirm Run.</span></button> : <div className="asset-shelf">{visibleAssets.map((asset) => {
           const selected = selectedAssetIds.includes(asset.id);
-          return <div className={`shelf-card ${selected ? "selected" : ""}`} key={asset.id}><button onClick={() => toggleAsset(asset.id)}><span style={{ backgroundImage: `url(${asset.previewUrl})` }} /><strong>{asset.name}</strong><small>{selected ? "Selected for brief" : "Select"}</small></button><button className="place-button" disabled={!selected} onClick={() => void handleToolCall({ name: "set_scene_asset", args: { scene_id: selectedScene.id, asset_id: asset.id, rationale: "Chosen by the user from the approved folder" } })}>Place in {selectedScene.id}</button></div>;
+          return <div className={`shelf-card ${selected ? "selected" : ""}`} key={asset.id}><button onClick={() => toggleAsset(asset.id)}><span style={{ backgroundImage: `url(${asset.previewUrl})` }} /><strong>{asset.name}</strong><small>{selected ? "Selected for brief" : "Select"}</small></button><button className="place-button" disabled={!selected} onClick={() => reportAction(handleToolCall({ name: "set_scene_asset", args: { scene_id: selectedScene.id, asset_id: asset.id, rationale: "Chosen by the user from the approved folder" } }))}>Place in {selectedScene.id}</button></div>;
         })}</div>}
         <div className="asset-count">{selectedAssetIds.length}/3–6 selected for the run</div>
       </aside>}
@@ -618,12 +701,7 @@ export function CanvasWorkspace() {
       </aside>}
 
       <section className="composer-dock">
-        {latestLine && <button className="latest-caption" onClick={() => setShowTranscript(true)}><span>{director.liveDirectorText ? "Director" : director.liveUserText ? "You" : "Session"}</span>{latestLine}</button>}
-        <div className={`orb-wrap ${director.isSpeaking && !visualsPaused ? "speaking" : ""}`}>
-          <div className="orb-core">
-            <ThinkingOrb state={orbState} size={64} theme="dark" color="#FF5A36" paused={visualsPaused || director.state === "idle" || director.state === "error"} aria-label={liveLabel} />
-          </div>
-        </div>
+        {latestLine && !voiceOpen && <button className="latest-caption" onClick={() => setShowTranscript(true)}><span>{director.liveDirectorText ? "Director" : director.liveUserText ? "You" : "Session"}</span>{latestLine}</button>}
         <VoiceBeam
           className="director-beam"
           level={() => director.isSpeaking ? director.outputLevel : director.state === "listening" ? director.inputLevel : 0}
@@ -640,26 +718,33 @@ export function CanvasWorkspace() {
           theme="dark"
         >
           <form className="canvas-composer" onSubmit={(event) => void submitComposer(event)}>
+            <input value={composerText} onChange={(event) => setComposerText(event.target.value)} placeholder="Ask the Director…" aria-label="Message the Director" />
             <button
+              ref={voiceButtonRef}
               className={`mic-button ${director.state === "listening" ? "live" : ""}`}
               type="button"
-              onClick={() => director.state === "listening" ? void director.stop() : void director.start()}
-              aria-label={director.state === "listening" ? "Disconnect Live Director" : "Enable Live Director"}
-            ><span>●</span></button>
-            <input value={composerText} onChange={(event) => setComposerText(event.target.value)} placeholder="Ask the Director, select a scene, or type “run preflight”…" />
+              onClick={voiceOpen ? closeVoice : openVoice}
+              aria-label={voiceOpen ? "Close voice conversation" : "Start voice conversation"}
+              aria-expanded={voiceOpen}
+              aria-controls="director-voice-mode"
+              title="Talk to Director"
+            >{director.state === "listening" ? <ThinkingOrb state={director.isSpeaking ? "composing" : director.isProcessing ? "working" : "listening"} size={20} theme="dark" color="#FF9B80" paused={visualsPaused} aria-label="Live voice active" /> : <VoiceIcon />}</button>
             <button className="send-button" type="submit" disabled={!composerText.trim()} aria-label="Send">↗</button>
           </form>
         </VoiceBeam>
-        <div className="composer-meta" aria-live="polite"><button onClick={() => director.state === "listening" ? void director.stop() : void director.start()}>{liveLabel}</button>{director.state === "listening" && <><span>Mic {Math.round(director.inputLevel * 100)}%</span><span>Voice {Math.round(director.outputLevel * 100)}%</span><button onClick={director.toggleMute}>{director.isMuted ? "Unmute Director" : "Mute Director"}</button><button onClick={() => void director.stop()}>Disconnect</button></>}<span className={`job-state ${jobState}`}>{jobMessage}</span></div>
-        {director.error && <div className="composer-error" role="alert">{director.error}</div>}
+        <div className="composer-meta"><span>{voiceOpen ? liveLabel : "Gemini Live"}</span><span className={`job-state ${jobState}`}>{jobMessage}</span></div>
+        {director.error && !voiceOpen && <div className="composer-error" role="alert">{director.error}</div>}
       </section>
+
+      <DirectorVoicePresence open={voiceOpen} director={director} paused={visualsPaused} anchorRef={voiceButtonRef}
+        onClose={closeVoice} onRetry={openVoice} onTranscript={() => setShowTranscript(true)} />
 
       {confirmSummary && <div className="modal-backdrop" role="presentation">
         <section className="run-modal" role="dialog" aria-modal="true" aria-labelledby="run-title">
           <small>Explicit confirmation · no job started</small><h2 id="run-title">Run this bounded preflight?</h2><p>{confirmSummary}</p>
           <ul><li className={readiness.brief ? "ready" : ""}>Confirmed brief fields</li><li className={readiness.screens ? "ready" : ""}>3–6 approved screenshots ({selectedAssetIds.length})</li><li className={readiness.concepts ? "ready" : ""}>Exactly A/B/C · five scenes each · 15 seconds</li></ul>
           <div className="modal-warning">This can start planning, rendering, Gemini panel evaluation, and TRIBE only when those services are genuinely connected.</div>
-          <div className="modal-actions"><button onClick={() => setConfirmSummary(null)}>Keep editing</button><button className="confirm-run" disabled={!readyToConfirm || jobState === "saving"} onClick={() => void confirmRun()}>{readyToConfirm ? "Confirm Run" : "Complete required inputs"}</button></div>
+          <div className="modal-actions"><button onClick={() => { setConfirmSummary(null); runBoundaryRef.current.cancel(); runApprovalRef.current = null; }}>Keep editing</button><button className="confirm-run" disabled={!readyToConfirm || jobState === "saving"} onClick={() => reportAction(confirmRun(runApprovalRef.current ?? ""))}>{readyToConfirm ? "Confirm Run" : "Complete required inputs"}</button></div>
         </section>
       </div>}
     </main>

@@ -1,7 +1,7 @@
 import { GoogleGenAI, Modality } from "@google/genai";
 import { NextRequest, NextResponse } from "next/server";
 
-import { DIRECTOR_INSTRUCTION, LIVE_MODEL, LIVE_VOICE } from "@/lib/director";
+import { DIRECTOR_INSTRUCTION, directorTools, LIVE_MODEL, LIVE_VOICE } from "@/lib/director";
 import { getGoogleApiKey } from "@/lib/google-api-key";
 
 export const runtime = "nodejs";
@@ -62,6 +62,7 @@ export async function POST(request: NextRequest) {
             },
             inputAudioTranscription: {},
             outputAudioTranscription: {},
+            tools: [{ functionDeclarations: directorTools }],
           },
         },
         lockAdditionalFields: [],
@@ -76,8 +77,9 @@ export async function POST(request: NextRequest) {
       { token: token.name, model: LIVE_MODEL, expiresAt: token.expireTime },
       { headers: { "Cache-Control": "no-store" } },
     );
-  } catch (error) {
-    console.error("Unable to create Gemini Live token", error);
+  } catch {
+    // SDK errors can carry credential-bearing request URLs; never log raw objects.
+    console.error("Unable to create Gemini Live token; check server credentials/model access.");
     return NextResponse.json(
       { error: "Gemini Live is temporarily unavailable." },
       { status: 502, headers: { "Cache-Control": "no-store" } },
