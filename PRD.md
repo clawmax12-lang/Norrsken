@@ -1,6 +1,6 @@
 # Preflight · Product Requirements Document
 
-**Version:** 1.1 · **Date:** 3 Oct 2026, 12:00 · **Status:** Hackathon build ({Tech: Europe} Agentic AI Hack, Norrsken Stockholm)
+**Version:** 1.3 · **Date:** 3 Oct 2026 · **Status:** Hackathon build ({Tech: Europe} Agentic AI Hack, Norrsken Stockholm)
 
 **Owner:** William (product) · **Tech owners:** see §14.3 and [TEAM.md](TEAM.md)
 
@@ -8,7 +8,11 @@
 
 **Built with (PRD plan):** Claude Opus 5.5 as the coding agent · Gemini · Condense · TRIBE v2 (Meta FAIR, research use)
 
-> This is the team's canonical, editable product specification. It supersedes earlier brainstorming and advisor briefs. Imported from the complete, 20-page [Preflight PRD v1.1.pdf](docs/source/Preflight-PRD-v1.1.pdf). The original is preserved unchanged; see [source provenance](docs/source/README.md). Formatting and the repository URL have been normalized for Git. The claims, priorities, acceptance criteria, open questions and research caveats below are retained from the supplied PRD. Actual implementation progress lives in [TEAM.md](TEAM.md), not in these requirements.
+> This is the team's canonical, editable product specification. It supersedes earlier brainstorming and advisor briefs. The baseline was imported from the complete, 20-page [Preflight PRD v1.1.pdf](docs/source/Preflight-PRD-v1.1.pdf), which is preserved unchanged; see [source provenance](docs/source/README.md). Versions 1.2 and 1.3 incorporate the product owner's web-platform, visual-reference and reusable-brain decisions, documented below and in §16. Actual implementation progress lives in [TEAM.md](TEAM.md), not in these requirements.
+
+**What changed in 1.3:** all three supplied images and the original motion reference are adopted as the shared [visual baseline](docs/design/README.md). Claude Opus 5.5 builds the interactive browser brain once; the same renderer/geometry is reused across users and A/B views with different simulation data, not generated per customer. §9.1 separates this development task from the desired runtime roles: Gemini for the variant/analysis loop and Opus for final motion-graphics composition. Runtime Opus is planned, not connected or a new P0 requirement. FR-12/FR-14 remain conditional P0 and FR-15 remains P1. See §10.5, §12.1 and §16.
+
+**What changed in 1.2:** Preflight is explicitly a standard, browser-based web platform. The full product journey, including the 3D viewer, runs in a desktop browser. It is not an iOS app and must not be implemented in SwiftUI or as an Xcode/native-client project. The 1080x1920 videos are exported assets, not a mobile-app platform requirement. See §7.5, §10, §15 and §16.
 
 **What changed in 1.1:** new §12 UI with the analysis intro (the "Preflight sequence") and the interactive 3D brain viewer; brain viewer and intro moved to P0 (conditional on TRIBE running); A/B compare mode added; repo and build info added; timeline and owners updated.
 
@@ -20,6 +24,8 @@
 - **Priorities:** P0 = must exist for the demo · P1 = do if P0 is done · P2 = after the hackathon.
 
 ## 1. TL;DR
+
+**Preflight is a web platform accessed through a URL in a desktop browser.** Users do not install an iOS app or any other native client. The web platform is the product; customers' apps and screenshots are input material.
 
 Startups need a demo video for every launch, but agencies take weeks and nobody knows which version will actually work until after they have posted and paid for ads. Preflight's agent turns your product into several motion graphics demo videos, pretests them on simulated viewers (TRIBE v2 brain simulation plus a Gemini viewer panel), and hands you the winner, why it won, and the runner up for a live A/B test.
 
@@ -37,6 +43,7 @@ Preflight changes that. Upload a few screenshots of your product, say what you w
 
 ### 2.2 Customer FAQ
 
+- **Where do I use Preflight?** Open the web platform in your desktop browser. No iOS app, App Store installation or native client is required.
 - **What do I need?** 3 to 6 screenshots of your product, one sentence on what it does, your goal (for example sign ups), and who it is for.
 - **How long does it take?** Target under 10 minutes for three tested videos.
 - **Does it guarantee results?** No. It ranks versions by simulated viewer response so you only spend real money testing the strongest ones. Confirm with a live A/B test.
@@ -149,6 +156,17 @@ A simulated audience for all content: every launch video, ad, trailer and landin
 - Publishing to social platforms
 - More than one template family
 - Mobile layout, multi language UI
+- Native iOS, iPadOS, Android or desktop clients; SwiftUI and Xcode application targets
+
+### 7.5 Product platform (required)
+
+`[DECISION — v1.2]` Preflight is a conventional web product, delivered through a URL and used in a desktop browser. The brief form, agent activity, video previews, results, interactive 3D brain, Preflight sequence and exports are all part of that web experience.
+
+The frontend uses web technology as proposed in §10.1. Orchestration, video rendering and GPU inference run in backend services/workers; end users do not need a local Python environment, GPU or development tools to use the deployed product.
+
+**Platform acceptance:** the complete MVP journey from brief intake to downloading the winner and runner up can be used through the browser without installing a native client. iOS, SwiftUI, Xcode, the iOS SDK and Simulator are not part of the Preflight application build or demo workflow.
+
+**Input/output distinction:** tablehopp and other customer apps may be mobile apps. Their screenshots and the 1080x1920 vertical video outputs do not make Preflight a mobile app. Desktop web remains the hackathon target; mobile layout is still outside today's scope.
 
 ## 8. Functional requirements
 
@@ -192,9 +210,9 @@ For each variant, 2 to 4 reasons, each tied to a timestamp and to what is on scr
 
 #### FR-07 Results UI
 
-Leaderboard; video player with per second curves synced to playback; verdict card ("Launch C. A/B test it against A.").
+Browser-based results page: leaderboard; video player with per second curves synced to playback; verdict card ("Launch C. A/B test it against A.").
 
-**AC:** curves follow scrubbing; verdict visible without scrolling on a 1440 px wide screen.
+**AC:** the results page works in the desktop browser as part of the web platform; curves follow scrubbing; verdict visible without scrolling on a 1440 px wide screen. No native client is required.
 
 #### FR-08 Export
 
@@ -218,7 +236,7 @@ Gemini for planning, viewer panel and explanations. All LLM calls go through Con
 
 **P0 if TRIBE passes the 12:30 go/no-go, otherwise dropped.** Brain mesh (fsaverage5) inside a head silhouette, with predicted activity synced to video playback. Controls and behaviour as specified in §12.3.
 
-**AC:** activity comes from real TRIBE results only; with no data the viewer shows an empty "No brain data" state, never generated or random activity; orbit, zoom, region click and scrub all work; runs smoothly on a recent MacBook.
+**AC:** activity comes from real TRIBE results only; with no data the viewer shows an empty "No brain data" state, never generated or random activity; orbit, zoom, region click and scrub all work in the web viewer; runs smoothly in a desktop browser on a recent MacBook.
 
 #### FR-14 Analysis intro, the "Preflight sequence"
 
@@ -277,13 +295,33 @@ Voice narration of the verdict (Gemini text to speech), screen recording input, 
 
 **State and memory:** every step writes JSON to `data/projects/{project_id}/`. A run can resume from the last completed state.
 
+### 9.1 Model roles and cost boundary
+
+`[DECISION — v1.3]` Distinguish building the product from running a customer's video job:
+
+| Role | Responsibility | Frequency / boundary |
+| --- | --- | --- |
+| Claude Opus 5.5 — coding agent | Builds the reusable 3D brain, shaders, interaction and cinematic sequence | Once as product code, then normal maintenance; no per-user brain-generation call |
+| Gemini — runtime agent | Plans variants, runs the viewer panel, explains results and proposes revisions | Per video job through Condense; today's cap stays three concepts and one P1 revision |
+| TRIBE v2 — simulator | Predicts cortical response for the actual rendered video | Once per distinct analyzed video; stored results drive playback |
+| Opus — planned runtime finalization | Authors a validated motion-graphics composition for the selected final asset | A separately budgeted final-video step, not each candidate or brain-view render; not yet integrated |
+| Remotion — renderer | Converts the approved composition/template inputs into MP4 | Backend rendering, not an LLM producing video pixels |
+
+The product owner's desired runtime direction is Gemini for the scalable experimentation loop, followed by Opus for the finished product-demo/motion-graphics asset. For today's MVP, keep the existing one-template FR-03 path working; the additional runtime finalization integration is not a new mandatory P0 and any winner revision still follows FR-11/P1. Do not introduce unlimited variants or a second template family.
+
+Before enabling runtime Opus, verify the provider's actual API model ID, Condense support, server-side credentials, per-run limits and latency. Conductor's coding-agent model ID is not an inference API contract. A Gemini key does not authorize or authenticate Claude calls. Log actual model usage/cost separately from browser rendering and TRIBE inference; do not claim unmeasured savings or pricing.
+
+If finalization changes the content or timing of a tested video, re-render and re-simulate those exact bytes before attaching a tested verdict or brain response to the export. Keep the original winner/runner-up artifacts and results traceable; never reuse a candidate's prediction for a changed final asset. Replaying, orbiting or opening an A/B view does not trigger new LLM or TRIBE inference.
+
 ## 10. Architecture
+
+**Platform decision:** this is a standard web application with a browser frontend and backend services/workers. The following web stack is the implementation direction. Do not create an iOS/SwiftUI application or an Xcode project; the user-facing product and 3D experience belong in the browser.
 
 ### 10.1 Components
 
 | Component | Responsibility | Suggested tech |
 | --- | --- | --- |
-| Web app | Brief, live log, Preflight sequence, results, brain viewer, export | Next.js, TypeScript, Tailwind, three.js |
+| Web frontend (desktop browser) | Brief, live log, Preflight sequence, results, brain viewer, export | Next.js, TypeScript, Tailwind, three.js |
 | API and orchestrator | State machine, tools, storage | Python, FastAPI |
 | Renderer | Motion graphics template driven by concept JSON | Remotion (check its license for commercial use later) |
 | TRIBE worker | Runs TRIBE v2 on a GPU and returns `SimulationResult` | Python on a GPU with 40 GB+ VRAM |
@@ -377,6 +415,20 @@ Every simulator implements one function: video in, `SimulationResult` out. Scori
 - Repo must be public (hackathon rule). URL: https://github.com/clawmax12-lang/Norrsken.
 - The README states the build stack, including that the code was written with Claude Opus 5.5 as the coding agent.
 
+Runtime Opus is separate from the Conductor coding agent. If integrated, supply its credentials only on the server (for a direct Anthropic integration, `ANTHROPIC_API_KEY`) and configure the verified API model independently. All runtime LLM calls still follow FR-10's Condense requirement; unsupported provider routing is an integration blocker, not permission to silently bypass it. The Gemini key will be supplied later: missing credentials must show an explicit unavailable/not-configured state, never fabricated results. Never request keys in tracked documents or frontend source.
+
+### 10.5 Reusable brain architecture
+
+`[DECISION — v1.3]` The core brain is a product component, built once by Claude Opus 5.5. Commit the viewer code and appropriately licensed static mesh/atlas assets; do not generate a new anatomy or scene implementation for each user, video or run.
+
+- Load/cache compatible `fsaverage5` geometry and atlas metadata once per browser session; reuse them across variants. Separate shared immutable geometry from each view's activity buffers, selected region and presentation state.
+- Feed the viewer genuine per-video `SimulationResult` data through the shared contract. Binding a new result changes the activity overlay, not the anatomy or renderer implementation. Contract details still require agreement between the worker and viewer owners.
+- A/B mode instantiates two views of the same component/mesh. Share playback time, camera framing and a consistent activity scale; each view reads its own variant's data. Differences require compatible vertex mappings and timestamps.
+- UI motion and interpolation are local rendering. The “brain waves” reference means predicted cortical/fMRI activity, not measured EEG or invented pulses.
+- Store simulation results against the exact analyzed video and model/config revision. Cache reuse must be invalidated when those inputs change; changing camera or playback position never requires inference.
+
+Implementation direction and visual quality bar: [visual baseline](docs/design/README.md) and [Opus brain build brief](docs/design/OPUS_BRAIN_BRIEF.md). These support this PRD, not a competing product specification.
+
 ## 11. TRIBE v2: what it is and how we use it
 
 **Facts (from third party write ups, verify on the Hugging Face model card in hour 1)**
@@ -402,7 +454,8 @@ Every simulator implements one function: video in, `SimulationResult` out. Scori
 ### 12.1 Design direction
 
 - **Feeling:** a lab instrument with a cinematic moment. Think heads up display from a film, but every number on screen is real and readable.
-- **Reference:** the TRIBE v2 demo viewer (screenshot shared in the team chat): black background, a dark head silhouette in profile, a light gray brain mesh, activity in a red to yellow heat scale, rounded segmented controls at the bottom. We match that quality bar. We do not copy Meta branding.
+- **Reference:** all three original images and the motion clip supplied by the product owner, now committed in the [visual baseline](docs/design/README.md): black background, a dark head silhouette in profile, a sculptural light gray brain mesh, activity in a red to yellow heat scale, readable timeline and rounded segmented controls. Match their anatomical depth and cinematic quality with an actual interactive 3D renderer, not a screenshot or prerecorded substitute. Do not copy Meta branding.
+- **Ownership and reuse:** Claude Opus 5.5 builds the complete browser brain experience under the [implementation brief](docs/design/OPUS_BRAIN_BRIEF.md). Build the renderer once and reuse it as specified in §10.5. A/B instances share the anatomy and controls, not simulation values. FR-15 remains P1.
 - **Rule:** the cinema is the wrapper, the decision is the content. Every screen still ends in "launch this one".
 
 ### 12.2 The analysis intro: the "Preflight sequence" (FR-14)
@@ -565,10 +618,12 @@ Problem (40 s) → live demo (2 min 30) → how it works, the agent and the simu
 8. When unsure, choose the simpler option and write the choice in the decision log (§16).
 9. The brain viewer may be built before data exists, but must then show the "No brain data" empty state. Never fill it with random or generated activity.
 10. Primary coding agent for this repo: Claude Opus 5.5. Keep this PRD in the repo root as `PRD.md` and update the decision log when a requirement changes.
+11. Build Preflight as the browser-based web platform specified in §7.5 and §10. Do not scaffold Swift, SwiftUI, an Xcode project or a native client. References to a customer's mobile app, screenshots or vertical videos describe input/output, not Preflight's implementation platform.
+12. Read the shared visual baseline before changing the brain experience. Opus 5.5 owns its implementation; keep the reusable mesh/renderer separate from per-video data and from any planned runtime Opus video-composition calls (§9.1/§10.5). No random “brain waves”, no per-user regeneration of the brain.
 
 ## 16. Decision log
 
-Entries below are retained from the supplied PRD. Append new decisions with their date, rationale and affected requirement IDs. Requirement changes must also update the relevant section and version/change notes in this document.
+The original entries below are retained from the supplied v1.1 PRD; later decisions are appended with their version. Append new decisions with their date, rationale and affected requirement IDs. Requirement changes must also update the relevant section and version/change notes in this document.
 
 | Date | Decision | Why |
 | --- | --- | --- |
@@ -580,6 +635,9 @@ Entries below are retained from the supplied PRD. Append new decisions with thei
 | 3 Oct | Rejected: creator focus, AI editing of base videos, chief of staff agent | Weaker money metric, does not fix weak content, off track |
 | 3 Oct, 12:00 | The interactive 3D brain viewer and the analysis intro are part of the core demo (P0 if TRIBE runs) | Strongest creativity moment (30% of judging); makes the pretest visible |
 | 3 Oct, 12:00 | Variant toggle replaces "True / Predicted" from the reference viewer | We only have predicted data; our job is comparing variants |
+| 3 Oct, v1.2 | Preflight is a standard web platform accessed in a desktop browser, not an iOS/SwiftUI or other native app. The full user journey and 3D experience are web-based; vertical videos remain export assets. Applies to FR-01, FR-07, FR-08, FR-09, FR-12 and FR-14, and §7.5/§10/§15. | Explicit product-owner clarification; prevents agents and teammates from choosing a native-app architecture based on earlier workspace context or customer app screenshots. |
+| 3 Oct, v1.3 | Adopt all three supplied images and the original motion clip as tracked visual references. Claude Opus 5.5 builds the complete interactive brain once; reuse its mesh/renderer with each video's genuine TRIBE data and synchronized A/B instances. FR-12/FR-14 stay conditional P0, FR-15 stays P1. Applies to §10.5/§12/§15. | Explicit product-owner direction: reference-quality 3D that reveals how the system works, with a shared baseline across team workspaces and no per-user brain-generation expense. |
+| 3 Oct, v1.3 | Separate coding-agent Opus from desired runtime roles: Gemini for variants/analysis, Opus for the selected finished motion-graphics composition, Remotion for MP4 rendering and TRIBE for neural prediction. Runtime Opus remains planned until credentials, provider routing, budget and API model are verified; it does not add a P0 gate. Changed final videos must be re-simulated. Applies to FR-02/FR-03/FR-04/FR-10/FR-11 and §9.1/§10.4. | Captures the product owner's generation/cost direction without claiming the API exists in the app, conflating Gemini with neural simulation, or presenting a candidate's result as evidence for a different exported video. |
 
 ## 17. Open questions
 
@@ -588,6 +646,7 @@ Entries below are retained from the supplied PRD. Append new decisions with thei
 - GPU source for TRIBE (sponsors, Metrix, Colab, cloud).
 - Template style. Reference: modern SaaS launch videos (for example the Lovable 2.0 launch video).
 - Lunch time (unclear in the opening talk).
+- Runtime Opus finalization: verify API model availability, Condense routing, server credentials, exact budget/latency and whether it fits today's P1 timebox. Coding-agent availability in Conductor alone does not resolve these.
 
 ## 18. Glossary
 
