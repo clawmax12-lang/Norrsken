@@ -100,6 +100,12 @@ def test_scene_violations_are_numbered_from_one() -> None:
     assert [v.location for v in violations] == ["scene 3"]
 
 
+def test_the_product_name_may_appear_in_any_field() -> None:
+    concept = make_concept(cta="Acme Notes for founders", cta_source_field="audience")
+
+    assert find_violations(concept, make_brief(audience="Startup founders")) == ()
+
+
 def test_optional_field_that_is_unset_grounds_nothing() -> None:
     concept = make_concept(cta="Launch day", cta_source_field="goal_note")
 

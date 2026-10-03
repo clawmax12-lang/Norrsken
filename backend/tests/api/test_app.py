@@ -16,7 +16,34 @@ async def test_health(client):
     response = await client.get("/api/health")
 
     assert response.status_code == 200
-    assert response.json() == {"status": "ok"}
+    assert response.json() == {
+        "status": "ok",
+        "runs": True,
+        "gemini": False,
+        "condense": False,
+        "brain_sim": False,
+    }
+
+
+async def test_health_reports_configured_providers(tmp_path, store, run_service):
+    settings = Settings(
+        data_dir=tmp_path / "projects",
+        gemini_api_key="g",
+        condense_api_key="c",
+        tribe_endpoint="http://gpu:8080",
+    )
+    app = create_app(settings, store=store, run_service=run_service)
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as client:
+        body = (await client.get("/api/health")).json()
+
+    assert body == {
+        "status": "ok",
+        "runs": True,
+        "gemini": True,
+        "condense": True,
+        "brain_sim": True,
+    }
 
 
 async def test_unknown_routes_use_the_error_envelope(client):

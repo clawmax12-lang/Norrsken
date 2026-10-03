@@ -16,7 +16,7 @@ from .archetypes import Archetype
 from .draft import VIDEO_SECONDS
 from .grounding import FUNCTION_WORDS
 
-PROMPT_VERSION = "plan-v1"
+PROMPT_VERSION = "plan-v2"
 
 SYSTEM_PROMPT = f"""\
 You are the planning agent of Preflight. You turn a founder's brief and real product \
@@ -27,7 +27,7 @@ Rules:
 1. Answer with JSON that matches the provided schema and nothing else.
 2. Every piece of on-screen text (hook, each scene text, call to action) must cite the brief \
 field it comes from in its source_field, and may use ONLY words that appear in that field, \
-dropped or reordered as needed. You may add only these function words: \
+dropped or reordered as needed. You may add only the product name and these function words: \
 {", ".join(sorted(FUNCTION_WORDS))}. Never add other words, numbers, names, statistics, \
 testimonials, quotes or claims, even true-sounding ones.
 3. The hook has at most 8 words. A concept has 4 to 6 scenes whose durations are whole \

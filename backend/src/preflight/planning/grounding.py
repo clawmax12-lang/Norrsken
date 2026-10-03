@@ -3,8 +3,9 @@
 Rule: every word of a piece of on-screen text (hook, scene text, CTA) must appear in the text
 of the brief field it cites as its ``source_field``, ignoring case and punctuation. Words may
 be dropped, reordered or recombined, but none may be added, so no claim, number, name or
-testimonial can be invented. The only exception is :data:`FUNCTION_WORDS`: grammatical glue
-that carries no claim.
+testimonial can be invented. The exceptions are :data:`FUNCTION_WORDS` (grammatical glue
+that carries no claim) and the words of the brief's product name, which any text may use
+because naming the customer's own product claims nothing.
 
 This is a word-level rule, not a semantic one: it cannot tell that a recombination changed the
 meaning, and inflections ("organises" for "organise") count as new words. Both are accepted
@@ -72,7 +73,12 @@ def find_violations(concept: CreativeConcept, brief: Brief) -> tuple[GroundingVi
         ("cta", concept.cta, concept.cta_source_field),
     ]
     violations = (
-        GroundingViolation(location, text, field, ungrounded_words(text, brief.field_text(field)))
+        GroundingViolation(
+            location,
+            text,
+            field,
+            ungrounded_words(text, f"{brief.field_text(field)} {brief.product_name}"),
+        )
         for location, text, field in claims
     )
     return tuple(violation for violation in violations if violation.words)

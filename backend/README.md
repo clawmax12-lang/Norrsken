@@ -1,21 +1,61 @@
 # Preflight backend
 
+## How to run
+
+Prerequisites: Python 3.12 with [uv](https://docs.astral.sh/uv/), Node.js 22.18 or later and Chrome (or let Remotion download Chrome Headless Shell on first render).
+
+```bash
+cp .env.example .env                       # at the repo root; fill in GEMINI_API_KEY and CONDENSE_API_KEY
+(cd workers/renderer && npm ci)            # once: the Remotion renderer
+cd backend && uv sync && make run          # API on http://localhost:8000
+```
+
+`make run` serves `preflight.api.main:create_production_app`, which wires the real pipeline:
+
+| Step | Component | Notes |
+| --- | --- | --- |
+| Plan (FR-02) | `GeminiPlanner` | Calls Gemini directly (see "Condense proxy" below). |
+| Backgrounds (§9.2) | `TemplateBackdrops` | Template-only for now; the template draws its own backgrounds. |
+| Compose and render (FR-03) | `TemplateComposer`, `RemotionRenderer` | Runs `node workers/renderer/render.mjs` per variant; 1080x1920, 30 fps, 15 s H.264. About 50-60 s per video, two at a time. |
+| Simulate (FR-04) | `GeminiViewerPanel`, `TribeSimulator` | The panel goes through Condense. TRIBE runs only when `TRIBE_ENDPOINT` points at our worker (`workers/tribe`); otherwise the run completes with the panel only and the report says `brain_sim: false` ("Brain sim off"). |
+| Score (FR-05) | `score_and_rank` | Deterministic; the rule is written into `ranking.json`. |
+| Explain (FR-06) | `GeminiExplainer` | Moments, timestamps and scenes come from the deterministic `RuleBasedExplainer`; Gemini (through Condense) only rewords each one, and the rule-based text is kept if Gemini fails. |
+
+Each run gets its own `TokenLedger` and Condense session id, so `report.json`'s `token_savings` covers that run. Settings are read from `<repo>/.env` (then `./.env`); projects are stored in `<repo>/data/projects/` unless `DATA_DIR` is set. Other settings: `RENDERER_DIR`, `NODE_BINARY`, `RENDER_CONCURRENCY`, `PREFLIGHT_CHROME` (read by the renderer), `MAX_VARIANTS`, `STEP_TIMEOUT_S`, `STEP_RETRIES`, `CORS_ORIGINS`.
+
+A full live run (4 screenshots, 3 variants, Gemini panel, no TRIBE) took 2 min 36 s from `POST /run` to `DONE`.
+
+### API
+
+| Method and path | Purpose |
+| --- | --- |
+| `GET /api/health` | Liveness plus `runs`, `gemini`, `condense`, `brain_sim` flags so the UI can show "not configured" or "Brain sim off" before a run. |
+| `POST /api/briefs` | Multipart brief: `product_name`, `one_liner`, `goal`, `audience`, optional `goal_note`, `brand_color`, 3-6 `screenshots` files, optional `logo`. Returns the `Brief` with its new `project_id`. |
+| `POST /api/projects/{id}/run` | Starts (or resumes) the run in the background; safe to repeat. |
+| `GET /api/projects/{id}` | `run.json` state plus the brief. |
+| `GET /api/projects/{id}/log` | Server-sent events: one `activity` event per log line, then `end` with the final state. Supports `Last-Event-ID`. |
+| `GET /api/projects/{id}/results` | Concepts, render records, simulation series and events, ranking and report (including `token_savings`), plus file URLs. |
+| `GET /api/projects/{id}/files/{video,brain-activity,brain-groups}/{variant}` | The variant's MP4 (range requests supported) and TRIBE brain data. |
+| `GET /api/projects/{id}/export/{winner.mp4,runner_up.mp4,report.json,launch_brief.md}` | The four FR-08 downloads. |
+
 ## LLM and Condense
 
-All Gemini calls go through `preflight.llm.GeminiClient` (structured JSON validated with Pydantic, one repair call, one retry of transient errors). Settings: `GEMINI_API_KEY`, `GEMINI_MODEL` (default `gemini-3.8-flash`, the default in Google's docs on 2026-10-03), `CONDENSE_API_KEY`, `CONDENSE_BASE_URL` (default `https://api.condense.chat`), `CONDENSE_COMPRESSION_RATE` (default `0.2`). Without `GEMINI_API_KEY` the client refuses to build (the UI should show "not configured"); without `CONDENSE_API_KEY` Gemini still works and the savings are exactly zero.
+All Gemini calls go through `preflight.llm.GeminiClient` (structured JSON validated with Pydantic, one repair call, one retry of transient errors). Settings: `GEMINI_API_KEY`, `GEMINI_MODEL` (default `gemini-3.8-flash`, the default in Google's docs on 2026-10-03), `CONDENSE_API_KEY`, `CONDENSE_BASE_URL` (default `https://api.condense.chat`), `CONDENSE_COMPRESSION_RATE` (default `0.2`), `CONDENSE_PROXY` (default `true`), `CONDENSE_UPSTREAM_URL` (default Gemini's OpenAI-compatible endpoint). Without `GEMINI_API_KEY` the client refuses to build (the UI should show "not configured"); without `CONDENSE_API_KEY` Gemini still works and the savings are exactly zero.
 
-**Gemini routing through Condense is UNVERIFIED with the vendor.** Condense documents proxy routes for Anthropic and OpenAI only: no Gemini route, nothing about image or video parts, and no usage field or header in any response. So we do not proxy Gemini. Instead:
+Settings are read from the environment before `.env`: a stale `GEMINI_API_KEY` exported in the shell (Conductor workspaces inject one) silently overrides the key in `.env`.
 
-- Large *text* context marked `compressible` (for example a previous model answer sent back for repair) is compressed with `POST {CONDENSE_BASE_URL}/v1/compress` and then sent to Gemini directly. Instructions, schemas, brief fields that copy must be grounded on, screenshots and video are never compressed.
-- Any Condense failure (no key, timeout, 4xx/5xx, malformed answer) degrades to the original text and is logged; nothing is counted.
-- Savings are measured by us: the text is counted before and after compression with Gemini's own `count_tokens`, and if the compressed text is not smaller the original is sent. Sent and output tokens come from Gemini's usage metadata. `TokenLedger` reports these as `TokenSavings`; zero compressions means zero savings. Because most prompts are short one-shot requests, expect small savings (possibly 0%). Condense's marketing numbers are not used.
-- Not verified here: that Condense's `compression_rate` semantics match its docs example, that `/v1/compress` is entitled for our key, and that Gemini accepts the `$ref`-based JSON Schemas Pydantic generates (no API key was available in the build sandbox; the SDK is exercised against faked transports only).
+### Condense proxy (verified live on 2026-10-03)
 
-Questions for the Condense team:
+With `CONDENSE_API_KEY` set, `CondenseProxyBackend` sends each generation to `POST {CONDENSE_BASE_URL}/openai/v1/chat/completions` with `X-Condense-Upstream-Url` pointing at Gemini's OpenAI-compatible endpoint. Text, PNG screenshots, MP4 video (as a data URI) and `response_format` JSON Schema all work through it with `gemini-3.8-flash`.
 
-1. Is there a Gemini / Google route (for example `/google/v1beta/...`), or will they enable `X-Condense-Upstream-Url` for our key?
-2. How are image, video and inline-data parts handled when proxied?
-3. Is there a per-request savings field or header, or a dashboard API to read tokens removed?
-4. Hackathon credits and an entitlement-enabled `ak_` key.
+- Each project gets a stable `X-Condense-Session-Id` (uuid5 of the project id), so one run's requests are grouped in the Condense dashboard.
+- Condense rewrites the user message: it merges all text parts without separators and moves every image or video after the text. We send the message pre-merged, with `[Attachment N: ...]` references in the text and the media in the same order, so nothing is lost in the rewrite. It also adds its own system message.
+- Even so, the planner (many labelled screenshots plus a strict storyboard schema) needed one repair per run through the proxy and none directly, so `build_gemini_client(..., proxy=False)` builds the planner's client; the viewer panel and the explanations go through the proxy. All clients of a run share one `TokenLedger` (see `preflight/wiring.py`).
+- Any proxy failure (timeout, 4xx/5xx, malformed answer) and media over 20 MB go to Gemini directly and are logged without keys; Condense never stops a run.
+- Large *text* marked `compressible` (for example a previous answer sent back for repair) is additionally compressed with `POST {CONDENSE_BASE_URL}/v1/compress`. Instructions and schemas are never marked compressible.
+
+### How savings are measured
+
+Condense returns no savings header or field, so we measure. For each proxied call, the original request is counted with Gemini's native `countTokens` (which matches Gemini's own prompt-token count for text and images) and compared with the prompt tokens Gemini reports for what Condense actually forwarded. `countTokens` overcounts video (2340 vs 1713 for a 15 s clip), so calls with video claim no saving. If the original cannot be counted, the call claims no saving. `TokenLedger` reports the totals as `TokenSavings`. Short one-shot prompts are passed through uncompressed by Condense, so expect single-digit percentages; a full live run saved 1.5% over 14 proxied calls. Condense's marketing numbers are not used.
 
 The Gemini SDK is isolated in `preflight/llm/genai_backend.py` (`google-genai` 2.28.0, `client.aio.models.generate_content`, `count_tokens` and the Files API for media over 20 MB). A move to the Interactions API means one new `GeminiBackend` implementation.

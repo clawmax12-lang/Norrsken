@@ -4,7 +4,7 @@ Run with ``uvicorn preflight.api.app:create_app --factory``. All collaborators a
 so tests pass fakes and the composition root passes the real pipeline.
 """
 
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime
 
@@ -41,6 +41,7 @@ def create_app(
     run_service: RunService | None = None,
     stream_timing: StreamTiming | None = None,
     clock: Clock = _utc_now,
+    on_shutdown: Callable[[], Awaitable[None]] | None = None,
 ) -> FastAPI:
     """Build the API.
 
@@ -50,6 +51,7 @@ def create_app(
         run_service: Starts runs. Without one, ``POST /run`` answers 503.
         stream_timing: Log-stream polling and heartbeat intervals.
         clock: Time source for records the API itself writes.
+        on_shutdown: Releases resources the run service uses, after runs are cancelled.
     """
     settings = settings or get_settings()
     store = store or ProjectStore(settings.data_dir)
@@ -60,6 +62,8 @@ def create_app(
         yield
         if runs:
             await runs.shutdown()
+        if on_shutdown:
+            await on_shutdown()
 
     app = FastAPI(title="Preflight", lifespan=lifespan)
     app.state.context = ApiContext(
@@ -77,9 +81,16 @@ def create_app(
     app.include_router(projects.router)
     app.include_router(downloads.router)
 
+    configured = HealthResponse(
+        runs=runs is not None,
+        gemini=settings.gemini_api_key is not None,
+        condense=settings.condense_api_key is not None,
+        brain_sim=settings.tribe_endpoint is not None,
+    )
+
     @app.get("/api/health")
     async def health() -> HealthResponse:
-        """Liveness probe."""
-        return HealthResponse()
+        """Liveness probe and configured providers."""
+        return configured
 
     return app

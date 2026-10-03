@@ -2,11 +2,10 @@
 
 What is verified (Condense docs, researched 2026-10-03): ``/v1/compress`` takes
 ``{"model", "messages", "compression_rate"}`` with header ``X-Condense-Auth-Token`` and
-returns the same number of messages with surviving text verbatim. What is NOT verified:
-Condense documents proxy routes for Anthropic and OpenAI only, with no Gemini route, no
-statement about image or video parts, and no usage fields in any response. So Gemini calls
-are not proxied; only large text context is compressed here and then sent to Gemini
-directly, and savings are measured by us (see :class:`TokenLedger`).
+returns the same number of messages with surviving text verbatim. Generations themselves go
+through the Condense proxy (:mod:`preflight.llm.condense_proxy`); this endpoint additionally
+shortens large text context marked ``compressible``, and savings are measured by us (see
+:class:`TokenLedger`).
 
 Compression is an optimisation, never a dependency: with no key, a short text, an HTTP
 error, a timeout or a malformed answer, the caller gets ``None`` and sends the original.
@@ -44,6 +43,7 @@ class CondenseCompressor:
         base_url: str,
         compression_rate: float,
         min_chars: int = DEFAULT_MIN_CHARS,
+        session_id: str | None = None,
     ) -> None:
         """Use an injected (caller-owned) HTTP client; texts shorter than ``min_chars`` skip."""
         self._http = http_client
@@ -51,15 +51,19 @@ class CondenseCompressor:
         self._url = f"{base_url.rstrip('/')}/v1/compress"
         self._compression_rate = compression_rate
         self._min_chars = min_chars
+        self._session_id = session_id
 
     async def compress(self, text: str) -> str | None:
         """Return the compressed text, or ``None`` when it was not (or could not be) compressed."""
         if self._api_key is None or len(text) < self._min_chars:
             return None
+        headers = {_AUTH_HEADER: self._api_key.get_secret_value()}
+        if self._session_id:
+            headers["X-Condense-Session-Id"] = self._session_id
         try:
             response = await self._http.post(
                 self._url,
-                headers={_AUTH_HEADER: self._api_key.get_secret_value()},
+                headers=headers,
                 json={
                     "model": COMPRESS_MODEL,
                     "compression_rate": self._compression_rate,

@@ -6,13 +6,16 @@ from pathlib import Path
 from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+# <repo>/backend/src/preflight/config.py -> <repo>
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+
 
 class Settings(BaseSettings):
     """All tunables in one place. Names match ``.env.example``."""
 
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(env_file=(_REPO_ROOT / ".env", ".env"), extra="ignore")
 
-    data_dir: Path = Path("data/projects")
+    data_dir: Path = _REPO_ROOT / "data" / "projects"
 
     gemini_api_key: SecretStr | None = None
     gemini_model: str = Field(
@@ -23,8 +26,28 @@ class Settings(BaseSettings):
     condense_api_key: SecretStr | None = None
     condense_base_url: str = "https://api.condense.chat"
     condense_compression_rate: float = Field(default=0.2, ge=0.0, le=1.0)
+    condense_proxy: bool = Field(
+        default=True,
+        description="With CONDENSE_API_KEY set, send Gemini calls through the Condense proxy; "
+        "a proxy failure falls back to calling Gemini directly.",
+    )
+    condense_upstream_url: str = Field(
+        default="https://generativelanguage.googleapis.com/v1beta/openai",
+        description="Where the Condense proxy forwards: Gemini's OpenAI-compatible endpoint.",
+    )
     tribe_endpoint: str | None = Field(
         default=None, description="Base URL of our TRIBE GPU worker; unset means 'Brain sim off'."
+    )
+
+    renderer_dir: Path = Field(
+        default=_REPO_ROOT / "workers" / "renderer",
+        description="The Remotion worker package (run `npm ci` there once).",
+    )
+    node_binary: str = Field(default="node", description="Node.js >= 22.18 for the renderer.")
+    render_concurrency: int | None = Field(
+        default=None,
+        ge=1,
+        description="Frames rendered in parallel per video; unset = Remotion's default.",
     )
 
     cors_origins: list[str] = Field(
