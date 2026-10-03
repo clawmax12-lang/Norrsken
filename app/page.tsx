@@ -1,5 +1,5 @@
-import { DirectorStudio } from "@/components/director-studio";
+import { CanvasWorkspace } from "@/components/canvas-workspace";
 
 export default function Home() {
-  return <DirectorStudio />;
+  return <CanvasWorkspace />;
 }

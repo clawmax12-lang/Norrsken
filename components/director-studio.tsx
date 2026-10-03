@@ -278,7 +278,7 @@ export function DirectorStudio() {
     }
   }, [assets, brief, director, isReady, projectId, saveState, selectedIds]);
 
-  const orbStyle = { "--signal": director.level.toFixed(3) } as React.CSSProperties;
+  const orbStyle = { "--signal": director.inputLevel.toFixed(3) } as React.CSSProperties;
 
   return (
     <main className="studio-shell">

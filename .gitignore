@@ -32,3 +32,4 @@ __pycache__/
 # Renderer / worker outputs
 workers/renderer/node_modules/
 workers/renderer/out/
+.vercel

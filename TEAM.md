@@ -1,6 +1,6 @@
 # Preflight — shared team board
 
-**Product baseline:** [PRD v1.3](PRD.md). **Platform:** desktop-browser web product; no iOS/SwiftUI or native client. **Repository:** https://github.com/clawmax12-lang/Norrsken. **Product owner:** William.
+**Product baseline:** [PRD v1.6](PRD.md). **Platform:** desktop-browser web product; no iOS/SwiftUI or native client. **Repository:** https://github.com/clawmax12-lang/Norrsken. **Product owner:** William.
 
 This document tracks coordination and implementation evidence. It does not redefine the product. Update it when claiming work, handing off a change, resolving a blocker or integrating a pull request. Blank ownership is intentional: technical names and progress were not supplied in the PRD.
 
@@ -15,7 +15,7 @@ This document tracks coordination and implementation evidence. It does not redef
 
 Suggested first message for any existing or new agent session:
 
-> Read AGENTS.md, then PRD.md §15, §8, §9, §10 and §12, then TEAM.md. PRD v1.3 supersedes earlier brainstorming: Preflight is a web platform, not an iOS/SwiftUI app; the interactive brain is built once and reused with genuine per-video data. For brain/design work also read docs/design/README.md and OPUS_BRAIN_BRIEF.md. Work only on my assigned requirement IDs. Report the scope, dependencies and acceptance criteria before implementing, and keep shared contracts coordinated with their owners.
+> Read AGENTS.md, then PRD.md §15, §8, §9, §10 and §12, then TEAM.md. PRD v1.6 supersedes earlier brainstorming: Preflight is a FLORA-referenced web canvas, not an iOS/SwiftUI app; Gemini Live is integrated in its composer and the brain is reused with genuine per-video data. For brain/design work also read docs/design/README.md and OPUS_BRAIN_BRIEF.md. Work only on my assigned requirement IDs. Report the scope, dependencies and acceptance criteria before implementing, and keep shared contracts coordinated with their owners.
 
 ## Ownership
 
@@ -24,12 +24,12 @@ Fill in real people rather than assigning all work to an unnamed agent. Record a
 | Area | Requirement IDs | Owner | Workspace / branch / owned files |
 | --- | --- | --- | --- |
 | Product decisions | Scope, priority, PRD changes | William | — |
-| Brief intake and tablehopp fixture | FR-01 | William / Codex | `williu16/voice-hackathon-brainstorming` · voice Director UI, brief contracts, Gemini Live session route, package/README/PRD/TEAM |
+| Brief intake, canvas and Live Director | FR-01, FR-07, FR-09, FR-16 | William / Codex | `williu16/fr-16-canvas-live` · canvas shell/composer, shared draft contracts, Gemini Live tools, Next API routes, package/README/PRD/TEAM. Preserves backend and brain-owner files. |
 | Template and renderer | FR-03 | Unassigned | — |
 | TRIBE worker | FR-04 (TRIBE) | Unassigned | — |
 | Agent, Gemini, Condense | FR-02, FR-04 (panel), FR-05, FR-06, FR-10 | Unassigned | — |
 | Web app, results, export and log | FR-07, FR-08, FR-09 | Unassigned | — |
-| Brain viewer and Preflight sequence | FR-12, FR-14, FR-15 | Claude Opus 5.5 (implementation); William (product review) | [3D Brain — Opus 5.5](conductor://workspace?id=e14af4c4-eada-4c17-bc3b-42cd2ef08dcd) / `conductor/3d-brain-opus-55`; reusable viewer/scene and minimal web integration. See docs/design/OPUS_BRAIN_BRIEF.md. FR-15 remains gated P1. |
+| Brain viewer and Preflight sequence | FR-12, FR-14, FR-15 | Claude Opus 5.5 (implementation); William (product review) | [3D Brain — Opus 5.5](conductor://workspace?id=e14af4c4-eada-4c17-bc3b-42cd2ef08dcd) / `conductor/3d-brain-opus-55`, [PR #3](https://github.com/clawmax12-lang/Norrsken/pull/3); reusable viewer/scene and assets. PR #6 only changes the canvas host seam. FR-15 remains gated P1. |
 | Integration and release | Shared contracts, clean-clone run, final demo path | Unassigned | — |
 | Demo video and pitch | PRD §14.4–§14.6 | William | — |
 
@@ -41,21 +41,22 @@ Statuses: `unclaimed` → `in_progress` → `in_review` → `done`. Use `blocked
 
 | ID | Requirement | Priority / gate | Owner | Status | Branch / PR / acceptance evidence |
 | --- | --- | --- | --- | --- | --- |
-| FR-01 | Brief intake and fixture | P0 | William / Codex | in_review | `williu16/voice-hackathon-brainstorming` · [PR #2](https://github.com/clawmax12-lang/Norrsken/pull/2) — voice-native intake, typed fallback, approved-folder shelf, storyboard and persisted brief implemented. `npm run typecheck`, `npm run lint`, 6 tests and production build pass; API smoke test persisted 3 PNGs + `brief.json`; 1440 px browser screenshot in `.context/preflight-director.png`. Live call remains unverified because `GEMINI_API_KEY` is not configured in this workspace. |
+| FR-01 | Brief intake and fixture | P0 | William / Codex | in_review | Original intake in merged PR #2; canvas integration on `williu16/fr-16-canvas-live` adds the shared typed/voice brief and approved-folder shelf. Unit/build/browser checks pass; real Gemini call remains unverified in this workspace. |
 | FR-02 | Three creative concepts | P0 | — | unclaimed | — |
 | FR-03 | Three rendered MP4s | P0 | — | unclaimed | — |
 | FR-04 | Simulators and Gemini fallback | P0 | — | unclaimed | — |
 | FR-05 | Deterministic score and rank | P0 | — | unclaimed | — |
 | FR-06 | Timestamped explanations | P0 | — | unclaimed | — |
-| FR-07 | Results UI and synced playback | P0 | — | unclaimed | — |
+| FR-07 | Canvas/results UI and synced playback | P0 | William / Codex | in_review | PR #6 implements the FLORA-referenced pan/zoom A/B/C canvas, sparse first-arrival state, contextual drawers and honest proposed/no-data states. 1440×1000 browser check passed; real render/result binding, leaderboard, player and curves remain. |
 | FR-08 | Four export files | P0 | — | unclaimed | — |
-| FR-09 | Live persisted activity log | P0 | — | unclaimed | — |
+| FR-09 | Live persisted activity log | P0 | William / Codex + backend owner | in_progress | Canvas exposes an honest job state and confirmation-gated idempotency key. SSE event binding remains blocked on a deployed canonical project/orchestrator seam; no progress is simulated. |
 | FR-10 | Gemini via Condense, measured savings | P0 | — | unclaimed | — |
-| FR-12 | Interactive 3D brain | Conditional P0: TRIBE go/no-go | Opus 5.5 | in_progress | `conductor/3d-brain-opus-55`; assignment started, no acceptance evidence yet |
-| FR-14 | Preflight sequence | Conditional P0: FR-12 | Opus 5.5 | in_progress | Same isolated assignment; genuine-data/intro AC not yet verified |
+| FR-12 | Interactive 3D brain | P0 anatomy/dock; genuine activity needs TRIBE | Opus 5.5 | in_review | [PR #3](https://github.com/clawmax12-lang/Norrsken/pull/3), head `8e02f13`; PR #6 mounts its unmodified `CanvasBrain` once outside pan/zoom and shares only backend-accepted project plus A/B/C selection. Genuine TRIBE/backend-run verification remains. |
+| FR-14 | Preflight sequence | P0 entry; genuine analysis focus needs TRIBE | Opus 5.5 | in_review | PR #3 owns sequence implementation. PR #6 preserves entry/dock integration and browser reduced-motion behavior; genuine matched-data focus remains unverified. |
 | FR-11 | One revision of the winner | P1: all applicable P0 pass | — | unclaimed | — |
 | FR-15 | A/B and brain difference view | P1: all applicable P0 pass | Opus 5.5 (queued) | unclaimed | Shared component/time/camera groundwork in FR-12; P1 implementation awaits gate |
 | FR-13 | Historical backtest | P1: P0 pass and real historical data exists | — | unclaimed | — |
+| FR-16 | Integrated two-way Gemini Live Director | P0 | William / Codex | in_review | `williu16/fr-16-canvas-live` · [PR #6](https://github.com/clawmax12-lang/Norrsken/pull/6) — single Live capture/AudioContext, validated revisioned A/B/C tools, separate mic/output analyser levels, audible-playback speaking state, immediate interruption/mute/disconnect queue discard, actual tool-processing state, captions/transcript and explicit Run confirmation. Typecheck/lint, 46 tests, build, production audit and browser checks pass. Real provider reply/interruption/spoken edit remains an acceptance gate because this workspace has no key/mic device. |
 
 P2 stays outside today's build. The broader validation programme also has the explicit prerequisite in PRD §13; do not silently start it as part of the MVP.
 
@@ -121,6 +122,11 @@ These are gaps to clarify during implementation, not changes to the supplied req
 Update product requirements in PRD.md and append the decision to §16. Update this board for owners/status/evidence and README for actual run instructions. Keep the original PDF unchanged. Earlier advisor briefs under `.context/` are historical and are not team requirements.
 
 ## Current handoff
+
+- **FR-01/FR-07/FR-09/FR-12/FR-14/FR-16 / [PR #6](https://github.com/clawmax12-lang/Norrsken/pull/6):** FLORA-referenced sparse canvas and first-arrival invitation; Redaction identity; exactly three proposed A/B/C branches with five 3-second scenes; integrated Live composer with 64→96 px audible-playback orb, real analyser-driven beam, captions and on-demand transcript; validated persistent tools and confirmation-gated Run. One unmodified Opus `CanvasBrain` from [PR #3](https://github.com/clawmax12-lang/Norrsken/pull/3) is outside pan/zoom, shares A/B/C selection, and receives a project id only after backend acceptance. Audio is never passed into neural state.
+- **Verification:** `npm run typecheck`; `npm run lint`; `npm test` (46/46); `npm run build`; `npm audit --omit=dev` (0 vulnerabilities). Production Chrome at 1440×1000 verified empty/populated canvas, Redaction, 24 px grid, A/B/C/five-scene lineage, no-data brain, reduced motion, mic/device error, transcript closed by default and zero console errors. Screenshots: `.context/preflight-flora-empty.png`, `.context/preflight-flora-canvas.png`, `.context/preflight-live-error.png`. Earlier draft GET/PUT/stale-409 and unavailable-Run-503 smokes remain valid.
+- **Preview:** final anonymous deployment `dpl_5oKdhVLgPuGkv8KmDTNvqFfS2mix` at https://temporary-agile-redwood-3fj586n.vercel.app built successfully and expires after about 43 minutes. It has no inherited environment variables, so it verifies the deployed FLORA canvas/brain shell but not Gemini Live.
+- **Remaining acceptance:** this cloud process has neither `GOOGLE_API_KEY` nor a microphone device, so genuine Gemini reply audio, barge-in/interruption and spoken persisted edit were not verified. Genuine TRIBE/backend results were also not verified. Vercel Preview needs `GOOGLE_API_KEY`; browser brain events additionally need deployed `PREFLIGHT_API_URL`, matching `NEXT_PUBLIC_PREFLIGHT_API_BASE` and backend CORS. Durable Vercel draft storage still needs an adapter.
 
 - **FR-01 / [PR #2](https://github.com/clawmax12-lang/Norrsken/pull/2) on `williu16/voice-hackathon-brainstorming`:** Next.js vertical slice adds secure ephemeral Gemini Live sessions (`gemini-3.8-live`, `Kore`), interruptible PCM audio, transcripts, typed fields, explicit local-folder selection, five inspectable Director tools, screenshot upload and schema-validated `data/projects/{project_id}/brief.json` persistence.
 - **Verification:** `npm run typecheck`; `npm run lint`; `npm test` (6/6); `npm run build`; `npm audit --omit=dev` (0 vulnerabilities); browser GET and 1440 px screenshot; API upload/save smoke test. No real Gemini request was claimed because the server has no `GEMINI_API_KEY`.

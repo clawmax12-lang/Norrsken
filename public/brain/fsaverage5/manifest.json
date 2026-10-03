@@ -1,0 +1,409 @@
+{
+  "mesh": "fsaverage5",
+  "vertex_order": "nilearn-fsaverage5:left-then-right",
+  "vertices_per_hemisphere": 10242,
+  "faces_per_hemisphere": 20480,
+  "coordinate_space": "fsaverage RAS (mm)",
+  "binary": "fsaverage5.bin",
+  "binary_sha256": "52f86db59afd459e10fdaddbda5868057abdb22d29d7182ee2142c0deafe92a0",
+  "layout": {
+    "left": {
+      "pial": {
+        "offset": 0,
+        "length": 30726,
+        "dtype": "float32"
+      },
+      "inflated": {
+        "offset": 122904,
+        "length": 30726,
+        "dtype": "float32"
+      },
+      "sulc": {
+        "offset": 245808,
+        "length": 10242,
+        "dtype": "float32"
+      },
+      "curv": {
+        "offset": 286776,
+        "length": 10242,
+        "dtype": "float32"
+      },
+      "labels": {
+        "offset": 327744,
+        "length": 10242,
+        "dtype": "uint8"
+      },
+      "faces": {
+        "offset": 337988,
+        "length": 61440,
+        "dtype": "uint16"
+      }
+    },
+    "right": {
+      "pial": {
+        "offset": 460868,
+        "length": 30726,
+        "dtype": "float32"
+      },
+      "inflated": {
+        "offset": 583772,
+        "length": 30726,
+        "dtype": "float32"
+      },
+      "sulc": {
+        "offset": 706676,
+        "length": 10242,
+        "dtype": "float32"
+      },
+      "curv": {
+        "offset": 747644,
+        "length": 10242,
+        "dtype": "float32"
+      },
+      "labels": {
+        "offset": 788612,
+        "length": 10242,
+        "dtype": "uint8"
+      },
+      "faces": {
+        "offset": 798856,
+        "length": 61440,
+        "dtype": "uint16"
+      }
+    }
+  },
+  "atlas": {
+    "name": "Desikan-Killiany (FreeSurfer aparc)",
+    "unknown_label": 255,
+    "regions": [
+      {
+        "index": 0,
+        "name": "unknown",
+        "rgb": [
+          25,
+          5,
+          25
+        ]
+      },
+      {
+        "index": 1,
+        "name": "bankssts",
+        "rgb": [
+          25,
+          100,
+          40
+        ]
+      },
+      {
+        "index": 2,
+        "name": "caudalanteriorcingulate",
+        "rgb": [
+          125,
+          100,
+          160
+        ]
+      },
+      {
+        "index": 3,
+        "name": "caudalmiddlefrontal",
+        "rgb": [
+          100,
+          25,
+          0
+        ]
+      },
+      {
+        "index": 4,
+        "name": "corpuscallosum",
+        "rgb": [
+          120,
+          70,
+          50
+        ]
+      },
+      {
+        "index": 5,
+        "name": "cuneus",
+        "rgb": [
+          220,
+          20,
+          100
+        ]
+      },
+      {
+        "index": 6,
+        "name": "entorhinal",
+        "rgb": [
+          220,
+          20,
+          10
+        ]
+      },
+      {
+        "index": 7,
+        "name": "fusiform",
+        "rgb": [
+          180,
+          220,
+          140
+        ]
+      },
+      {
+        "index": 8,
+        "name": "inferiorparietal",
+        "rgb": [
+          220,
+          60,
+          220
+        ]
+      },
+      {
+        "index": 9,
+        "name": "inferiortemporal",
+        "rgb": [
+          180,
+          40,
+          120
+        ]
+      },
+      {
+        "index": 10,
+        "name": "isthmuscingulate",
+        "rgb": [
+          140,
+          20,
+          140
+        ]
+      },
+      {
+        "index": 11,
+        "name": "lateraloccipital",
+        "rgb": [
+          20,
+          30,
+          140
+        ]
+      },
+      {
+        "index": 12,
+        "name": "lateralorbitofrontal",
+        "rgb": [
+          35,
+          75,
+          50
+        ]
+      },
+      {
+        "index": 13,
+        "name": "lingual",
+        "rgb": [
+          225,
+          140,
+          140
+        ]
+      },
+      {
+        "index": 14,
+        "name": "medialorbitofrontal",
+        "rgb": [
+          200,
+          35,
+          75
+        ]
+      },
+      {
+        "index": 15,
+        "name": "middletemporal",
+        "rgb": [
+          160,
+          100,
+          50
+        ]
+      },
+      {
+        "index": 16,
+        "name": "parahippocampal",
+        "rgb": [
+          20,
+          220,
+          60
+        ]
+      },
+      {
+        "index": 17,
+        "name": "paracentral",
+        "rgb": [
+          60,
+          220,
+          60
+        ]
+      },
+      {
+        "index": 18,
+        "name": "parsopercularis",
+        "rgb": [
+          220,
+          180,
+          140
+        ]
+      },
+      {
+        "index": 19,
+        "name": "parsorbitalis",
+        "rgb": [
+          20,
+          100,
+          50
+        ]
+      },
+      {
+        "index": 20,
+        "name": "parstriangularis",
+        "rgb": [
+          220,
+          60,
+          20
+        ]
+      },
+      {
+        "index": 21,
+        "name": "pericalcarine",
+        "rgb": [
+          120,
+          100,
+          60
+        ]
+      },
+      {
+        "index": 22,
+        "name": "postcentral",
+        "rgb": [
+          220,
+          20,
+          20
+        ]
+      },
+      {
+        "index": 23,
+        "name": "posteriorcingulate",
+        "rgb": [
+          220,
+          180,
+          220
+        ]
+      },
+      {
+        "index": 24,
+        "name": "precentral",
+        "rgb": [
+          60,
+          20,
+          220
+        ]
+      },
+      {
+        "index": 25,
+        "name": "precuneus",
+        "rgb": [
+          160,
+          140,
+          180
+        ]
+      },
+      {
+        "index": 26,
+        "name": "rostralanteriorcingulate",
+        "rgb": [
+          80,
+          20,
+          140
+        ]
+      },
+      {
+        "index": 27,
+        "name": "rostralmiddlefrontal",
+        "rgb": [
+          75,
+          50,
+          125
+        ]
+      },
+      {
+        "index": 28,
+        "name": "superiorfrontal",
+        "rgb": [
+          20,
+          220,
+          160
+        ]
+      },
+      {
+        "index": 29,
+        "name": "superiorparietal",
+        "rgb": [
+          20,
+          180,
+          140
+        ]
+      },
+      {
+        "index": 30,
+        "name": "superiortemporal",
+        "rgb": [
+          140,
+          220,
+          220
+        ]
+      },
+      {
+        "index": 31,
+        "name": "supramarginal",
+        "rgb": [
+          80,
+          160,
+          20
+        ]
+      },
+      {
+        "index": 32,
+        "name": "frontalpole",
+        "rgb": [
+          100,
+          0,
+          100
+        ]
+      },
+      {
+        "index": 33,
+        "name": "temporalpole",
+        "rgb": [
+          70,
+          20,
+          170
+        ]
+      },
+      {
+        "index": 34,
+        "name": "transversetemporal",
+        "rgb": [
+          150,
+          150,
+          200
+        ]
+      },
+      {
+        "index": 35,
+        "name": "insula",
+        "rgb": [
+          255,
+          192,
+          32
+        ]
+      }
+    ]
+  },
+  "sources": {
+    "surfaces": "nilearn 0.12.1 datasets/data/fsaverage5 (FreeSurfer fsaverage5)",
+    "atlas": "FreeSurfer fsaverage label/{lh,rh}.aparc.annot, first 10,242 vertices (nesting verified)"
+  }
+}

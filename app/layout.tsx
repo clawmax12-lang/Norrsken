@@ -7,8 +7,8 @@ const sans = Geist({ variable: "--font-sans", subsets: ["latin"] });
 const mono = Geist_Mono({ variable: "--font-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Preflight Director",
-  description: "Build and pretest a launch video with an interruptible creative director.",
+  title: "Preflight Canvas",
+  description: "Direct, build, and pretest a launch video from one shared canvas.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
