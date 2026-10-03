@@ -13,6 +13,7 @@ from preflight.api.schemas import ProjectResponse, ResultsResponse
 from preflight.api.sse import start_offset, stream_activity_log
 from preflight.contracts import Brief, Goal, RunRecord
 from preflight.intake import MAX_IMAGE_BYTES, BriefForm, create_project
+from preflight.orchestrator.preparation import prepare_run
 
 router = APIRouter(prefix="/api")
 
@@ -72,15 +73,18 @@ async def start_run(project: ProjectDep, context: Context) -> RunRecord:
     """Start the run in the background; asking again while it runs changes nothing."""
     if context.runs is None:
         raise ApiError(503, "run_service_unavailable", "this server has no run service configured")
+    if context.runs.is_running(project.id):
+        return await asyncio.to_thread(context.store.read, project.paths.run, RunRecord)
+    record = await asyncio.to_thread(prepare_run, context.store, project.id, context.clock)
     context.runs.start(project.id)
-    return await asyncio.to_thread(context.store.read, project.paths.run, RunRecord)
+    return record
 
 
 @router.get("/projects/{project_id}")
 async def get_project(project: ProjectDep, context: Context) -> ProjectResponse:
     """The run record and brief of one project."""
     run = await asyncio.to_thread(context.store.read, project.paths.run, RunRecord)
-    brief = await asyncio.to_thread(context.store.read, project.paths.brief, Brief)
+    brief = await asyncio.to_thread(context.store.read_brief, project.id)
     return ProjectResponse(run=run, brief=brief)
 
 
@@ -100,8 +104,12 @@ async def stream_log(
     )
     return StreamingResponse(
         frames,
-        media_type="text/event-stream",
-        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+        headers={
+            # Exactly this value, without "; charset": some proxies only stream it verbatim.
+            "Content-Type": "text/event-stream",
+            "Cache-Control": "no-cache, no-transform",
+            "X-Accel-Buffering": "no",
+        },
     )
 
 

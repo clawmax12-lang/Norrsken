@@ -14,7 +14,7 @@ from typing import TypeVar
 
 from pydantic import BaseModel, ValidationError
 
-from preflight.contracts import ActivityEvent
+from preflight.contracts import ActivityEvent, Brief
 from preflight.errors import PreflightValidationError, StorageError
 
 _PROJECT_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$")
@@ -137,6 +137,25 @@ class ProjectStore:
             raise StorageError(f"missing file: {path}") from exc
         except ValidationError as exc:
             raise StorageError(f"invalid {model_type.__name__} in {path}: {exc}") from exc
+
+    def read_brief(self, project_id: str) -> Brief:
+        """Read ``brief.json`` with screenshot and logo paths relative to the project directory.
+
+        The web app saves paths from the repository root (``data/projects/{id}/assets/x.png``);
+        that prefix is dropped so every consumer resolves paths the same way.
+        """
+        brief = self.read(self.paths(project_id).brief, Brief)
+        prefix = f"data/projects/{project_id}/"
+
+        def relative(path: str) -> str:
+            return path.removeprefix(prefix)
+
+        return brief.model_copy(
+            update={
+                "screenshots": tuple(relative(p) for p in brief.screenshots),
+                "logo": relative(brief.logo) if brief.logo else brief.logo,
+            }
+        )
 
     def append_event(self, project_id: str, event: ActivityEvent) -> None:
         """Append one activity event to ``log.jsonl`` (one JSON object per line)."""

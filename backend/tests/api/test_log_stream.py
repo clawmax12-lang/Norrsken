@@ -35,8 +35,8 @@ async def test_replays_every_logged_event_then_ends_when_done(client, store):
     response = await client.get(log_url())
 
     assert response.status_code == 200
-    assert response.headers["content-type"].startswith("text/event-stream")
-    assert response.headers["cache-control"] == "no-cache"
+    assert response.headers["content-type"] == "text/event-stream"
+    assert response.headers["cache-control"] == "no-cache, no-transform"
     assert event_ids(response) == [0, 1, 2, 3]
     assert frames(response)[-1] == 'event: end\ndata: {"state": "DONE"}'
 

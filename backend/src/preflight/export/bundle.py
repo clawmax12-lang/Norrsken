@@ -7,7 +7,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
-from preflight.contracts import Brief, CreativeConcept, Ranking, Report
+from preflight.contracts import CreativeConcept, Ranking, Report
 from preflight.errors import StorageError
 from preflight.storage import ProjectPaths, ProjectStore
 
@@ -43,7 +43,7 @@ def build_export(store: ProjectStore, project_id: str) -> ExportBundle:
         StorageError: A required result, concept or video is missing or unreadable.
     """
     paths = store.paths(project_id)
-    brief = store.read(paths.brief, Brief)
+    brief = store.read_brief(project_id)
     ranking = store.read(paths.ranking, Ranking)
     report = store.read(paths.report, Report)
     winner = store.read(paths.concept(report.winner), CreativeConcept)
