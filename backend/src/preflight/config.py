@@ -23,6 +23,15 @@ class Settings(BaseSettings):
     condense_api_key: SecretStr | None = None
     condense_base_url: str = "https://api.condense.chat"
     condense_compression_rate: float = Field(default=0.2, ge=0.0, le=1.0)
+    condense_proxy: bool = Field(
+        default=True,
+        description="With CONDENSE_API_KEY set, send Gemini calls through the Condense proxy; "
+        "a proxy failure falls back to calling Gemini directly.",
+    )
+    condense_upstream_url: str = Field(
+        default="https://generativelanguage.googleapis.com/v1beta/openai",
+        description="Where the Condense proxy forwards: Gemini's OpenAI-compatible endpoint.",
+    )
     tribe_endpoint: str | None = Field(
         default=None, description="Base URL of our TRIBE GPU worker; unset means 'Brain sim off'."
     )

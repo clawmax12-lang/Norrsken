@@ -23,9 +23,9 @@ class TokenLedger:
     """Accumulates measured usage and reports it as :class:`TokenSavings` (a ``UsageMeter``).
 
     Inputs are Gemini's own prompt-token counts (``sent``). Compression only ever adds to
-    ``original`` the difference between the same tokenizer's count of a text before and after
-    Condense shortened it, so with zero compressions ``original == sent`` and the savings
-    are exactly zero.
+    ``original`` the difference between the same tokenizer's count of a text (or a whole
+    proxied request) before and after Condense shortened it, so with zero compressions
+    ``original == sent`` and the savings are exactly zero.
     """
 
     def __init__(self) -> None:
@@ -41,7 +41,7 @@ class TokenLedger:
         self._output_tokens += usage.output_tokens
 
     def record_compression(self, *, tokens_before: int, tokens_after: int) -> None:
-        """Record one successful Condense call whose text was measured before and after.
+        """Record one successful Condense call whose input was measured before and after.
 
         A result that is not smaller was discarded by the caller (the original is sent), so
         it counts as a call that saved nothing.

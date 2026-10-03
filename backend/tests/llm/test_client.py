@@ -3,6 +3,7 @@ from pydantic import BaseModel
 
 from preflight.errors import PreflightValidationError, ProviderError, TransientProviderError
 from preflight.llm import GeminiClient, TextPart, TokenLedger
+from preflight.llm.backend import BackendResponse
 from tests.llm.fakes import FakeCompressor, FakeGeminiBackend
 
 
@@ -35,6 +36,25 @@ async def test_returns_validated_model_and_records_usage() -> None:
         20,
         0,
     )
+
+
+async def test_proxied_answers_record_measured_condense_savings() -> None:
+    proxied = BackendResponse(
+        GOOD, input_tokens=80, output_tokens=20, uncompressed_input_tokens=100
+    )
+    ledger = TokenLedger()
+
+    await make_client(FakeGeminiBackend(proxied), ledger=ledger).generate_json(
+        Answer, "system", [TextPart("go")]
+    )
+
+    snapshot = ledger.snapshot()
+    assert (snapshot.calls, snapshot.input_tokens_sent, snapshot.input_tokens_original) == (
+        1,
+        80,
+        100,
+    )
+    assert snapshot.tokens_saved == 20
 
 
 async def test_invalid_answer_gets_exactly_one_repair_with_the_error_fed_back() -> None:

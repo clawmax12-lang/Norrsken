@@ -11,7 +11,7 @@ LONG_TEXT = "alpha beta gamma " * 200
 
 
 def make_compressor(
-    handler, *, api_key: str | None = "ak_secret"
+    handler, *, api_key: str | None = "ak_secret", session_id: str | None = None
 ) -> tuple[CondenseCompressor, list]:
     requests: list[httpx.Request] = []
 
@@ -25,6 +25,7 @@ def make_compressor(
         api_key=SecretStr(api_key) if api_key else None,
         base_url="https://api.condense.test/",
         compression_rate=0.2,
+        session_id=session_id,
     )
     return compressor, requests
 
@@ -48,6 +49,14 @@ async def test_posts_documented_request_and_returns_compressed_text() -> None:
         "compression_rate": 0.2,
         "messages": [{"role": "user", "content": LONG_TEXT}],
     }
+
+
+async def test_session_header_groups_requests_in_the_dashboard() -> None:
+    compressor, requests = make_compressor(ok, session_id="s-1")
+
+    await compressor.compress(LONG_TEXT)
+
+    assert requests[0].headers["X-Condense-Session-Id"] == "s-1"
 
 
 async def test_without_a_key_nothing_is_sent() -> None:

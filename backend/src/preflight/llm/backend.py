@@ -19,11 +19,14 @@ class BackendResponse:
     """One model answer with the token counts the provider reported for it.
 
     ``output_tokens`` includes thinking tokens because the provider bills them as output.
+    ``uncompressed_input_tokens`` is set only when the request went through Condense: what
+    the same request would have cost sent directly.
     """
 
     text: str
     input_tokens: int
     output_tokens: int
+    uncompressed_input_tokens: int | None = None
 
 
 class GeminiBackend(Protocol):

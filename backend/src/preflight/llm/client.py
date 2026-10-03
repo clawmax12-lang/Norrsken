@@ -123,6 +123,11 @@ class GeminiClient:
         response = await self._generate_with_retry(model_type, system, parts)
         usage = CallUsage(response.input_tokens, response.output_tokens)
         self._ledger.record_generation(usage)
+        if response.uncompressed_input_tokens is not None:
+            self._ledger.record_compression(
+                tokens_before=response.uncompressed_input_tokens,
+                tokens_after=response.input_tokens,
+            )
         try:
             value = model_type.model_validate_json(response.text)
         except ValidationError as exc:
