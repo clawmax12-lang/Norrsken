@@ -1,0 +1,35 @@
+{
+  "name": "preflight-renderer",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Remotion worker that renders a Preflight CompositionSpec to a 1080x1920, 30 fps MP4.",
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "node --test --experimental-strip-types src/**/*.test.ts",
+    "gen:types": "node --experimental-strip-types scripts/generate-types.ts",
+    "render": "node render.mjs"
+  },
+  "dependencies": {
+    "@fontsource-variable/inter": "5.3.0",
+    "@remotion/bundler": "4.0.532",
+    "@remotion/layout-utils": "4.0.532",
+    "@remotion/media-utils": "4.0.532",
+    "@remotion/renderer": "4.0.532",
+    "@remotion/transitions": "4.0.532",
+    "ajv": "8.20.0",
+    "ajv-formats": "3.0.1",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "remotion": "4.0.532"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.1",
+    "@types/react": "19.3.0",
+    "json-schema-to-typescript": "16.0.0",
+    "typescript": "5.9.3"
+  }
+}
