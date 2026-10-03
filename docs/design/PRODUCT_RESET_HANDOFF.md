@@ -32,6 +32,8 @@ At 1440×1000, using real routes in isolated checkouts and a fresh Chrome contex
 
 Further browser checks on `fa27aea`: ordinary reload correctly stays docked; explicit replay reopens entry. Canvas has no page scroll, but floating header/tool/composer controls remain over the brain, and Skip is genuinely blocked. Missing initial draft produces `/api/projects/launch-draft/draft` 404 responses. Enable Live reports `Requested device not found` on this headless machine; no real microphone conversation or provider acceptance can be claimed. No billable jobs were confirmed.
 
+The team subsequently merged PR #6 to main `a36670f`; the reviewer did not merge it. The findings above apply to its inspected head `fa27aea`. Source integration is not video-first/Live/TRIBE acceptance. Brain PR #3 and docs PR #1 need non-destructive reconciliation with current main; keep actual run instructions.
+
 Protected brain preview `https://norrsken-w11.conductor.show/` returns HTTP 401 without login. We did not bypass authentication; the exact pushed source was run locally. The older public canvas tested was `https://temporary-agile-redwood-3fj586n.vercel.app/`, a temporary deployment, not a stable production link. Browser screenshots/results are saved in the reviewer's `.context/`; these are diagnostic evidence, not design-baseline images or scientific data.
 
 ## Ready-to-relay prompt for the Canvas / Voice owner
