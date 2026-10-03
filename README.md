@@ -8,7 +8,7 @@ Preflight turns a product brief and 3–6 screenshots into three 15-second motio
 
 **[TRIBE v2 by Meta FAIR](https://github.com/facebookresearch/tribev2) is a foundational component of Preflight's planned neural pretesting system.** It supplies the predicted brain responses behind the brain simulation, synchronized activity curves, interactive 3D brain and Preflight sequence. Gemini supplies the complementary viewer panel and the agent's planning/explanations; Preflight coordinates generation, simulation, comparison and export.
 
-**Current approved specification: [PRD v1.4](PRD.md).** It supersedes earlier brainstorming, including editing an existing customer video. The product is a web flow canvas with a cinematic brain entry, persistent brain companion and mandatory female Gemini voice, plus the genuine video-generation/pretest/export pipeline. This repository is the shared reference for the hackathon team and its coding agents.
+**Current approved specification: [PRD v1.6](PRD.md).** It supersedes earlier brainstorming, including editing an existing customer video, and establishes the FLORA-referenced canvas, integrated Live Director and reusable-brain architecture. This repository is the shared reference for the hackathon team and its coding agents.
 
 ## Start here
 
@@ -17,18 +17,19 @@ Preflight turns a product brief and 3–6 screenshots into three 15-second motio
 | [PRD.md](PRD.md) | Product scope, FR-01–FR-16, acceptance criteria, architecture, UI, timeline and decision log. The source of truth for what to build. |
 | [TEAM.md](TEAM.md) | Owners, task status, integration evidence, open blockers and the shared Git/Conductor workflow. |
 | [AGENTS.md](AGENTS.md) | Instructions every coding agent must follow. Claude loads these through [CLAUDE.md](CLAUDE.md). |
-| [Visual baseline](docs/design/README.md) | All four original reference images and the motion clip, shared brain/canvas direction, provenance and existing preview. |
-| [Brain companion implementation](docs/design/BRAIN_COMPANION.md) | What the reusable brain does today, its embedding API, events/commands, proposed cortical payload and verification status. |
+| [Visual baseline](docs/design/README.md) | All three original reference images and the motion clip, shared visual direction, provenance and the existing Dashboard preview. |
 | [Opus 5.5 brain brief](docs/design/OPUS_BRAIN_BRIEF.md) | Complete interactive browser brain, reuse/data boundaries, A/B synchronization and verification/handoff. |
-| [Canvas and voice brief](docs/design/CANVAS_VOICE_BRIEF.md) | Integration of canvas, docked brain, actual job events and mandatory female Gemini TTS with voice glow. |
-| [Build status audit](docs/status/2026-10-03-build-audit.md) | Timestamped evidence from all nine Norrsken workspaces; prototype, implementation and genuine-data gaps are separate. |
 | [Original PDF](docs/source/Preflight-PRD-v1.1.pdf) | Unchanged, 20-page source supplied by the product owner. [Provenance and checksum](docs/source/README.md). |
 
 Humans: start with PRD §1–§7. Builders: also read §8–§14. Agents: read AGENTS.md and PRD §15, §8, §9, §10 and §12 before implementing.
 
 ## How to run
 
-The implemented vertical slice is the FR-01 voice-native Preflight Director: interruptible Gemini Live audio, transcripts, typed fallback, a permission-scoped local asset shelf, a six-scene draft storyboard, a visible decision thread and persisted `brief.json`. Planning, rendering, simulation, scoring and export are not implemented yet. The reusable brain companion (FR-12/FR-14) docks in the top-left of that route; see below.
+The web app opens directly into a sparse black dotted Preflight canvas. First arrival shows a short upload/Enable Live invitation; once the project has content, exactly three proposed A/B/C concepts branch from the confirmed source brief, with five editable three-second scenes each. The bottom composer contains the two-way Gemini Live Director, typed fallback, on-demand transcript, real input/output audio state, mute and disconnect. Voice, typed commands and clicked controls use the same validated revisioned draft; source-backed pre-render edits persist in browser storage and, in a writable Node deployment, `data/projects/{project_id}/draft.json`.
+
+The standalone 64 px `ThinkingOrb` maps connection, listening, actual tool work and audible playback to supported states; it grows to approximately 96 px only while analyzed assistant output is audible. `VoiceBeam` has no idle glow and reads the existing Live `AudioContext`: microphone RMS is `inputLevel`, an analyser after the playback gain supplies `outputLevel`, and `isSpeaking` comes from scheduled output that is currently audible. Interruption, output mute and disconnect stop and discard every queued source immediately. No second microphone or voice service is opened.
+
+The repository now includes the Python pipeline, Remotion renderer and TRIBE worker foundations, but the Next.js preview does not assume they are deployed. Without `PREFLIGHT_API_URL`, confirmed Run saves the validated inputs and visibly reports that the generation pipeline is unavailable; it never fabricates planning/render/simulation progress. Production draft persistence still needs a durable storage adapter because Vercel function filesystems are ephemeral/read-only outside `/tmp`.
 
 ```bash
 git clone https://github.com/clawmax12-lang/Norrsken.git
@@ -38,9 +39,13 @@ npm install
 npm run dev
 ```
 
-Use Node.js 20.9 or newer. Set `GEMINI_API_KEY` in `.env.local` to an AI Studio key with access to `gemini-3.8-live`, then open `http://localhost:3000` in current desktop Chrome. Click **Start Director** once to grant microphone permission. **Choose folder** grants read access to one folder through the browser; Preflight indexes at most 100 PNG/JPG filenames locally and uploads only the 3–6 screens selected when **Run Preflight** is clicked.
+Use Node.js 20.9 or newer. Set `GOOGLE_API_KEY` in `.env.local` to an AI Studio key with access to `gemini-3.8-live` (`GEMINI_API_KEY` remains a fallback), then open `http://localhost:3000` in current desktop Chrome. Click the mic in the bottom composer once to grant microphone permission. The Director uses the female-sounding `Kore` preset. The folder tool grants read access to one folder; Preflight indexes at most 100 PNG/JPG filenames locally and uploads only the 3–6 selected screens after explicit Run confirmation.
 
-The permanent key is read only by `/api/live-token`, which exchanges it for a one-use, short-lived token. It must never be named `NEXT_PUBLIC_GEMINI_API_KEY`, placed in client code or committed. The temporary hackathon account and its project may be deleted after the event, so replace the key for any later deployment.
+Typed fallback works without a Live connection. It accepts natural structured phrases such as `product is …`, `description is …`, `audience is …`, `goal is downloads`, `select A scene 2`, `use description as copy`, `move scene 2 to 1`, and `run preflight`.
+
+The permanent key is read only by `/api/live-token`, which exchanges it for a one-use, short-lived token. It must never use a `NEXT_PUBLIC_*` name, appear in client code or be committed. In Vercel, add `GOOGLE_API_KEY` to the intended project/environment and redeploy. Browser microphone access requires HTTPS (Vercel preview) or localhost plus a user gesture.
+
+Set `PREFLIGHT_API_URL` only when the FastAPI orchestrator is genuinely deployed and wired. Set the public, non-secret `NEXT_PUBLIC_PREFLIGHT_API_BASE` to the same reachable origin when the browser brain should consume results/log events; configure backend CORS for the app origin. The Next route forwards the confirmed command with an idempotency key; if the value is absent or unreachable, the canvas shows the unavailable state and no job is claimed. The brain does not receive a project id until that backend accepts the run, so a local draft can never masquerade as genuine result data.
 
 Frontend verification commands:
 
@@ -58,26 +63,7 @@ Backend verification commands:
 ./backend/.venv/bin/pytest backend/
 ```
 
-### Brain companion (FR-12/FR-14)
-
-The reusable fsaverage5 brain is mounted on the main route as a **top-left canvas dock** next to the Director (`app/page.tsx` renders `<CanvasBrain />`; no voice or backend code is replaced). It needs no GPU or model calls; the mesh, atlas and head silhouette are committed static assets ([provenance and licences](public/brain/ATTRIBUTION.md)).
-
-- **Entry:** first visit per browser session plays the brain intro, then docks (Skip and reduced motion respected; `?entry=off` disables it, `?entry=replay` forces it).
-- **Dock:** hover enlarges it; click, or Enter/Space on the focused dock, pins it; Esc unpins. **Expand** opens the analysis view (F fullscreen, Esc back to the dock). **Pause motion** stops all camera/spin motion, and dragging the brain hands control to you until **Resume motion**.
-- **Backend activity (optional):** set `NEXT_PUBLIC_PREFLIGHT_API_BASE` (public URL of the FastAPI backend; it already allows `http://localhost:3000` by CORS) and open `/?project=<backend project id>`. The dock subscribes to `GET /api/projects/{id}/log` (SSE) and `GET /api/projects/{id}/results`. Running steps spin the brain briskly with a halo and status line; each live `succeeded` milestone (plan, render, simulate, score, explain, export) plays a ~3 s slower focus beat showing the backend's own message. The camera only moves to a region when that variant has a genuine TRIBE artifact (`brain.activity_path`, float16 `.npy`): the strongest genuine response, its sample time and the concept scene then. Otherwise it frames anatomy neutrally and says no region is shown. Playback time and speed are never changed by the beat. Without a project or API base, the dock stays idle.
-- **No brain data:** with no bound genuine result the cortex is gray and labelled **No brain data**; there is no genuine TRIBE output or demo example in this repository.
-- **`/brain` harness:** standalone page with a placeholder canvas, local loaders and event log for integration testing. `?result=/same-origin/result.json` binds stored `SimulationResult` JSON (proposed `meta.cortical`, see [BRAIN_COMPANION.md](docs/design/BRAIN_COMPANION.md)); `?demo=` loads a genuine precomputed example (**Demo example · precomputed**); `?sim=off` previews **Brain sim off**.
-- `?fixture=mock` on `/brain` (development server only, stripped from production builds) binds a deterministic **MOCK** test fixture with a red banner and a MOCK tag on the dock. It tests shaders and controls; it is not evidence.
-
-An existing Next.js Dashboard implementation is on the team's separate `williu16/preflight-swiftui-dashboard` branch (the name is historical; its code is web-based). Its **[Vercel canvas preview](https://temporary-instant-flint-xxlx4l9.vercel.app/?demo=1)** was checked on 3 Oct 2026: HTTP 200 and browser inspection. It now shows a branching storyline prototype, not genuine generated/tested batches or an integrated brain/voice pipeline. See the [workspace/preview details](docs/design/README.md#existing-dashboard-and-preview). The brain viewer branch adds the `/brain` route below; the canvas itself lives on the Dashboard branch.
-
-## Canvas, brain and voice experience
-
-On first arrival, the anatomical brain rotates and focuses on regions, then docks in a corner while the flow canvas opens. Sources and the validated brief branch into storyboards/concepts, rendered videos, actual simulation results and a verdict/export. The corner brain follows the selected video's stored predictions; realtime job events update the canvas. Introductory colored response requires a genuine disclosed example, not fabricated waves before a run exists.
-
-**Female Gemini speech is required for the demo (FR-16/P0).** Gemini TTS voices welcome, actual progress and evidence-backed verdicts; captions/mute/stop remain available. The assistant's visual direction is a standalone `ThinkingOrb`, no surrounding card, growing during speech. Its work states are event-driven; audio-amplitude binding is our code, not a built-in orb feature. `voice-glow` is an optional prompt effect, not a speech engine. The selected target is `gemini-3.8-flash-tts` pending account/routing verification. Optional microphone conversation uses a separate Gemini Live integration and user permission. A supplied Gemini key is not proof that speech or Live is configured; all long-lived keys remain server-side.
-
-The large experiment tree is a design/architecture goal. Proposed nodes are not completed neural tests; today's three-video execution cap remains until the owner approves a batch budget and the backend team measures capacity. Keep prototype/untested states visible.
+The historical dashboard branch is no longer the intended product shell. FR-16 uses the canvas in this branch; do not reintroduce a separate Director screen or treat an old temporary preview as pipeline evidence.
 
 ## Brain and generation roles
 
@@ -159,37 +145,31 @@ First use downloads model weights and extracts multimodal features. Record both 
 4. Expose the worker to the orchestrator and configure `TRIBE_ENDPOINT` with **our deployed worker's address**. It is not the GitHub URL or a hosted Meta inference API supplied by the upstream project. The Preflight endpoint and request/response transport still need implementation; this guide does not define a ready-made HTTP route.
 5. Verify one real clip for the go/no-go, then the actual 15-second rendered variants, including any silent/no-speech case produced by the template. Record output, timing, GPU environment and failures in TEAM.md before marking FR-04 complete.
 
-The v1.4 fallback applies: if live TRIBE fails the 12:30 gate, keep the Gemini path with **Brain sim off**, the gray anatomical entry/dock and the required voice/canvas. This is a degraded execution path, not equivalent neural evidence. Never replace missing brain activity with generated values. Genuine precomputed examples must be tied to the video they analyzed, visibly disclosed and kept separate from the current run.
+The PRD's hackathon fallback still applies: if TRIBE fails the 12:30 gate, keep the gray reusable anatomy/dock but show **Brain sim off** for the Gemini-only run. This is a degraded execution path, not equivalent neural evidence. Never replace missing brain activity with generated values. Genuine precomputed results must be tied to the video they analyzed and visibly disclosed.
 
 ## Build stack
 
-The FR-01 slice uses Next.js 16, React 19, TypeScript, Zod and `@google/genai`. `gemini-3.8-live` provides low-latency native audio, automatic voice activity detection, barge-in, transcripts and function calls; the Director uses the firm `Kore` voice. A Next.js server route mints ephemeral Live tokens, while Live audio flows directly between the browser and Gemini.
+The FR-01/FR-16 slice uses Next.js 16, React 19, TypeScript, Zod, `@google/genai`, `thinking-orbs` 0.3.2 and `voice-glow` 0.2.1. `gemini-3.8-live` provides low-latency native audio, automatic voice activity detection, barge-in, transcripts and function calls; the Director uses the female-sounding `Kore` preset. A Next.js server route mints ephemeral Live tokens, while Live audio flows directly between the browser and Gemini. The prompt beam follows analyzed playback amplitude; microphone level is displayed separately and neither signal represents neural activity. The reusable Opus brain uses three.js and the tracked fsaverage5/head assets.
 
 The backend pipeline (FR-01..FR-10) uses Python 3.12, FastAPI, Pydantic, and Hatchling, orchestrating concept planning, Remotion motion graphics composition specs, simulated viewer panels (Gemini via Condense), deterministic goal-aligned scoring, and export bundles. TRIBE v2 runs on a GPU worker for neural simulation.
 
-The direct Gemini Live WebSocket is the narrow PRD v1.2 exception to Condense routing because the required full-duplex transport is not available through the adopted Condense path. Planning, viewer-panel and explanation calls must still go through Condense and report real token savings when implemented.
-
-The PRD proposes Next.js, TypeScript, Tailwind and three.js for the browser frontend; Python/FastAPI for orchestration; Remotion for rendering; and a GPU worker for TRIBE v2. Gemini provides planning, the viewer panel and explanations, with all LLM calls routed through Condense. Rendering and inference run on backend workers; users access the product through their browser. The current dashboard shell uses Next.js, React and TypeScript and does not yet connect to those services.
+The current Live implementation uses Gemini's direct ephemeral-token WebSocket because no compatible full-duplex Condense transport has been demonstrated. PRD v1.6 does not approve that routing exception: verify Condense Live compatibility or obtain an explicit product decision before claiming FR-10/partner-routing acceptance. Planning, viewer-panel and explanation calls must go through Condense and report real token savings when implemented.
 
 The PRD designates **Claude Opus 5.5** as the primary coding agent. This is a build plan, not a claim that the application has already been implemented with it. This documentation bootstrap was prepared with Codex from the supplied PDF.
 
-Environment variable names from PRD §10.4: `GEMINI_API_KEY`, `CONDENSE_API_KEY`, `TRIBE_ENDPOINT`. Only `GEMINI_API_KEY` is consumed by the current slice. `.env.example` contains placeholders; `.env*` files remain ignored except for that example.
+Environment variable names from PRD §10.4: `GOOGLE_API_KEY` (preferred), `GEMINI_API_KEY` (fallback), `CONDENSE_API_KEY`, `TRIBE_ENDPOINT`, optional server-side `PREFLIGHT_API_URL` and public `NEXT_PUBLIC_PREFLIGHT_API_BASE`. `.env.example` contains placeholders; `.env*` files remain ignored except for that example.
 
 Runtime Opus, if integrated, requires its own server-side provider credentials (for a direct Anthropic integration, `ANTHROPIC_API_KEY`) and verified API model configuration. No customer key has been supplied or embedded by this documentation change. Keep all secrets out of the browser and shared chat/documents.
 
 ## Demo and research honesty
 
-- Complete P0 before P1. Brain anatomy/entry/dock and FR-16 voice remain P0; genuine neural animation/live inference require actual TRIBE data/go-no-go as described in PRD §8/§14.2.
+- Complete P0 before P1. The reusable FR-12 anatomy/dock and entry remain P0; neural response animation and analysis focus require genuine TRIBE data.
 - Use genuine simulation output in the demo. Disclose precomputed TRIBE output in both the UI and this README when introduced. Never present test mocks as real results.
 - Without TRIBE, finish with Gemini and show **Brain sim off**. Without brain data, show **No brain data**. Record the actual go/no-go result in TEAM.md.
 - Document the implemented scoring/confidence rule here when FR-05 lands. Simulator agreement is not a demonstrated probability of real-world success.
 - Do not claim that neural response predicts retention, virality, emotions or sales. Live A/B testing is the eventual validation.
 
-Current TRIBE mode in this repository: **none**. The brain companion shows gray anatomy and "No brain data" until a genuine result is bound; no precomputed or demo-example TRIBE output is included, and its activity rendering has only been exercised with the labelled MOCK test fixture.
-
-Current integration evidence: backend adapters/scoring are being implemented in the team's separate workspaces; **live TRIBE inference, Gemini speech, Condense routing and an end-to-end run are not yet verified by this documentation audit**. See the timestamped [status evidence](docs/status/2026-10-03-build-audit.md), rather than treating branch/session activity as product completion.
-
-Current TRIBE mode, scoring implementation and Condense integration: **not yet implemented or verified in this repository**. The Director UI labels its intake advice **Creative rationale · no simulation yet** and cannot call TRIBE. With no configured `GEMINI_API_KEY`, typed intake and folder selection still work, while voice shows a configuration error instead of fake output.
+Current browser integration status: one `CanvasBrain` is mounted outside the pan/zoom transform and shares the selected A/B/C variant, but stays **No brain data** until a backend-accepted project supplies genuine results. The Director cannot cite TRIBE before a completed real simulation. With no configured Google key, typed intake, folder selection and persisted browser draft edits still work while voice shows a configuration error. A real Gemini Live round trip, interruption and spoken tool edit still require provider verification in the deployed HTTPS preview; automated/synthetic audio tests do not claim that acceptance.
 
 ## Attribution and eligibility
 
