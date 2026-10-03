@@ -83,4 +83,7 @@ class RunRecord(Contract):
     state: RunState
     variants: tuple[VariantRecord, ...] = ()
     error: str | None = None
+    failed_after: Annotated[
+        RunState | None, Field(description="Last completed state when FAILED; resume point.")
+    ] = None
     updated_at: datetime

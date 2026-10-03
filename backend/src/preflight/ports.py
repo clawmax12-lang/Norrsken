@@ -52,6 +52,14 @@ class AssetGenerator(Protocol):
     ) -> tuple[GeneratedAsset, ...]: ...
 
 
+class Composer(Protocol):
+    """Pure, synchronous step that turns a concept and its assets into a validated spec."""
+
+    def compose(
+        self, brief: Brief, concept: CreativeConcept, assets: Sequence[GeneratedAsset]
+    ) -> CompositionSpec: ...
+
+
 class Renderer(Protocol):
     """``render_variant``: composition spec in, MP4 on disk out."""
 

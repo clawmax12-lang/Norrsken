@@ -7,6 +7,8 @@ from pydantic import Field, computed_field, model_validator
 from ._base import Contract
 from .concept import VariantId
 
+_DERIVED_FIELDS = frozenset({"tokens_saved", "percent"})
+
 
 class Reason(Contract):
     """A timestamped reason tied to a scene that is on screen at that moment."""
@@ -23,6 +25,14 @@ class TokenSavings(Contract):
     input_tokens_original: Annotated[int, Field(ge=0)] = 0
     input_tokens_sent: Annotated[int, Field(ge=0)] = 0
     output_tokens: Annotated[int, Field(ge=0)] = 0
+
+    @model_validator(mode="before")
+    @classmethod
+    def _drop_derived_fields(cls, data: object) -> object:
+        """Accept our own serialised form: derived fields are written out but never input."""
+        if isinstance(data, dict):
+            return {k: v for k, v in data.items() if k not in _DERIVED_FIELDS}
+        return data
 
     @model_validator(mode="after")
     def _sent_not_above_original(self) -> Self:

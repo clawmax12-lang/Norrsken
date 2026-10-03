@@ -1,0 +1,51 @@
+{
+  "atlas": "Destrieux 2009 (a2009s) parcellation on fsaverage5, via nilearn.datasets.fetch_atlas_surf_destrieux",
+  "groups": [
+    {
+      "id": "visual",
+      "label": "Visual cortex",
+      "event_noun": "visual-cortex",
+      "known_for": "Occipital and ventral occipito-temporal cortex, known for processing what the eyes see: edges, motion, shapes and objects.",
+      "atlas_labels": [
+        "S_calcarine",
+        "G_cuneus",
+        "G_oc-temp_med-Lingual",
+        "S_oc-temp_med_and_Lingual",
+        "Pole_occipital",
+        "G_occipital_middle",
+        "G_occipital_sup",
+        "G_and_S_occipital_inf",
+        "S_oc_middle_and_Lunatus",
+        "S_oc_sup_and_transversal",
+        "S_occipital_ant",
+        "G_oc-temp_lat-fusifor"
+      ]
+    },
+    {
+      "id": "auditory",
+      "label": "Auditory cortex",
+      "event_noun": "auditory-cortex",
+      "known_for": "Heschl's gyrus and the surrounding superior temporal plane, known for processing sound.",
+      "atlas_labels": [
+        "G_temp_sup-G_T_transv",
+        "G_temp_sup-Plan_tempo",
+        "G_temp_sup-Plan_polar",
+        "S_temporal_transverse"
+      ]
+    },
+    {
+      "id": "language",
+      "label": "Language regions",
+      "event_noun": "language-region",
+      "known_for": "Inferior frontal and lateral temporal cortex, often linked to speech and language comprehension in group studies.",
+      "atlas_labels": [
+        "G_front_inf-Opercular",
+        "G_front_inf-Triangul",
+        "G_front_inf-Orbital",
+        "G_temp_sup-Lateral",
+        "S_temporal_sup",
+        "G_temporal_middle"
+      ]
+    }
+  ]
+}
