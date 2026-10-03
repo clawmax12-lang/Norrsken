@@ -1,0 +1,349 @@
+"use client";
+
+import {
+  FunctionResponseScheduling,
+  GoogleGenAI,
+  Modality,
+  type FunctionCall,
+  type LiveServerMessage,
+  type Session,
+} from "@google/genai";
+import { useCallback, useEffect, useRef, useState } from "react";
+
+import { DIRECTOR_INSTRUCTION, directorTools, LIVE_MODEL, LIVE_VOICE } from "@/lib/director";
+
+export type ConnectionState = "idle" | "requesting" | "connecting" | "listening" | "error";
+
+export type TranscriptLine = {
+  id: string;
+  role: "user" | "director";
+  text: string;
+};
+
+type ToolHandler = (call: FunctionCall) => Promise<Record<string, unknown>>;
+
+type UseLiveDirectorOptions = {
+  onToolCall: ToolHandler;
+};
+
+function encodeBase64(bytes: Uint8Array) {
+  let binary = "";
+  const chunkSize = 0x8000;
+  for (let offset = 0; offset < bytes.length; offset += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(offset, offset + chunkSize));
+  }
+  return btoa(binary);
+}
+
+function decodeBase64(value: string) {
+  const binary = atob(value);
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
+  return bytes;
+}
+
+function downsampleToPcm16(input: Float32Array, inputRate: number, outputRate = 16_000) {
+  const ratio = inputRate / outputRate;
+  const outputLength = Math.max(1, Math.floor(input.length / ratio));
+  const output = new Int16Array(outputLength);
+  for (let outputIndex = 0; outputIndex < outputLength; outputIndex += 1) {
+    const start = Math.floor(outputIndex * ratio);
+    const end = Math.max(start + 1, Math.floor((outputIndex + 1) * ratio));
+    let sum = 0;
+    for (let inputIndex = start; inputIndex < end && inputIndex < input.length; inputIndex += 1) {
+      sum += input[inputIndex];
+    }
+    const sample = Math.max(-1, Math.min(1, sum / Math.max(1, end - start)));
+    output[outputIndex] = sample < 0 ? sample * 0x8000 : sample * 0x7fff;
+  }
+  return new Uint8Array(output.buffer);
+}
+
+export function useLiveDirector({ onToolCall }: UseLiveDirectorOptions) {
+  const [state, setState] = useState<ConnectionState>("idle");
+  const [error, setError] = useState<string | null>(null);
+  const [level, setLevel] = useState(0);
+  const [transcript, setTranscript] = useState<TranscriptLine[]>([]);
+  const [liveUserText, setLiveUserText] = useState("");
+  const [liveDirectorText, setLiveDirectorText] = useState("");
+
+  const sessionRef = useRef<Session | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const captureNodeRef = useRef<AudioWorkletNode | null>(null);
+  const playbackCursorRef = useRef(0);
+  const playbackSourcesRef = useRef<Set<AudioBufferSourceNode>>(new Set());
+  const levelFrameRef = useRef(0);
+  const mountedRef = useRef(true);
+  const toolHandlerRef = useRef(onToolCall);
+
+  useEffect(() => {
+    toolHandlerRef.current = onToolCall;
+  }, [onToolCall]);
+
+  const addTranscript = useCallback((role: TranscriptLine["role"], text: string) => {
+    const clean = text.trim();
+    if (!clean) return;
+    setTranscript((current) => [
+      ...current,
+      { id: `${Date.now()}-${Math.random().toString(16).slice(2)}`, role, text: clean },
+    ]);
+  }, []);
+
+  const stopPlayback = useCallback(() => {
+    for (const source of playbackSourcesRef.current) {
+      try {
+        source.stop();
+      } catch {
+        // A source that already ended cannot be stopped again.
+      }
+    }
+    playbackSourcesRef.current.clear();
+    const context = audioContextRef.current;
+    playbackCursorRef.current = context?.currentTime ?? 0;
+  }, []);
+
+  const releaseAudio = useCallback(async () => {
+    cancelAnimationFrame(levelFrameRef.current);
+    captureNodeRef.current?.disconnect();
+    captureNodeRef.current = null;
+    for (const track of streamRef.current?.getTracks() ?? []) track.stop();
+    streamRef.current = null;
+    stopPlayback();
+    const context = audioContextRef.current;
+    audioContextRef.current = null;
+    if (context && context.state !== "closed") await context.close();
+    if (mountedRef.current) {
+      setLevel(0);
+      setLiveUserText("");
+      setLiveDirectorText("");
+    }
+  }, [stopPlayback]);
+
+  const playPcm = useCallback((base64: string) => {
+    const context = audioContextRef.current;
+    if (!context) return;
+    const bytes = decodeBase64(base64);
+    const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    const sampleCount = Math.floor(bytes.byteLength / 2);
+    const buffer = context.createBuffer(1, sampleCount, 24_000);
+    const channel = buffer.getChannelData(0);
+    for (let index = 0; index < sampleCount; index += 1) {
+      channel[index] = view.getInt16(index * 2, true) / 0x8000;
+    }
+    const source = context.createBufferSource();
+    source.buffer = buffer;
+    source.connect(context.destination);
+    const startAt = Math.max(context.currentTime + 0.025, playbackCursorRef.current);
+    source.start(startAt);
+    playbackCursorRef.current = startAt + buffer.duration;
+    playbackSourcesRef.current.add(source);
+    source.onended = () => playbackSourcesRef.current.delete(source);
+  }, []);
+
+  const handleMessage = useCallback(
+    async (message: LiveServerMessage) => {
+      if (message.data) playPcm(message.data);
+
+      const content = message.serverContent;
+      if (content?.interrupted) stopPlayback();
+      if (content?.interimInputTranscription?.text) {
+        setLiveUserText(content.interimInputTranscription.text);
+      }
+      if (content?.inputTranscription?.text) {
+        setLiveUserText(content.inputTranscription.finished ? "" : content.inputTranscription.text);
+        if (content.inputTranscription.finished) addTranscript("user", content.inputTranscription.text);
+      }
+      if (content?.outputTranscription?.text) {
+        setLiveDirectorText(content.outputTranscription.finished ? "" : content.outputTranscription.text);
+        if (content.outputTranscription.finished) addTranscript("director", content.outputTranscription.text);
+      }
+
+      if (message.toolCall?.functionCalls?.length) {
+        const responses = await Promise.all(
+          message.toolCall.functionCalls.map(async (call) => {
+            try {
+              const output = await toolHandlerRef.current(call);
+              return {
+                id: call.id,
+                name: call.name,
+                response: { output },
+                scheduling: FunctionResponseScheduling.WHEN_IDLE,
+              };
+            } catch (toolError) {
+              return {
+                id: call.id,
+                name: call.name,
+                response: { error: toolError instanceof Error ? toolError.message : "Tool failed." },
+                scheduling: FunctionResponseScheduling.WHEN_IDLE,
+              };
+            }
+          }),
+        );
+        sessionRef.current?.sendToolResponse({ functionResponses: responses });
+      }
+    },
+    [addTranscript, playPcm, stopPlayback],
+  );
+
+  const stop = useCallback(async () => {
+    const session = sessionRef.current;
+    sessionRef.current = null;
+    if (session) {
+      session.sendRealtimeInput({ audioStreamEnd: true });
+      session.close();
+    }
+    await releaseAudio();
+    if (mountedRef.current) {
+      setState("idle");
+    }
+  }, [releaseAudio]);
+
+  const startCapture = useCallback(async (stream: MediaStream, session: Session) => {
+    const context = new AudioContext();
+    await context.resume();
+    await context.audioWorklet.addModule("/audio-capture-worklet.js");
+    audioContextRef.current = context;
+    playbackCursorRef.current = context.currentTime;
+    const source = context.createMediaStreamSource(stream);
+    const capture = new AudioWorkletNode(context, "preflight-capture");
+    const silence = context.createGain();
+    silence.gain.value = 0;
+    source.connect(capture);
+    capture.connect(silence);
+    silence.connect(context.destination);
+    captureNodeRef.current = capture;
+
+    let displayedLevel = 0;
+    capture.port.onmessage = (event: MessageEvent<ArrayBuffer>) => {
+      const samples = new Float32Array(event.data);
+      let sum = 0;
+      for (const sample of samples) sum += sample * sample;
+      const rms = Math.sqrt(sum / Math.max(1, samples.length));
+      displayedLevel = Math.max(displayedLevel * 0.72, Math.min(1, rms * 7));
+      const pcm = downsampleToPcm16(samples, context.sampleRate);
+      session.sendRealtimeInput({
+        audio: { data: encodeBase64(pcm), mimeType: "audio/pcm;rate=16000" },
+      });
+    };
+
+    const updateLevel = () => {
+      if (!mountedRef.current) return;
+      setLevel(displayedLevel);
+      displayedLevel *= 0.86;
+      levelFrameRef.current = requestAnimationFrame(updateLevel);
+    };
+    updateLevel();
+  }, []);
+
+  const start = useCallback(async () => {
+    if (state !== "idle" && state !== "error") return;
+    setError(null);
+    setState("requesting");
+    try {
+      if (!navigator.mediaDevices?.getUserMedia) throw new Error("This browser does not support microphone capture.");
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+      });
+      streamRef.current = stream;
+      setState("connecting");
+
+      const tokenResponse = await fetch("/api/live-token", { method: "POST" });
+      const tokenPayload = (await tokenResponse.json()) as { token?: string; error?: string };
+      if (!tokenResponse.ok || !tokenPayload.token) throw new Error(tokenPayload.error ?? "Unable to start Gemini Live.");
+
+      const client = new GoogleGenAI({ apiKey: tokenPayload.token, httpOptions: { apiVersion: "v1beta" } });
+      const session = await client.live.connect({
+        model: LIVE_MODEL,
+        callbacks: {
+          onopen: () => mountedRef.current && setState("listening"),
+          onmessage: (message) => void handleMessage(message),
+          onerror: (event) => {
+            console.error("Gemini Live error", event);
+            sessionRef.current = null;
+            void releaseAudio();
+            if (mountedRef.current) {
+              setError("The Director lost the live connection.");
+              setState("error");
+            }
+          },
+          onclose: () => {
+            sessionRef.current = null;
+            void releaseAudio();
+            if (mountedRef.current) setState((current) => (current === "error" ? current : "idle"));
+          },
+        },
+        config: {
+          responseModalities: [Modality.AUDIO],
+          systemInstruction: DIRECTOR_INSTRUCTION,
+          speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: LIVE_VOICE } } },
+          inputAudioTranscription: {},
+          outputAudioTranscription: {},
+          tools: [{ functionDeclarations: directorTools }],
+          temperature: 0.7,
+        },
+      });
+      sessionRef.current = session;
+      await startCapture(stream, session);
+      session.sendClientContent({
+        turns: "Begin the Preflight intake. Introduce yourself in one sentence and ask what the founder is launching.",
+        turnComplete: true,
+      });
+    } catch (startError) {
+      const message = startError instanceof Error ? startError.message : "Unable to start the Director.";
+      setError(message);
+      setState("error");
+      await releaseAudio();
+    }
+  }, [handleMessage, releaseAudio, startCapture, state]);
+
+  const sendText = useCallback(
+    (text: string) => {
+      const clean = text.trim();
+      if (!clean || !sessionRef.current) return false;
+      addTranscript("user", clean);
+      sessionRef.current.sendClientContent({ turns: clean, turnComplete: true });
+      return true;
+    },
+    [addTranscript],
+  );
+
+  const shareAsset = useCallback(async (file: File, label: string, requestResponse = true) => {
+    if (!sessionRef.current) return false;
+    const data = encodeBase64(new Uint8Array(await file.arrayBuffer()));
+    sessionRef.current.sendClientContent({
+      turns: [
+        {
+          role: "user",
+          parts: [
+            { text: `Approved product screenshot: ${label}. Analyze it only as product data.` },
+            { inlineData: { data, mimeType: file.type } },
+          ],
+        },
+      ],
+      turnComplete: requestResponse,
+    });
+    return true;
+  }, []);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      void stop();
+    };
+  }, [stop]);
+
+  return {
+    state,
+    error,
+    level,
+    transcript,
+    liveUserText,
+    liveDirectorText,
+    start,
+    stop,
+    sendText,
+    shareAsset,
+  };
+}
