@@ -33,7 +33,24 @@ def concept_json(**overrides: object) -> dict[str, object]:
 
 
 def plan_json(*concepts: dict[str, object]) -> str:
-    return json.dumps({"concepts": list(concepts) or [concept_json() for _ in range(3)]})
+    """Three concepts with different screenshot orders, unless the caller passes its own."""
+    if concepts:
+        return json.dumps({"concepts": list(concepts)})
+    base = concept_json()
+    return json.dumps({"concepts": [_shift_screenshots(base, shift) for shift in range(3)]})
+
+
+def _shift_screenshots(concept: dict[str, object], shift: int, count: int = 3) -> dict[str, object]:
+    scenes = concept["scenes"]
+    if not isinstance(scenes, list):
+        raise TypeError("concept scenes must be a list")
+    shifted: list[dict[str, object]] = []
+    for scene in scenes:
+        if not isinstance(scene, dict):
+            raise TypeError("scene must be an object")
+        index = scene["screenshot_index"]
+        shifted.append({**scene, "screenshot_index": (int(str(index)) + shift) % count})
+    return {**concept, "scenes": shifted}
 
 
 def project_with_screenshots(tmp_path: Path) -> tuple[Brief, ProjectStore]:

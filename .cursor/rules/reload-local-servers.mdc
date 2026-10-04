@@ -1,0 +1,13 @@
+---
+description: After code changes, confirm the local demo is running the new code before the user tests.
+alwaysApply: true
+---
+
+# Reload the local demo after changes
+
+When a change affects what the user runs locally, do not finish until the running servers have the new code.
+
+- Backend (`backend/`, port 8000): uvicorn `--reload` must log a completed startup after the last edit. If the process is dead or the reload failed, restart it the same way it was already running.
+- Next (`app/`, `components/`, `lib/`, port 3000): the dev server must recompile. Restart it if it did not.
+- Remotion (`workers/renderer/`): the renderer reads the TypeScript on each Run. No Next restart is required. Already rendered MP4s stay old until a new Run.
+- Say so in the reply: servers are on the new code, and a new Run is required when the change is in planning, render or sound. A browser refresh does not replace finished videos.

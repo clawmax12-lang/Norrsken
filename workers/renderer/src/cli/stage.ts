@@ -22,6 +22,7 @@ export function referencedAssets(spec: CompositionSpec): string[] {
     paths.add(scene.screenshot);
     if (scene.backdrop) paths.add(scene.backdrop.path);
   }
+  if (spec.logo) paths.add(spec.logo);
   return [...paths];
 }
 
@@ -37,7 +38,16 @@ export function resolveInside(root: string, relative: string): string {
 
 /** Copies every referenced asset to `<publicDir>/<same relative path>`, so `staticFile(path)` just works. */
 export async function stageAssets(spec: CompositionSpec, assetsRoot: string, publicDir: string): Promise<void> {
-  for (const asset of referencedAssets(spec)) {
+  await stagePaths(referencedAssets(spec), assetsRoot, publicDir);
+}
+
+/** Same copy rules for an explicit path list (used by the beat-sheet stager). */
+export async function stagePaths(
+  assets: Iterable<string>,
+  assetsRoot: string,
+  publicDir: string,
+): Promise<void> {
+  for (const asset of assets) {
     const source = resolveInside(assetsRoot, asset);
     const target = resolveInside(publicDir, asset);
     await mkdir(path.dirname(target), { recursive: true });

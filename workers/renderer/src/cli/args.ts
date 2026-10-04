@@ -10,11 +10,15 @@ export interface CliOptions {
   /** Explicit Chrome/Chromium binary; undefined means auto-detect, then Remotion's download. */
   readonly browser: string | undefined;
   readonly concurrency: number | undefined;
+  /** Remotion composition id. Default remains Showcase ``PreflightVideo``. */
+  readonly compositionId: string;
+  /** Bundle entry relative to the worker package. Default is ``src/index.ts``. */
+  readonly entry: string | undefined;
 }
 
 export class UsageError extends Error {
   constructor(message: string) {
-    super(`${message}\nusage: node render.mjs --spec spec.json --out out.mp4 [--assets-root DIR] [--browser PATH] [--concurrency N]`);
+    super(`${message}\nusage: node render.mjs --spec spec.json --out out.mp4 [--assets-root DIR] [--browser PATH] [--concurrency N] [--composition-id PreflightVideo] [--entry src/index.ts]`);
     this.name = "UsageError";
   }
 }
@@ -28,6 +32,8 @@ export function parseCliArgs(argv: readonly string[], env: NodeJS.ProcessEnv = p
       "assets-root": { type: "string" },
       browser: { type: "string" },
       concurrency: { type: "string" },
+      "composition-id": { type: "string" },
+      entry: { type: "string" },
     },
     strict: true,
   });
@@ -45,5 +51,7 @@ export function parseCliArgs(argv: readonly string[], env: NodeJS.ProcessEnv = p
     assetsRoot: path.resolve(values["assets-root"] ?? path.dirname(specPath)),
     browser: values.browser ?? env["PREFLIGHT_CHROME"],
     concurrency,
+    compositionId: values["composition-id"] ?? "PreflightVideo",
+    entry: values.entry,
   };
 }

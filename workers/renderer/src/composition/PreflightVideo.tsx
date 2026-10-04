@@ -37,7 +37,13 @@ export const PreflightVideo: React.FC<PreflightVideoProps> = ({ spec }) => {
         );
       })}
       <Sequence from={ctaStart} durationInFrames={spec.duration_frames - ctaStart} layout="none">
-        <CtaCard text={spec.cta} theme={spec.theme} />
+        <CtaCard
+          headline={spec.headline ?? spec.cta}
+          wordmark={spec.wordmark ?? spec.cta}
+          button={spec.cta}
+          theme={spec.theme}
+          logo={spec.logo ?? null}
+        />
       </Sequence>
     </AbsoluteFill>
   );

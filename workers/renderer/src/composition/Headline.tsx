@@ -2,12 +2,11 @@ import { useMemo } from "react";
 import { useVideoConfig } from "remotion";
 import { progress, easeOut } from "./motion.ts";
 import { withAlpha } from "./color.ts";
-import { FONT_FAMILY, TYPE } from "./tokens.ts";
+import { FONT_FAMILY, TEXT_IN_S, TYPE } from "./tokens.ts";
 import { layoutHeadline, measureInBrowser, type SizeRange } from "./typography.ts";
 
 /** Frames between one line starting its reveal and the next. */
-const LINE_STAGGER = 5;
-const REVEAL_FRAMES = 26;
+const LINE_STAGGER_S = 0.08;
 /** Light words keep enough contrast for large text (WCAG 1.4.3 requires 3:1). */
 const LIGHT_WORD_ALPHA = 0.62;
 
@@ -24,9 +23,11 @@ interface HeadlineProps {
 
 /** Large statement type whose lines slide up out of a mask, with heavy/light weight contrast. */
 export const Headline: React.FC<HeadlineProps> = ({ text, color, width, align, range, delay, frame }) => {
-  useVideoConfig();
+  const { fps } = useVideoConfig();
   const layout = useMemo(() => layoutHeadline(text, width, range, measureInBrowser), [text, width, range]);
   const { fontSize, lines } = layout;
+  const revealFrames = Math.round(TEXT_IN_S * fps);
+  const lineStagger = Math.round(LINE_STAGGER_S * fps);
   return (
     <div
       style={{
@@ -41,7 +42,7 @@ export const Headline: React.FC<HeadlineProps> = ({ text, color, width, align, r
       }}
     >
       {lines.map((line, i) => {
-        const p = progress(frame, delay + i * LINE_STAGGER, REVEAL_FRAMES, easeOut);
+        const p = progress(frame, delay + i * lineStagger, revealFrames, easeOut);
         return (
           <div
             key={i}

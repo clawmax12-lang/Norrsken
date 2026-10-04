@@ -24,6 +24,11 @@ FUNCTION_WORDS = frozenset(
         "of", "to", "for", "in", "on", "at", "with", "from", "by", "as", "into",  # prepositions
         "is", "are", "be", "it", "its", "this", "that",  # copulas and demonstratives
         "you", "your", "we", "our",  # pronouns
+        # Swedish glue (same role: no claim)
+        "och", "eller", "men", "så", "att", "som", "en", "ett", "den", "det", "de",
+        "för", "med", "på", "i", "av", "till", "från", "om", "utan", "under",
+        "din", "ditt", "dina", "vår", "vårt", "våra", "er", "ert", "era",
+        "är", "vara", "var", "bli", "blir",
     }
 )  # fmt: skip
 _WORD = re.compile(r"\w+")

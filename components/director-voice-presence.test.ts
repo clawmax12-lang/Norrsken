@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 // MOCK presentation state: not real Gemini Live/provider acceptance.
 import { createElement, type ComponentProps } from "react";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DirectorVoicePresence } from "./director-voice-presence";
 
@@ -75,11 +75,12 @@ describe("Director voice presentation (MOCK)", () => {
     expect(view.container.querySelector(".voice-orb")?.getAttribute("data-speaking")).toBe("false");
   });
 
-  it("shares actual output with the orb/floor beam, keeps mic separate and never creates a stream", () => {
+  it("shares actual output with the orb/floor beam, keeps mic separate and never creates a stream", async () => {
     const props = fixture();
     const director = { ...props.director, isSpeaking: true, outputLevel: 0.4, inputLevel: 0.9 };
     const view = render(createElement(DirectorVoicePresence, { ...props, director }));
     expect(visual.orb.mock.calls.at(-1)?.[0].level()).toBe(0.4);
+    await waitFor(() => expect(visual.beam).toHaveBeenCalled());
     const beam = visual.beam.mock.calls.at(-1)?.[0];
     expect(beam.level()).toBe(0.4); expect(beam.type).toBe("mobile"); expect(beam.stream).toBeUndefined();
     expect(view.container.querySelector(".voice-floor")?.getAttribute("aria-hidden")).toBe("true");

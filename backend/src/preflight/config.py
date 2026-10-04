@@ -66,7 +66,9 @@ class Settings(BaseSettings):
         description="Gemini text-to-speech model (the id in Google's docs on 2026-10-03).",
     )
     narration_voice: str = Field(
-        default="Kore", description="Gemini prebuilt voice; the Live Director uses the same one."
+        default="Leda",
+        description="Gemini prebuilt voice for ad narration (youthful feminine). "
+        "Live Director stays Kore.",
     )
     ffmpeg_binary: str = Field(default="ffmpeg", description="ffmpeg for mixing and muxing.")
     ffprobe_binary: str = Field(default="ffprobe", description="ffprobe to verify the output.")

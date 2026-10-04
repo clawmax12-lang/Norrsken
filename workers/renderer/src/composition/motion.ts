@@ -9,6 +9,8 @@ export const easeInOut = Easing.bezier(0.65, 0, 0.35, 1);
 export const SMOOTH_SPRING = { damping: 30, stiffness: 120, mass: 1 } as const;
 /** Slightly livelier spring with a hint of overshoot, for the device entrance. */
 export const SOFT_SPRING = { damping: 20, stiffness: 100, mass: 1 } as const;
+/** Stronger mass/stiffness for Mode 1 device enter; screenshot pixels stay unwarped. */
+export const SHOWCASE_SPRING = { damping: 14, stiffness: 160, mass: 0.8 } as const;
 
 /** 0 -> 1 over `duration` frames starting at `start`, eased; clamped outside the range. */
 export function progress(
@@ -28,7 +30,7 @@ export function springIn(
   frame: number,
   fps: number,
   delay: number,
-  config: typeof SMOOTH_SPRING | typeof SOFT_SPRING = SMOOTH_SPRING,
+  config: typeof SMOOTH_SPRING | typeof SOFT_SPRING | typeof SHOWCASE_SPRING = SMOOTH_SPRING,
 ): number {
   return spring({ frame: frame - delay, fps, config });
 }

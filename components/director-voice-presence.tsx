@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react";
-import { VoiceBeam } from "voice-glow";
 import { DirectorOrb } from "@/components/director-orb";
+import { VoiceBeam } from "@/components/voice-beam";
 
 import type { useLiveDirector } from "@/hooks/use-live-director";
 import { directorOrbState } from "@/lib/director-presence";

@@ -279,6 +279,25 @@ async def test_speech_asks_for_audio_with_the_prebuilt_voice_and_returns_pcm() -
     assert voice == {"voice_name": "Kore"}
 
 
+async def test_speech_style_is_metadata_not_transcript() -> None:
+    client, requests = sdk_client(
+        lambda _r: speech_answer(b"\x05\x00" * 4, "audio/L16;codec=pcm;rate=24000")
+    )
+
+    await GenAIBackend(client).synthesize_speech(
+        model="tts-test",
+        text="Collect payments",
+        voice="Kore",
+        style="clear, confident, selling",
+    )
+
+    body = json.loads(requests[0].content)
+    part = body["contents"][0]["parts"][0]
+    assert part["text"] == "Collect payments"
+    meta = part.get("speechMetadata") or part.get("speech_metadata") or {}
+    assert meta.get("style") == "clear, confident, selling"
+
+
 async def test_speech_assumes_24_khz_when_the_mime_type_has_no_rate() -> None:
     client, _ = sdk_client(lambda _r: speech_answer(mime="audio/wav"))
 

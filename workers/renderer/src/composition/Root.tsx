@@ -25,6 +25,9 @@ const PREVIEW_SPEC: CompositionSpec = {
   ],
   cta: "Preview",
   cta_source_field: "product_name",
+  wordmark: "Preview",
+  headline: "Preview",
+  headline_source_field: "product_name",
 };
 
 /** Dimensions, frame rate and length always come from the spec, never from constants. */

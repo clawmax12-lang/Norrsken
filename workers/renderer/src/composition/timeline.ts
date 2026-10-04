@@ -1,6 +1,6 @@
 /** Pure timeline maths: which scenes are on screen and when the CTA end card takes over. */
 import type { CompositionSpec, SceneSpec } from "../spec/types.generated.ts";
-import { CTA_CARD_MAX_FRAMES, CTA_CARD_SCENE_SHARE, TRANSITION_FRAMES } from "./tokens.ts";
+import { ctaStartFrameFor, TRANSITION_FRAMES } from "./tokens.ts";
 
 export interface SceneWindow {
   readonly index: number;
@@ -14,24 +14,30 @@ export interface SceneWindow {
 }
 
 export function sceneWindows(spec: CompositionSpec): SceneWindow[] {
-  return spec.scenes.map((scene, index) => {
-    const next = spec.scenes[index + 1];
-    const overlap = next !== undefined && next.transition_in !== "cut" ? TRANSITION_FRAMES : 0;
-    return {
-      index,
-      scene,
-      from: scene.start_frame,
-      duration: scene.end_frame - scene.start_frame + overlap,
-      overlap,
-    };
-  });
+  const ctaStart = ctaStartFrame(spec);
+  return spec.scenes
+    .map((scene, index) => {
+      const next = spec.scenes[index + 1];
+      const overlap =
+        next !== undefined && next.transition_in !== "cut" && next.start_frame < ctaStart
+          ? TRANSITION_FRAMES
+          : 0;
+      const from = scene.start_frame;
+      if (from >= ctaStart) return null;
+      const end = Math.min(scene.end_frame, ctaStart);
+      return {
+        index,
+        scene,
+        from,
+        duration: end - from + overlap,
+        overlap,
+      };
+    })
+    .filter((window): window is SceneWindow => window !== null);
 }
 
-/** First frame of the CTA end card: the tail of the last scene, capped so the scene still reads. */
+/** First frame of the locked 3 s end card. */
 export function ctaStartFrame(spec: CompositionSpec): number {
-  const last = spec.scenes[spec.scenes.length - 1];
-  if (last === undefined) throw new Error("spec has no scenes");
-  const length = last.end_frame - last.start_frame;
-  const card = Math.min(CTA_CARD_MAX_FRAMES, Math.max(1, Math.floor(length * CTA_CARD_SCENE_SHARE)));
-  return last.end_frame - card;
+  const fps = spec.fps ?? 30;
+  return ctaStartFrameFor(spec.duration_frames, fps);
 }

@@ -1,58 +1,93 @@
-import { AbsoluteFill, useCurrentFrame, useVideoConfig } from "remotion";
+import { AbsoluteFill, Img, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
 import type { Theme } from "../spec/types.generated.ts";
 import { withAlpha } from "./color.ts";
 import { Headline } from "./Headline.tsx";
 import { easeInOut, lerp, progress, springIn } from "./motion.ts";
-import { SAFE_WIDTH, TYPE } from "./tokens.ts";
+import { FONT_FAMILY, SAFE_WIDTH, TYPE, WEIGHT } from "./tokens.ts";
 
-const WASH_FRAMES = 22;
-const TEXT_DELAY = 10;
-const ARROW_DELAY = 24;
-const ARROW_SIZE = 150;
+const WASH_S = 0.4;
+const TEXT_DELAY_S = 0.15;
+const ARROW_DELAY_S = 0.28;
+const LOGO_MAX = 160;
 
-interface CtaCardProps {
-  readonly text: string;
+export interface CtaCardProps {
+  readonly headline: string;
+  readonly wordmark: string;
+  readonly button: string;
   readonly theme: Theme;
+  readonly logo?: string | null | undefined;
 }
 
-/**
- * Closing card. The wash uses the foreground colour with the stage colour as type, so the
- * contrast between the two is the theme's own text contrast whatever the brand colour is.
- */
-export const CtaCard: React.FC<CtaCardProps> = ({ text, theme }) => {
+/** Closing card: logo/wordmark, grounded headline, button. Holds for the locked 3 s window. */
+export const CtaCard: React.FC<CtaCardProps> = ({ headline, wordmark, button, theme, logo }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-  const wash = progress(frame, 0, WASH_FRAMES, easeInOut);
-  const arrow = springIn(frame, fps, ARROW_DELAY);
+  const washFrames = Math.round(WASH_S * fps);
+  const wash = progress(frame, 0, washFrames, easeInOut);
+  const textDelay = Math.round(TEXT_DELAY_S * fps);
+  const arrow = springIn(frame, fps, Math.round(ARROW_DELAY_S * fps));
   return (
     <AbsoluteFill
       style={{
-        backgroundColor: theme.foreground,
-        clipPath: `circle(${lerp(0, 150, wash)}% at 50% 88%)`,
+        backgroundColor: theme.background,
+        opacity: lerp(0.35, 1, wash),
       }}
     >
       <AbsoluteFill
         style={{
-          background: `radial-gradient(1100px 1100px at 50% ${lerp(70, 55, wash)}%, ${withAlpha(theme.accent, 0.5)}, transparent 68%)`,
+          background: `radial-gradient(900px 700px at 50% 42%, ${withAlpha(theme.accent, 0.28)}, transparent 70%)`,
         }}
       />
-      <AbsoluteFill style={{ justifyContent: "center", alignItems: "center", paddingBottom: 160 }}>
-        <Headline text={text} color={theme.background} width={SAFE_WIDTH} align="center" range={TYPE.cta} delay={TEXT_DELAY} frame={frame} />
+      <AbsoluteFill
+        style={{
+          justifyContent: "center",
+          alignItems: "center",
+          gap: 36,
+          padding: "160px 72px 200px",
+        }}
+      >
+        {logo ? (
+          <Img
+            src={staticFile(logo)}
+            style={{ maxWidth: LOGO_MAX, maxHeight: LOGO_MAX, objectFit: "contain", opacity: Math.min(1, wash * 1.4) }}
+          />
+        ) : (
+          <div
+            style={{
+              fontFamily: `"${FONT_FAMILY}", system-ui, sans-serif`,
+              fontSize: 42,
+              fontWeight: WEIGHT.heavy,
+              letterSpacing: "-0.04em",
+              color: theme.foreground,
+              opacity: Math.min(1, wash * 1.4),
+            }}
+          >
+            {wordmark}
+          </div>
+        )}
+        <Headline text={headline} color={theme.foreground} width={SAFE_WIDTH} align="center" range={TYPE.cta} delay={textDelay} frame={frame} />
         <div
           style={{
-            marginTop: 88,
-            width: ARROW_SIZE,
-            height: ARROW_SIZE,
-            borderRadius: ARROW_SIZE,
+            marginTop: 12,
+            minWidth: 280,
+            padding: "22px 40px",
+            borderRadius: 999,
             background: theme.accent,
-            display: "grid",
-            placeItems: "center",
+            color: theme.background,
+            fontFamily: `"${FONT_FAMILY}", system-ui, sans-serif`,
+            fontSize: 28,
+            fontWeight: WEIGHT.heavy,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 16,
             transform: `scale(${arrow})`,
             opacity: Math.min(1, arrow * 2),
-            boxShadow: `0 30px 80px ${withAlpha(theme.accent, 0.55)}`,
+            boxShadow: `0 24px 60px ${withAlpha(theme.accent, 0.45)}`,
           }}
         >
-          <svg width={ARROW_SIZE * 0.42} height={ARROW_SIZE * 0.42} viewBox="0 0 24 24" fill="none" stroke={theme.background} strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+          <span>{button}</span>
+          <svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke={theme.background} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
             <path d="M5 12h14M13 6l6 6-6 6" />
           </svg>
         </div>

@@ -41,6 +41,29 @@ def test_trimming_pure_silence_returns_nothing() -> None:
     assert len(audio.trim_silence(np.zeros(1000, dtype=np.float32))) == 0
 
 
+def test_deglitch_tail_drops_a_clipped_burst_after_the_word() -> None:
+    rate = 24_000
+    word = (0.4 * np.sin(2 * np.pi * 220 * np.arange(rate) / rate)).astype(np.float32)
+    burst = np.full(int(0.03 * rate), 0.99, dtype=np.float32)
+    cleaned = audio.deglitch_tail(np.concatenate([word, burst]), rate)
+
+    assert len(cleaned) < len(word) + len(burst)
+    assert float(np.max(np.abs(cleaned[-int(0.01 * rate) :]))) < 0.95
+
+
+def test_deglitch_leaves_ordinary_speech_alone() -> None:
+    rate = 24_000
+    word = (0.4 * np.sin(2 * np.pi * 220 * np.arange(rate) / rate)).astype(np.float32)
+    assert np.array_equal(audio.deglitch_tail(word, rate), word)
+
+
+def test_fade_edges_starts_and_ends_at_zero() -> None:
+    tone = np.ones(48_000, dtype=np.float32)
+    faded = audio.fade_edges(tone, 48_000, in_s=0.01, out_s=0.05)
+    assert faded[0] == 0.0 and faded[-1] == 0.0
+    assert faded[24_000] == pytest.approx(1.0)
+
+
 def test_rms_normalise_hits_the_target_without_clipping() -> None:
     t = np.arange(48_000) / 48_000
     tone = (0.05 * np.sin(2 * np.pi * 200 * t)).astype(np.float32)

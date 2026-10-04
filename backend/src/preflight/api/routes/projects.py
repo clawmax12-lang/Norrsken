@@ -11,20 +11,21 @@ from preflight.api.errors import ApiError
 from preflight.api.results import build_results
 from preflight.api.schemas import ProjectResponse, ResultsResponse
 from preflight.api.sse import start_offset, stream_activity_log
-from preflight.contracts import Brief, Goal, RunRecord
+from preflight.contracts import Brief, Goal, RenderMode, RunRecord
 from preflight.intake import MAX_IMAGE_BYTES, BriefForm, create_project
 from preflight.orchestrator.preparation import prepare_run
 
 router = APIRouter(prefix="/api")
 
 
-def brief_form(
+def brief_form(  # noqa: PLR0913, PLR0917
     product_name: Annotated[str, Form()],
     one_liner: Annotated[str, Form()],
     goal: Annotated[Goal, Form()],
     audience: Annotated[str, Form()],
     goal_note: Annotated[str | None, Form()] = None,
     brand_color: Annotated[str | None, Form()] = None,
+    render_mode: Annotated[RenderMode, Form()] = RenderMode.SHOWCASE,
 ) -> BriefForm:
     """Collect the text fields of the multipart intake form."""
     return BriefForm(
@@ -34,6 +35,7 @@ def brief_form(
         audience=audience,
         goal_note=goal_note,
         brand_color=brand_color,
+        render_mode=render_mode.value,
     )
 
 

@@ -1,0 +1,287 @@
+{
+  "$defs": {
+    "BriefField": {
+      "description": "Brief fields that on-screen copy may be sourced from (``source_field``).",
+      "enum": [
+        "product_name",
+        "one_liner",
+        "goal_note",
+        "audience"
+      ],
+      "title": "BriefField",
+      "type": "string"
+    },
+    "LayerKind": {
+      "description": "Closed set of reconstructed UI kinds. Unknown regions are ``other``.",
+      "enum": [
+        "panel",
+        "button",
+        "chart",
+        "text",
+        "icon",
+        "other"
+      ],
+      "title": "LayerKind",
+      "type": "string"
+    },
+    "MotionLayer": {
+      "additionalProperties": false,
+      "description": "One reconstructed region. ``bbox_norm`` is x, y, w, h in the unit square.",
+      "properties": {
+        "id": {
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/LayerKind"
+        },
+        "bbox_norm": {
+          "maxItems": 4,
+          "minItems": 4,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Bbox Norm",
+          "type": "array"
+        },
+        "confidence": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Path"
+        },
+        "label": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Label"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "bbox_norm",
+        "confidence"
+      ],
+      "title": "MotionLayer",
+      "type": "object"
+    },
+    "MotionShot": {
+      "additionalProperties": false,
+      "description": "One 60 fps beat. Timestamps stay in seconds; frames are derived at compose time.",
+      "properties": {
+        "screenshot": {
+          "minLength": 1,
+          "title": "Screenshot",
+          "type": "string"
+        },
+        "start_frame": {
+          "minimum": 0,
+          "title": "Start Frame",
+          "type": "integer"
+        },
+        "end_frame": {
+          "exclusiveMinimum": 0,
+          "title": "End Frame",
+          "type": "integer"
+        },
+        "text": {
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        },
+        "source_field": {
+          "$ref": "#/$defs/BriefField"
+        },
+        "layers": {
+          "items": {
+            "$ref": "#/$defs/MotionLayer"
+          },
+          "title": "Layers",
+          "type": "array"
+        },
+        "t_start": {
+          "maximum": 15,
+          "minimum": 0,
+          "title": "T Start",
+          "type": "number"
+        },
+        "t_end": {
+          "exclusiveMinimum": 0,
+          "maximum": 15,
+          "title": "T End",
+          "type": "number"
+        }
+      },
+      "required": [
+        "screenshot",
+        "start_frame",
+        "end_frame",
+        "text",
+        "source_field",
+        "layers",
+        "t_start",
+        "t_end"
+      ],
+      "title": "MotionShot",
+      "type": "object"
+    },
+    "Theme": {
+      "additionalProperties": false,
+      "description": "Visual tokens for one video. Typography follows the template's design system.",
+      "properties": {
+        "background": {
+          "pattern": "^#[0-9a-fA-F]{6}$",
+          "title": "Background",
+          "type": "string"
+        },
+        "foreground": {
+          "pattern": "^#[0-9a-fA-F]{6}$",
+          "title": "Foreground",
+          "type": "string"
+        },
+        "accent": {
+          "pattern": "^#[0-9a-fA-F]{6}$",
+          "title": "Accent",
+          "type": "string"
+        },
+        "font_family": {
+          "minLength": 1,
+          "title": "Font Family",
+          "type": "string"
+        }
+      },
+      "required": [
+        "background",
+        "foreground",
+        "accent",
+        "font_family"
+      ],
+      "title": "Theme",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Input to the isolated ``PreflightMotion`` Remotion composition.",
+  "properties": {
+    "variant_id": {
+      "pattern": "^[A-Z]$",
+      "title": "Variant Id",
+      "type": "string"
+    },
+    "width": {
+      "const": 1080,
+      "default": 1080,
+      "title": "Width",
+      "type": "integer"
+    },
+    "height": {
+      "const": 1920,
+      "default": 1920,
+      "title": "Height",
+      "type": "integer"
+    },
+    "fps": {
+      "const": 60,
+      "default": 60,
+      "title": "Fps",
+      "type": "integer"
+    },
+    "duration_frames": {
+      "const": 900,
+      "default": 900,
+      "title": "Duration Frames",
+      "type": "integer"
+    },
+    "theme": {
+      "$ref": "#/$defs/Theme"
+    },
+    "shots": {
+      "items": {
+        "$ref": "#/$defs/MotionShot"
+      },
+      "title": "Shots",
+      "type": "array"
+    },
+    "cta": {
+      "minLength": 1,
+      "title": "Cta",
+      "type": "string"
+    },
+    "cta_source_field": {
+      "$ref": "#/$defs/BriefField"
+    },
+    "wordmark": {
+      "minLength": 1,
+      "title": "Wordmark",
+      "type": "string"
+    },
+    "headline": {
+      "minLength": 1,
+      "title": "Headline",
+      "type": "string"
+    },
+    "headline_source_field": {
+      "$ref": "#/$defs/BriefField"
+    },
+    "logo": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Logo"
+    },
+    "underlay": {
+      "default": true,
+      "title": "Underlay",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "variant_id",
+    "theme",
+    "shots",
+    "cta",
+    "cta_source_field",
+    "wordmark",
+    "headline",
+    "headline_source_field"
+  ],
+  "title": "MotionSpec",
+  "type": "object"
+}

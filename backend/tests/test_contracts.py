@@ -10,6 +10,10 @@ def test_brief_round_trips_through_json() -> None:
     assert Brief.model_validate_json(brief.model_dump_json()) == brief
 
 
+def test_brief_defaults_to_showcase_render_mode() -> None:
+    assert make_brief().render_mode.value == "showcase"
+
+
 @pytest.mark.parametrize(
     "overrides",
     [

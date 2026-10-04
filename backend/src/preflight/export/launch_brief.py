@@ -49,8 +49,8 @@ def render_launch_brief(
             finished the pretest.
         ranking: The scored ranking with its confidence label and rule.
         report: Reasons, next-time advice, token savings and whether the brain sim ran.
-        sounds: Sound added to the exported videos, by variant; ``None`` or empty when they
-            are the silent renders that were pretested.
+        sounds: Sound mixed onto every rendered variant before the pretest; ``None`` or empty
+            when the panel watched a silent render.
 
     Raises:
         PreflightValidationError: The concepts do not match the report's winner and runner-up.
@@ -164,8 +164,8 @@ def _sound_section(sounds: Mapping[str, SoundRecord]) -> str:
     lines = [
         "## Sound in the exported videos",
         "",
-        "Narration, music and sound effects were added after the pretest. The simulated "
-        "viewers watched the silent renders, so the ranking above does not cover the audio.",
+        "Narration, music and sound effects were mixed before the pretest. Simulated "
+        "viewers watched the soundtrack cut, so the ranking above includes the audio.",
         "",
     ]
     for variant, record in sorted(sounds.items()):

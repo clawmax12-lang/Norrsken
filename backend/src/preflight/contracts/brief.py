@@ -23,6 +23,13 @@ class Goal(StrEnum):
     PURCHASE = "purchase"
 
 
+class RenderMode(StrEnum):
+    """Which picture track to try. Default is the FR-03 Showcase template."""
+
+    SHOWCASE = "showcase"
+    GENERATIVE_MOTION = "generative_motion"
+
+
 class BriefField(StrEnum):
     """Brief fields that on-screen copy may be sourced from (``source_field``)."""
 
@@ -46,6 +53,7 @@ class Brief(Contract):
     audience: NonEmpty
     brand_color: Annotated[str, Field(pattern=r"^#[0-9a-fA-F]{6}$")] | None = None
     logo: str | None = None
+    render_mode: RenderMode = RenderMode.SHOWCASE
 
     @field_validator("screenshots")
     @classmethod

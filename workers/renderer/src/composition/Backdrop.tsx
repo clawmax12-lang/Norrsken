@@ -35,13 +35,13 @@ export const Backdrop: React.FC<BackdropProps> = ({ theme, asset, sceneIndex, t 
         <Img src={staticFile(asset.path)} style={media} />
       )}
       <AbsoluteFill
-        style={{ background: `linear-gradient(180deg, ${withAlpha(theme.background, 0.88)} 0%, ${withAlpha(theme.background, 0.4)} 38%, ${withAlpha(theme.background, 0.1)} 100%)` }}
+        style={{ background: `linear-gradient(180deg, ${withAlpha(theme.background, 0.18)} 0%, ${withAlpha(theme.background, 0.04)} 42%, transparent 100%)` }}
       />
     </AbsoluteFill>
   );
 };
 
-const TemplateBackdrop: React.FC<{ theme: Theme; sceneIndex: number; drift: number }> = ({ theme, sceneIndex, drift }) => {
+export const TemplateBackdrop: React.FC<{ theme: Theme; sceneIndex: number; drift: number }> = ({ theme, sceneIndex, drift }) => {
   const a = SCENE_HUES[sceneIndex % SCENE_HUES.length]!;
   const b = SCENE_HUES[(sceneIndex + 2) % SCENE_HUES.length]!;
   return (
@@ -51,6 +51,7 @@ const TemplateBackdrop: React.FC<{ theme: Theme; sceneIndex: number; drift: numb
         background: [
           `radial-gradient(900px 900px at ${a.x}% ${a.y}%, ${withAlpha(theme.accent, 0.2)}, transparent 70%)`,
           `radial-gradient(760px 760px at ${b.x}% ${b.y}%, ${withAlpha(theme.accent, 0.11)}, transparent 70%)`,
+          `radial-gradient(420px 280px at 50% 18%, ${withAlpha(theme.foreground, 0.08)}, transparent 72%)`,
         ].join(", "),
       }}
     />

@@ -13,7 +13,7 @@ from datetime import UTC, datetime
 
 from pydantic import ValidationError
 
-from preflight.contracts import Brief, RunRecord, RunState
+from preflight.contracts import Brief, RenderMode, RunRecord, RunState
 from preflight.contracts.brief import MAX_SCREENSHOTS, MIN_SCREENSHOTS
 from preflight.errors import PreflightValidationError
 from preflight.ports import Clock
@@ -41,6 +41,7 @@ class BriefForm:
     audience: str
     goal_note: str | None = None
     brand_color: str | None = None
+    render_mode: str = RenderMode.SHOWCASE.value
 
 
 def create_project(
@@ -112,6 +113,7 @@ def _build_brief(
                 "audience": form.audience,
                 "brand_color": _blank_to_none(form.brand_color),
                 "logo": _upload_name("logo", logo) if logo else None,
+                "render_mode": form.render_mode or RenderMode.SHOWCASE.value,
             }
         )
     except ValidationError as exc:

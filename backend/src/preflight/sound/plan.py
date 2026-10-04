@@ -1,29 +1,29 @@
-"""Decide what the soundtrack contains, as a pure function of the composition spec.
+"""Decide what the soundtrack contains, as a pure function of the rendered spec.
 
-Everything is derived from the spec the renderer drew: narration reads the on-screen copy,
-effects land on scene changes (by transition style) and the music's drop and outro follow the
-scene and end-card boundaries. At 120 BPM a beat is half a second, so the whole-second scene
-lengths the planner produces fall on beats and every cut lands on the music.
+Narration reads on-screen copy; effects land on scene changes; music drop/outro follow the
+locked 3 s end card. At 120 BPM a beat is half a second.
 """
 
 from dataclasses import dataclass
 
-from preflight.contracts import CompositionSpec, CueKind, NarrationLine, SoundCue, Transition
+from preflight.contracts import (
+    BriefField,
+    CompositionSpec,
+    CueKind,
+    NarrationLine,
+    SoundCue,
+    Transition,
+)
+from preflight.motion.scene import MotionSpec
+from preflight.timing import END_CARD_S, SPEECH_GAP_S, SPEECH_LEAD_S, SPEECH_TAIL_S
 
 BPM = 120
 BEAT_S = 60.0 / BPM
 BAR_S = 4 * BEAT_S
 
-# The CTA end card covers the tail of the last scene. Mirrors CTA_CARD_MAX_FRAMES and
-# CTA_CARD_SCENE_SHARE in workers/renderer/src/composition/tokens.ts.
-_CTA_MAX_FRAMES = 60
-_CTA_SCENE_SHARE = 0.6
-
-_SPEECH_LEAD_S = 0.3  # a line starts once its scene has settled
-_SPEECH_GAP_S = 0.12  # air left before the next line
-_SPEECH_TAIL_S = 0.2  # the last line must end before the video does
 _TEXT_TICK_DELAY_S = 0.12
-_BEAT_SNAP_S = 0.06
+# Rough words/second for fitting a line into its scene window.
+_WORDS_PER_S = 2.6
 
 
 @dataclass(frozen=True)
@@ -41,27 +41,74 @@ class SoundPlan:
     cues: tuple[SoundCue, ...]
 
 
+@dataclass(frozen=True)
+class _Beat:
+    start_s: float
+    text: str
+    source_field: BriefField
+    transition: Transition | None
+
+
+@dataclass(frozen=True)
+class _Copy:
+    headline: str
+    headline_field: BriefField
+    cta: str
+    cta_field: BriefField
+
+
 def plan_soundtrack(spec: CompositionSpec) -> SoundPlan:
-    """Plan narration, effects and music structure for ``spec``."""
+    """Plan narration, effects and music for a Showcase ``CompositionSpec``."""
     duration_s = spec.duration_frames / spec.fps
-    cta_s = _cta_start_s(spec)
-    scene_starts = [scene.start_frame / spec.fps for scene in spec.scenes]
+    cta_s = duration_s - END_CARD_S
+    body = spec.scenes[:-1] or spec.scenes
+    beats = tuple(
+        _Beat(
+            start_s=scene.start_frame / spec.fps,
+            text=scene.text,
+            source_field=scene.source_field,
+            transition=None if index == 0 else scene.transition_in,
+        )
+        for index, scene in enumerate(body)
+    )
+    copy = _Copy(spec.headline, spec.headline_source_field, spec.cta, spec.cta_source_field)
+    return _plan(duration_s, beats, copy, cta_s)
+
+
+def plan_motion_soundtrack(spec: MotionSpec) -> SoundPlan:
+    """Plan narration against the 60 fps motion timeline that was actually rendered."""
+    duration_s = spec.duration_frames / spec.fps
+    cta_s = duration_s - END_CARD_S
+    body = spec.shots[:-1] or spec.shots
+    beats = tuple(
+        _Beat(
+            start_s=shot.start_frame / spec.fps,
+            text=shot.text,
+            source_field=shot.source_field,
+            transition=None if index == 0 else Transition.FADE,
+        )
+        for index, shot in enumerate(body)
+    )
+    copy = _Copy(spec.headline, spec.headline_source_field, spec.cta, spec.cta_source_field)
+    return _plan(duration_s, beats, copy, cta_s)
+
+
+def _plan(
+    duration_s: float,
+    beats: tuple[_Beat, ...],
+    copy: _Copy,
+    cta_s: float,
+) -> SoundPlan:
+    scene_starts = [beat.start_s for beat in beats]
     outro_s = _snap_down(cta_s)
     drop_s = _snap(scene_starts[1]) if len(scene_starts) > 1 else 0.0
     return SoundPlan(
         duration_s=duration_s,
         drop_s=min(drop_s, outro_s),
         outro_s=outro_s,
-        lines=_narration(spec, scene_starts, cta_s, duration_s),
-        cues=_cues(spec, scene_starts, cta_s),
+        lines=_narration(beats, copy, cta_s, duration_s),
+        cues=_cues(beats, cta_s),
     )
-
-
-def _cta_start_s(spec: CompositionSpec) -> float:
-    last = spec.scenes[-1]
-    length = last.end_frame - last.start_frame
-    card = min(_CTA_MAX_FRAMES, max(1, int(length * _CTA_SCENE_SHARE)))
-    return (last.end_frame - card) / spec.fps
 
 
 def _snap(t: float) -> float:
@@ -75,35 +122,54 @@ def _snap_down(t: float) -> float:
 
 
 def _narration(
-    spec: CompositionSpec, scene_starts: list[float], cta_s: float, duration_s: float
+    beats: tuple[_Beat, ...],
+    copy: _Copy,
+    cta_s: float,
+    duration_s: float,
 ) -> tuple[NarrationLine, ...]:
-    """One line per distinct on-screen text, then the call to action on its end card."""
-    spoken: list[tuple[str, object, float, float]] = []
+    """One line per distinct on-screen text, then the end-card headline."""
+    starts = [beat.start_s for beat in beats]
+    boundaries = [*starts[1:], cta_s]
+    spoken: list[tuple[str, BriefField, float, float]] = []
     seen: set[str] = set()
-    boundaries = [*scene_starts[1:], cta_s]
-    for scene, start, next_start in zip(spec.scenes, scene_starts, boundaries, strict=True):
-        if scene.text.casefold() not in seen:
-            seen.add(scene.text.casefold())
-            spoken.append((scene.text, scene.source_field, start + _SPEECH_LEAD_S, next_start))
-    if spec.cta.casefold() not in seen:
-        spoken.append((spec.cta, spec.cta_source_field, cta_s + _SPEECH_LEAD_S, duration_s))
-    lines = []
+    for beat, start, next_start in zip(beats, starts, boundaries, strict=True):
+        key = beat.text.casefold()
+        if key and key not in seen:
+            seen.add(key)
+            spoken.append((beat.text, beat.source_field, start + SPEECH_LEAD_S, next_start))
+    cta_text = copy.headline or copy.cta
+    if cta_text.casefold() not in seen:
+        spoken.append((cta_text, copy.headline_field, cta_s + SPEECH_LEAD_S, duration_s))
+    lines: list[NarrationLine] = []
     for index, (text, field, start, limit) in enumerate(spoken):
         is_last = index == len(spoken) - 1
-        end = limit - (_SPEECH_TAIL_S if is_last else _SPEECH_GAP_S)
-        if end - start > 0:
+        end = limit - (SPEECH_TAIL_S if is_last else SPEECH_GAP_S)
+        window = end - start
+        if window <= 0 or not text.strip():
+            continue
+        fitted = _fit(text, window)
+        if fitted:
             lines.append(
-                NarrationLine(text=text, source_field=field, start_s=start, window_s=end - start)
+                NarrationLine(text=fitted, source_field=field, start_s=start, window_s=window)
             )
     return tuple(lines)
 
 
-def _cues(spec: CompositionSpec, scene_starts: list[float], cta_s: float) -> tuple[SoundCue, ...]:
+def _fit(text: str, window_s: float) -> str:
+    """Trim ``text`` to roughly fit ``window_s``; empty when nothing fits."""
+    words = text.split()
+    if not words:
+        return ""
+    budget = max(1, int(window_s * _WORDS_PER_S))
+    return " ".join(words[:budget])
+
+
+def _cues(beats: tuple[_Beat, ...], cta_s: float) -> tuple[SoundCue, ...]:
     cues: list[SoundCue] = [SoundCue(kind=CueKind.SHIMMER, t=0.1)]
-    for index, (scene, start) in enumerate(zip(spec.scenes, scene_starts, strict=True)):
-        cues.append(SoundCue(kind=CueKind.TICK, t=start + _TEXT_TICK_DELAY_S))
-        if index > 0:
-            cues.extend(_transition_cues(scene.transition_in, start))
+    for beat in beats:
+        cues.append(SoundCue(kind=CueKind.TICK, t=beat.start_s + _TEXT_TICK_DELAY_S))
+        if beat.transition is not None:
+            cues.extend(_transition_cues(beat.transition, beat.start_s))
     cues += [SoundCue(kind=CueKind.IMPACT, t=cta_s), SoundCue(kind=CueKind.SHIMMER, t=cta_s)]
     return tuple(sorted(cues, key=lambda cue: (cue.t, cue.kind.value)))
 

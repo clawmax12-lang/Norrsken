@@ -88,11 +88,11 @@ The Gemini SDK is isolated in `preflight/llm/genai_backend.py` (`google-genai` 2
 
 ## Sound
 
-After the report is written, `SoundStage` gives the ranked top two variants a soundtrack (`preflight.sound`):
+After picture render, `SoundStage` mixes every rendered variant (`preflight.sound`) **before** simulated viewers:
 
-- **Narration.** One Gemini text-to-speech call per distinct on-screen line (scene text, then the CTA), timed to its scene. Lines are trimmed, levelled, sped up at most 1.3x to fit their scene, or left out if they cannot fit. Results are cached under `sound/work/cache/`. A voice failure leaves music and effects only.
+- **Narration.** One Gemini text-to-speech call per distinct on-screen line (scene text, then the CTA), timed to its scene. Lines are trimmed, levelled, sped up at most 1.5× to fit, then trimmed to the window rather than dropped. Distinct lines are spoken one at a time and cached under `sound/work/cache/`; a 429 is retried twice before that line is skipped. A total voice outage leaves music and effects only.
 - **Music and effects.** Synthesized in numpy (`dsp.py`, `music.py`): a 120 BPM bed whose drop and outro follow the scene boundaries and CTA card (whole-second scenes land on beats), and effects chosen by each scene's transition style.
 - **Mix and master.** Music ducks under speech; ffmpeg's two-pass `loudnorm` sets about -14 LUFS and the encoded file is measured again (true peak at or below -1 dBTP). The video stream is copied unchanged.
-- **Outputs.** `videos/{id}.final.mp4` and `sound/{id}.json` (what was said, effects, loudness, tested vs. final hashes, TTS tokens). Export uses the sound cut when present; the pretest covers the silent render and the launch brief says so.
+- **Outputs.** `videos/{id}.final.mp4` and `sound/{id}.json` (what was said, effects, loudness, picture vs mixed hashes, TTS tokens). Export and playback use the sound cut when present; the pretest watches that mixed file.
 
 Narration bypasses Condense (a logged exception to FR-10; see PRD §9.3). Nothing in the sound path has been run against the live Gemini TTS API in this repository's tests: those use a fake backend over the real SDK. Verify with a real key before relying on it, including the model id (`TTS_MODEL`) and the voice (`NARRATION_VOICE`).

@@ -33,7 +33,7 @@ def build_export(store: ProjectStore, project_id: str) -> ExportBundle:
     """Write the export files for a finished project and return their locations.
 
     The videos are copies of the cuts with narration, music and effects when sound was added
-    (the pretest ran on the silent renders, which the launch brief says), otherwise of the
+    (the pretest watched those mixed files), otherwise of the
     rendered MP4s. ``report.json`` is the validated report and
     the launch brief is rendered from the stored results. When only one variant survived there
     is no runner-up video: the file is absent (a stale one from an earlier run is removed)

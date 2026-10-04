@@ -11,6 +11,7 @@ _ORDER = (
     RunState.BRIEF_RECEIVED,
     RunState.PLANNED,
     RunState.RENDERED,
+    RunState.MIXED,
     RunState.SIMULATED,
     RunState.SCORED,
     RunState.EXPLAINED,

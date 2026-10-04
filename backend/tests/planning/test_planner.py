@@ -1,3 +1,5 @@
+import json
+
 import pytest
 
 from preflight.errors import PreflightValidationError, ProviderError
@@ -5,6 +7,12 @@ from preflight.llm import GeminiClient, MediaPart
 from preflight.planning import GeminiPlanner
 from tests.llm.fakes import FakeGeminiBackend
 from tests.planning.helpers import concept_json, plan_json, project_with_screenshots
+
+
+def _ungrounded_plan() -> str:
+    raw = json.loads(plan_json())
+    raw["concepts"][2]["cta"] = "Try it free"
+    return json.dumps(raw)
 
 
 def make_planner(tmp_path, *script):
@@ -47,10 +55,7 @@ async def test_screenshots_are_sent_as_images_in_index_order(tmp_path) -> None:
 
 
 async def test_ungrounded_text_gets_one_repair_with_the_exact_violation(tmp_path) -> None:
-    bad = concept_json(cta="Try it free")
-    planner, brief, backend = make_planner(
-        tmp_path, plan_json(concept_json(), concept_json(), bad), plan_json()
-    )
+    planner, brief, backend = make_planner(tmp_path, _ungrounded_plan(), plan_json())
 
     concepts = await planner.plan_variants(brief, count=3)
 
@@ -60,7 +65,7 @@ async def test_ungrounded_text_gets_one_repair_with_the_exact_violation(tmp_path
 
 
 async def test_still_ungrounded_after_repair_fails(tmp_path) -> None:
-    bad = plan_json(concept_json(cta="Try it free"), concept_json(), concept_json())
+    bad = _ungrounded_plan()
     planner, brief, backend = make_planner(tmp_path, bad, bad)
 
     with pytest.raises(PreflightValidationError, match="after one repair"):
@@ -77,7 +82,8 @@ async def test_wrong_number_of_concepts_is_repaired(tmp_path) -> None:
 
 
 async def test_fewer_concepts_can_be_requested(tmp_path) -> None:
-    planner, brief, _ = make_planner(tmp_path, plan_json(concept_json(), concept_json()))
+    varied = json.loads(plan_json())
+    planner, brief, _ = make_planner(tmp_path, json.dumps({"concepts": varied["concepts"][:2]}))
 
     assert [c.variant_id for c in await planner.plan_variants(brief, count=2)] == ["A", "B"]
 

@@ -11,11 +11,13 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from preflight.contracts import Brief, BriefField, CreativeConcept, Scene
 from preflight.contracts.concept import MAX_HOOK_WORDS, MAX_SCENES, MIN_SCENES
+from preflight.timing import END_CARD_S
 
 from .archetypes import Archetype
 
 VIDEO_SECONDS = 15
 FIRST_VARIANT_ID = "A"
+END_CARD_SECONDS = int(END_CARD_S)
 
 
 class _Draft(BaseModel):
@@ -57,11 +59,19 @@ class ConceptDraft(_Draft):
         return self.model_copy(update={"scenes": scenes})
 
 
-def fit_durations(durations: list[int], total: int) -> list[int]:
-    """Whole-second lengths summing to ``total``, proportional to ``durations``, each >= 1.
+def fit_durations(
+    durations: list[int], total: int, *, last_locked: int | None = END_CARD_SECONDS
+) -> list[int]:
+    """Whole-second lengths summing to ``total``. The last scene is locked to the end card."""
+    if last_locked is None or len(durations) < 2:
+        return _fit_body(durations, total)
+    last = min(last_locked, total - (len(durations) - 1))
+    body = _fit_body(durations[:-1], total - last)
+    return [*body, last]
 
-    Uses largest remainders, so lengths that already sum to ``total`` are unchanged.
-    """
+
+def _fit_body(durations: list[int], total: int) -> list[int]:
+    """Whole-second lengths summing to ``total``, proportional to ``durations``, each >= 1."""
     current = sum(durations)
     if current == total:
         return list(durations)
@@ -123,12 +133,23 @@ def _assemble(
             )
         )
         elapsed += scene.duration_s
+    cta, cta_source_field = _cta_for(concept, brief)
     return CreativeConcept(
         variant_id=identifier,
         hypothesis=archetype.name,
         hook=concept.hook,
         hook_source_field=concept.hook_source_field,
         scenes=tuple(scenes),
-        cta=concept.cta,
-        cta_source_field=concept.cta_source_field,
+        cta=cta,
+        cta_source_field=cta_source_field,
     )
+
+
+def _cta_for(concept: ConceptDraft, brief: Brief) -> tuple[str, BriefField]:
+    """Prefer the founder's goal note as the end-card line when they wrote one."""
+    note = (brief.goal_note or "").strip()
+    if not note:
+        return concept.cta, concept.cta_source_field
+    if concept.cta_source_field is BriefField.GOAL_NOTE:
+        return concept.cta, BriefField.GOAL_NOTE
+    return note, BriefField.GOAL_NOTE

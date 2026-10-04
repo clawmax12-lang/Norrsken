@@ -1,6 +1,6 @@
 """Public contract models. Import from here, not from the submodules."""
 
-from .brief import Brief, BriefField, Goal
+from .brief import Brief, BriefField, Goal, RenderMode
 from .composition import (
     AssetKind,
     CompositionSpec,
@@ -43,6 +43,7 @@ __all__ = [
     "NarrationLine",
     "Ranking",
     "Reason",
+    "RenderMode",
     "RenderResult",
     "RenderStatus",
     "Report",

@@ -1,5 +1,7 @@
 """Plan-level checks that need the brief: everything the schema alone cannot express (FR-02)."""
 
+from itertools import pairwise
+
 from pydantic import ValidationError
 
 from preflight.contracts import Brief, CreativeConcept
@@ -16,6 +18,9 @@ def plan_problems(draft: PlanDraft, brief: Brief, archetypes: tuple[Archetype, .
     index_problems = _screenshot_index_problems(draft, len(brief.screenshots))
     if index_problems:
         return index_problems
+    sequence_problems = _screenshot_sequence_problems(draft, len(brief.screenshots))
+    if sequence_problems:
+        return sequence_problems
     try:
         concepts = assemble_concepts(draft, brief, archetypes)
     except ValidationError as exc:
@@ -31,6 +36,28 @@ def _screenshot_index_problems(draft: PlanDraft, screenshot_count: int) -> list[
         for s, scene in enumerate(concept.scenes, start=1)
         if scene.screenshot_index >= screenshot_count
     ]
+
+
+def _screenshot_sequence_problems(draft: PlanDraft, screenshot_count: int) -> list[str]:
+    """Reject a repeated screen and a plan whose concepts are the same film reordered nowhere."""
+    if screenshot_count < 2:
+        return []
+    problems: list[str] = []
+    sequences: list[tuple[int, ...]] = []
+    for concept_index, concept in enumerate(draft.concepts):
+        indexes = [scene.screenshot_index for scene in concept.scenes]
+        sequences.append(tuple(indexes))
+        for scene_index, (left, right) in enumerate(pairwise(indexes), start=1):
+            if left == right:
+                problems.append(
+                    f"concept {variant_id(concept_index)} scenes {scene_index} and "
+                    f"{scene_index + 1} repeat screenshot_index {left}; pick a different screenshot"
+                )
+    if len(sequences) >= 2 and len(set(sequences)) == 1:
+        problems.append(
+            "concepts must not share the same screenshot sequence; vary the order across A, B and C"
+        )
+    return problems
 
 
 def _set_problems(concepts: tuple[CreativeConcept, ...]) -> list[str]:

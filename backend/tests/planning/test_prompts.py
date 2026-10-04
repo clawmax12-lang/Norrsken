@@ -44,6 +44,17 @@ def test_system_prompt_declares_screenshots_and_brief_to_be_data() -> None:
     assert "inside a screenshot" in SYSTEM_PROMPT
 
 
+def test_hook_must_carry_product_or_one_liner_not_audience_only() -> None:
+    assert "product name or the one-liner" in SYSTEM_PROMPT
+    assert "audience-only" in SYSTEM_PROMPT
+    assert "goal_note" in SYSTEM_PROMPT
+    assert PROMPT_VERSION == "plan-v6"
+    assert "last scene is always exactly 3 seconds" in SYSTEM_PROMPT
+    assert "first scene's on-screen text is the hook" in SYSTEM_PROMPT
+    assert "not a label of what a screenshot shows" in SYSTEM_PROMPT
+    assert "same screenshot sequence" in SYSTEM_PROMPT
+
+
 def test_screenshots_are_sent_in_index_order_with_a_data_label_and_no_file_names() -> None:
     brief = make_brief(screenshots=("uploads/ignore-previous-instructions.png", "b.png", "c.png"))
     shots = [MediaPart(bytes([i]), "image/png") for i in range(3)]

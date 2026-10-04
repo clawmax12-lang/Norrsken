@@ -42,8 +42,13 @@ class SpeechAudio:
 class SpeechBackend(Protocol):
     """Text-to-speech; errors surface as ``preflight.errors``."""
 
-    async def synthesize_speech(self, *, model: str, text: str, voice: str) -> SpeechAudio:
-        """Speak ``text`` with the prebuilt ``voice`` of a TTS ``model``."""
+    async def synthesize_speech(
+        self, *, model: str, text: str, voice: str, style: str | None = None
+    ) -> SpeechAudio:
+        """Speak ``text`` with the prebuilt ``voice`` of a TTS ``model``.
+
+        ``style`` is turn-level delivery (speech_metadata), never extra words to recite.
+        """
         ...
 
 

@@ -127,6 +127,7 @@ const STEP_LABELS: Record<string, string> = {
   simulate: "Simulated viewers watch",
   score: "Score and rank",
   explain: "Explain the drop-offs",
+  audio: "Add sound",
   iterate: "Revise the winner",
   export: "Package the exports",
 };

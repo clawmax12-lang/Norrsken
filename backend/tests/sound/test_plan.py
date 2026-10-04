@@ -1,7 +1,11 @@
 import pytest
 
 from preflight.contracts import CueKind, SceneSpec, Transition
-from preflight.sound.plan import BEAT_S, plan_soundtrack
+from preflight.generation.compose import compose
+from preflight.motion.compose import compose_motion
+from preflight.motion.scene import ExtractedLayers, LayerKind, MotionLayer
+from preflight.sound.plan import BEAT_S, plan_motion_soundtrack, plan_soundtrack
+from tests.factories import make_brief, make_concept
 from tests.sound.helpers import make_spec
 
 
@@ -17,19 +21,32 @@ def test_music_structure_follows_the_scenes_and_the_end_card() -> None:
 
     assert plan.duration_s == 15.0
     assert plan.drop_s == 3.0  # the first scene change
-    assert plan.outro_s == 13.0  # the end card takes the last 1.8 s (60 % of 3 s), then a beat down
+    assert plan.outro_s == 12.0  # locked 3 s end card, snapped to a beat
 
 
-def test_narration_reads_each_distinct_on_screen_text_then_the_cta() -> None:
+def test_narration_covers_distinct_copy_then_the_end_card() -> None:
     plan = plan_soundtrack(make_spec())
 
-    texts = [line.text for line in plan.lines]
-    assert texts == [
-        "Notes that organise themselves",
-        "Acme Notes",
-    ]  # repeated scene text read once
+    # Fixture scenes reuse the one-liner, so dedupe keeps a single opening line.
+    assert len(plan.lines) == 1
     assert plan.lines[0].start_s == pytest.approx(0.3)
-    assert plan.lines[1].start_s > plan.outro_s - BEAT_S
+    assert plan.lines[0].text == "Notes that organise themselves"
+
+    varied = make_spec(
+        hook="Start here",
+        scenes=tuple(
+            scene.model_copy(update={"text": text})
+            for scene, text in zip(
+                make_concept().scenes,
+                ("Start here", "Keep going", "See results", "Try Acme", "Acme Notes"),
+                strict=True,
+            )
+        ),
+    )
+    varied_plan = plan_soundtrack(varied)
+    texts = [line.text.casefold() for line in varied_plan.lines]
+    assert len(texts) == len(set(texts))
+    assert varied_plan.lines[-1].start_s > varied_plan.outro_s - BEAT_S
 
 
 def test_lines_never_overlap_and_end_before_the_video_does() -> None:
@@ -45,13 +62,7 @@ def test_every_line_keeps_its_source_field() -> None:
     plan = plan_soundtrack(spec)
 
     assert plan.lines[0].source_field == spec.scenes[0].source_field
-    assert plan.lines[-1].source_field == spec.cta_source_field
-
-
-def test_cta_is_not_repeated_when_the_last_scene_already_says_it() -> None:
-    spec = make_spec(cta="Notes that organise themselves")
-
-    assert [line.text for line in plan_soundtrack(spec).lines] == ["Notes that organise themselves"]
+    assert plan.lines[-1].source_field == spec.headline_source_field
 
 
 def test_effects_follow_the_transition_style() -> None:
@@ -61,7 +72,7 @@ def test_effects_follow_the_transition_style() -> None:
     by_time: dict[float, set[CueKind]] = {}
     for cue in plan.cues:
         by_time.setdefault(cue.t, set()).add(cue.kind)
-    for scene in spec.scenes[1:]:
+    for scene in spec.scenes[1:-1]:
         start = scene.start_frame / spec.fps
         expected = {
             Transition.SCALE: {CueKind.WHOOSH, CueKind.IMPACT},
@@ -70,7 +81,7 @@ def test_effects_follow_the_transition_style() -> None:
             Transition.CUT: {CueKind.IMPACT},
         }[scene.transition_in]
         assert expected <= by_time[start]
-    cta_s = 13.2  # the end card starts 1.8 s before the end
+    cta_s = 12.0
     at_cta = next(kinds for t, kinds in by_time.items() if t == pytest.approx(cta_s))
     assert {CueKind.IMPACT, CueKind.SHIMMER} <= at_cta
 
@@ -93,3 +104,23 @@ def test_a_single_scene_video_still_has_a_plan() -> None:
     assert plan.drop_s == 0.0
     assert plan.lines and plan.cues
     assert isinstance(only, SceneSpec)
+
+
+def test_motion_soundtrack_uses_the_sixty_fps_end_card() -> None:
+    concept = make_concept("A")
+    layers = (
+        MotionLayer(id="a", kind=LayerKind.PANEL, bbox_norm=(0.1, 0.2, 0.5, 0.4), confidence=0.9),
+        MotionLayer(
+            id="b", kind=LayerKind.BUTTON, bbox_norm=(0.2, 0.7, 0.3, 0.08), confidence=0.88
+        ),
+    )
+    extracted = {
+        scene.screenshot: ExtractedLayers(screenshot=scene.screenshot, layers=layers)
+        for scene in concept.scenes
+    }
+    brief = make_brief()
+    spec = compose_motion(concept, compose(brief, concept, ()).theme, extracted, brief)
+    assert spec is not None
+    plan = plan_motion_soundtrack(spec)
+    assert plan.outro_s == 12.0
+    assert any(cue.t == pytest.approx(12.0) for cue in plan.cues)

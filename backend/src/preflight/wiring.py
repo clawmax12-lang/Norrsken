@@ -18,6 +18,7 @@ from preflight.finalization.source import FinalSource
 from preflight.generation.assets import TemplateBackdrops
 from preflight.generation.compose import TemplateComposer
 from preflight.llm import GenAIBackend, TokenLedger, build_gemini_client
+from preflight.motion import MotionPipeline
 from preflight.orchestrator import Pipeline
 from preflight.orchestrator.retry import StepPolicy
 from preflight.planning.planner import GeminiPlanner
@@ -82,6 +83,7 @@ class ProductionRunService:
             settings,
             self._clock,
             sound=_sound_studio(settings, self._store.paths(project_id)),
+            motion=MotionPipeline(client, renderer, self._store),
         )
 
     def finalization_service(self) -> FinalizationService:

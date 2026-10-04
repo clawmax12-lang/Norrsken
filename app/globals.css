@@ -176,10 +176,25 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .composer-error { position: absolute; right: 0; bottom: 105px; max-width: 390px; padding: 9px 12px; border: 1px solid rgba(255, 90, 54, 0.26); border-radius: 9px; background: #2a1712; color: #f0a08d; font-size: 9px; }
 
 .modal-backdrop { position: fixed; z-index: 200; inset: 0; display: grid; place-items: center; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(9px); }
-.run-modal { width: 470px; padding: 25px; border: 1px solid var(--line-strong); border-radius: 20px; background: #181817; box-shadow: 0 30px 100px #000; }
+.run-modal { width: min(560px, calc(100vw - 36px)); padding: 25px; border: 1px solid var(--line-strong); border-radius: 20px; background: #181817; box-shadow: 0 30px 100px #000; }
 .run-modal > small { color: var(--accent); font: 600 8px/1 var(--font-mono); letter-spacing: 0.11em; text-transform: uppercase; }
 .run-modal h2 { margin: 10px 0; font-family: var(--pf-font-display, Georgia, serif); font-size: 26px; font-synthesis: none; letter-spacing: -0.025em; }
-.run-modal > p { margin: 0 0 18px; color: #aaa69f; font-size: 11px; line-height: 1.5; }
+.run-modal > p { margin: 0 0 16px; color: #aaa69f; font-size: 11px; line-height: 1.5; }
+.track-choice { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 0 0 16px; }
+.track-card { display: grid; gap: 8px; padding: 8px 8px 12px; border: 1px solid var(--line); border-radius: 14px; background: #121211; color: inherit; text-align: left; cursor: pointer; }
+.track-card.is-on { border-color: rgba(255, 90, 54, 0.55); box-shadow: 0 0 0 1px rgba(255, 90, 54, 0.18); }
+.track-card strong { font-size: 12px; letter-spacing: -0.03em; color: #ece8e1; }
+.track-card small { color: #8d8882; font-size: 10px; line-height: 1.4; }
+.track-preview { position: relative; aspect-ratio: 1; overflow: hidden; border-radius: 10px; background: #0c0c0b center / cover no-repeat; }
+.track-preview-exact { box-shadow: inset 0 0 0 10px #1c1c1b; }
+.track-phone { position: absolute; inset: 14px 28px; border: 1px solid rgba(255,255,255,0.14); border-radius: 14px; box-shadow: 0 10px 24px rgba(0,0,0,0.45); }
+.track-lock { position: absolute; left: 10px; bottom: 10px; padding: 4px 8px; border-radius: 999px; background: rgba(12,12,11,0.82); color: #ffab96; font: 600 8px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; }
+.track-preview-split { perspective: 420px; }
+.track-shard { position: absolute; border-radius: 8px; background-image: inherit; background-size: 180% 180%; background-position: center; box-shadow: 0 8px 18px rgba(0,0,0,0.4); }
+.track-shard.s1 { inset: 18% 42% 48% 12%; transform: rotate(-8deg) translate(-6px, -4px); }
+.track-shard.s2 { inset: 14% 12% 52% 40%; transform: rotate(7deg) translate(8px, -6px); }
+.track-shard.s3 { inset: 46% 38% 16% 10%; transform: rotate(5deg) translate(-8px, 8px); }
+.track-shard.s4 { inset: 50% 10% 12% 36%; transform: rotate(-6deg) translate(10px, 6px); border: 1px solid rgba(255, 90, 54, 0.45); }
 .run-modal ul { display: grid; gap: 8px; margin: 0 0 18px; padding: 0; list-style: none; }
 .run-modal li { padding: 9px 11px; border: 1px solid var(--line); border-radius: 8px; color: #77736e; font-size: 10px; }
 .run-modal li::before { content: "○"; margin-right: 8px; }

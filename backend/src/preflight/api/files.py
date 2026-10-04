@@ -57,7 +57,8 @@ def _candidate_path(
     store: ProjectStore, paths: ProjectPaths, kind: FileKind, variant: VariantId
 ) -> Path | None:
     if kind is FileKind.VIDEO:
-        return paths.video(variant)
+        final = paths.final_video(variant)
+        return final if final.is_file() else paths.video(variant)
     if kind is FileKind.VIDEO_FINAL:
         return paths.final_video(variant)
     simulation = paths.simulation(variant, SimulatorName.TRIBE_V2.value)

@@ -7,6 +7,8 @@ import pytest
 
 from preflight.errors import PreflightValidationError, RenderError
 from preflight.generation.compose import TemplateComposer
+from preflight.motion.compose import compose_motion
+from preflight.motion.scene import ExtractedLayers, LayerKind, MotionLayer
 from preflight.rendering import RemotionRenderer
 from tests.factories import make_brief, make_concept
 
@@ -45,6 +47,33 @@ async def test_renders_the_spec_and_hashes_the_video(tmp_path) -> None:
     assert seen["spec"]["variant_id"] == "A"
     assert seen["opts"]["--assets-root"] == str(tmp_path / "project")
     assert seen["opts"]["--concurrency"] == "2"
+
+
+async def test_render_motion_uses_isolated_composition_flags(tmp_path) -> None:
+    layers = (
+        MotionLayer(id="a", kind=LayerKind.PANEL, bbox_norm=(0.1, 0.2, 0.5, 0.4), confidence=0.9),
+        MotionLayer(
+            id="b", kind=LayerKind.BUTTON, bbox_norm=(0.2, 0.7, 0.3, 0.08), confidence=0.88
+        ),
+    )
+    concept = make_concept("A")
+    extracted = {
+        scene.screenshot: ExtractedLayers(screenshot=scene.screenshot, layers=layers)
+        for scene in concept.scenes
+    }
+    motion = compose_motion(concept, SPEC.theme, extracted)
+    assert motion is not None
+    body = """\
+    seen = {"opts": opts}
+    json.dump(seen, open(opts["--out"] + ".seen", "w"))
+    open(opts["--out"], "wb").write(b"motion")
+    """
+    output = tmp_path / "project" / "videos" / "A.mp4"
+    result = await renderer(tmp_path, body).render_motion(motion, output)
+    seen = json.loads((output.parent / "A.mp4.seen").read_text())
+    assert seen["opts"]["--composition-id"] == "PreflightMotion"
+    assert seen["opts"]["--entry"] == "src/motion/index.ts"
+    assert result.video_sha256 == hashlib.sha256(b"motion").hexdigest()
 
 
 async def test_invalid_spec_exit_is_not_retryable(tmp_path) -> None:

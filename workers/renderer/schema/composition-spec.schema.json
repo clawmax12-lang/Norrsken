@@ -207,12 +207,32 @@
       "title": "Fps",
       "type": "integer"
     },
+    "headline": {
+      "minLength": 1,
+      "title": "Headline",
+      "type": "string"
+    },
+    "headline_source_field": {
+      "$ref": "#/$defs/BriefField"
+    },
     "height": {
       "default": 1920,
       "maximum": 1920,
       "minimum": 1920,
       "title": "Height",
       "type": "integer"
+    },
+    "logo": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Logo"
     },
     "scenes": {
       "items": {
@@ -236,6 +256,11 @@
       "minimum": 1080,
       "title": "Width",
       "type": "integer"
+    },
+    "wordmark": {
+      "minLength": 1,
+      "title": "Wordmark",
+      "type": "string"
     }
   },
   "required": [
@@ -244,7 +269,10 @@
     "theme",
     "scenes",
     "cta",
-    "cta_source_field"
+    "cta_source_field",
+    "wordmark",
+    "headline",
+    "headline_source_field"
   ],
   "title": "CompositionSpec",
   "type": "object"

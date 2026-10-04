@@ -15,6 +15,7 @@ from pathlib import Path
 
 from preflight.contracts import CompositionSpec, RenderResult
 from preflight.errors import PreflightValidationError, RenderError
+from preflight.motion.scene import MotionSpec
 
 _LOG = logging.getLogger(__name__)
 _EXIT_INVALID_INPUT = 2
@@ -75,13 +76,54 @@ class RemotionRenderer:
             render_seconds=round(time.monotonic() - started, 2),
         )
 
-    def _command(self, spec_path: Path, output: Path) -> list[str]:
+    async def render_motion(self, spec: MotionSpec, output: Path) -> RenderResult:
+        """Render the isolated 60 fps composition. Does not call Showcase ``render``."""
+        output.parent.mkdir(parents=True, exist_ok=True)
+        started = time.monotonic()
+        with tempfile.TemporaryDirectory(prefix="preflight-motion-") as tmp:
+            spec_path = Path(tmp) / f"{spec.variant_id}.motion.json"
+            spec_path.write_text(spec.model_dump_json(), encoding="utf-8")
+            command = self._command(
+                spec_path,
+                output,
+                composition_id="PreflightMotion",
+                entry="src/motion/index.ts",
+            )
+            returncode, stderr = await self._run(command)
+        if returncode == _EXIT_INVALID_INPUT:
+            raise PreflightValidationError(
+                f"motion renderer rejected variant {spec.variant_id}: {stderr}"
+            )
+        if returncode != 0:
+            raise RenderError(f"motion renderer failed for variant {spec.variant_id}: {stderr}")
+        sha256 = await asyncio.to_thread(_sha256, output)
+        if sha256 is None:
+            raise RenderError(f"motion renderer wrote no video for variant {spec.variant_id}")
+        return RenderResult(
+            variant_id=spec.variant_id,
+            video_path=str(output),
+            video_sha256=sha256,
+            render_seconds=round(time.monotonic() - started, 2),
+        )
+
+    def _command(
+        self,
+        spec_path: Path,
+        output: Path,
+        *,
+        composition_id: str | None = None,
+        entry: str | None = None,
+    ) -> list[str]:
         command = [self._node, str(self._script), "--spec", str(spec_path), "--out", str(output)]
         command += ["--assets-root", str(self._assets_root)]
         if self._browser:
             command += ["--browser", self._browser]
         if self._concurrency:
             command += ["--concurrency", str(self._concurrency)]
+        if composition_id:
+            command += ["--composition-id", composition_id]
+        if entry:
+            command += ["--entry", entry]
         return command
 
     async def _run(self, command: Sequence[str]) -> tuple[int, str]:

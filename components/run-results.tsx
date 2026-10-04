@@ -191,7 +191,7 @@ export function RunResults({ apiBase, projectId, runNonce, onClose, onProgress, 
           })}
         </div>
 
-        {variant?.files.video && <video key={variant.files.video} ref={videoRef} className="results-video" src={url(apiBase, variant.files.video)} controls playsInline preload="metadata" />}
+        {playbackSrc(variant?.files) && <video key={playbackSrc(variant?.files)} ref={videoRef} className="results-video" src={url(apiBase, playbackSrc(variant?.files)!)} controls playsInline preload="metadata" />}
 
         {shown && <div className="results-reasons">
           <small>Why {shown} scored this way</small>
@@ -231,4 +231,9 @@ export function RunResults({ apiBase, projectId, runNonce, onClose, onProgress, 
 
 function Heading({ title, onClose }: { title: string; onClose: () => void }) {
   return <div className="drawer-heading"><div><small>Preflight results</small><h2>{title}</h2></div><button onClick={onClose} aria-label="Close results">×</button></div>;
+}
+
+function playbackSrc(files: Record<string, string> | undefined) {
+  if (!files) return undefined;
+  return files["video-final"] ?? files.video;
 }

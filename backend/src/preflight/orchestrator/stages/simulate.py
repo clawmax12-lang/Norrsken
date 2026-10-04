@@ -77,10 +77,13 @@ def _request(ctx: RunContext, variant: VariantRecord) -> SimulationRequest:
     artifacts.mkdir(parents=True, exist_ok=True)
     if variant.video_sha256 is None:
         raise PreflightValidationError(f"rendered variant {variant_id} has no video hash")
+    video_path = (
+        ctx.paths.root / variant.video_path if variant.video_path else ctx.paths.video(variant_id)
+    )
     return SimulationRequest(
         brief=ctx.brief,
         concept=ctx.read_concept(variant_id),
-        video_path=ctx.paths.video(variant_id),
+        video_path=video_path,
         video_sha256=variant.video_sha256,
         artifacts_dir=artifacts,
     )

@@ -89,8 +89,8 @@ export function RunReport({ apiBase, projectId, results, onClose }: {
         </header>
 
         <section className="run-report-hero">
-          {winnerVariant?.files.video
-            ? <video className="run-report-video" src={url(apiBase, winnerVariant.files.video)} controls playsInline preload="metadata" />
+          {winnerVariant?.files["video-final"] || winnerVariant?.files.video
+            ? <video className="run-report-video" src={url(apiBase, winnerVariant.files["video-final"] ?? winnerVariant.files.video)} controls playsInline preload="metadata" />
             : <div className="run-report-video empty">No video file for {report.winner}</div>}
           <div>
             <p className="run-report-kicker">Final video · {winner?.hypothesis}</p>

@@ -1,13 +1,14 @@
 """FR-09 / PRD §9: the deterministic, resumable state machine.
 
-``BRIEF_RECEIVED -> PLANNED -> RENDERED -> SIMULATED -> SCORED -> EXPLAINED -> DONE`` (or
-``FAILED``); the optional sound stage runs between ``EXPLAINED`` and ``DONE``. The pipeline
-only sequences stages: each stage persists its artifacts through the project store, so a re-run
-resumes after the last completed state without repeating work.
+``BRIEF_RECEIVED -> PLANNED -> RENDERED -> MIXED -> SIMULATED -> SCORED -> EXPLAINED -> DONE`` (or
+``FAILED``); the optional sound stage runs between ``RENDERED`` and ``SIMULATED`` so the panel
+watches the mixed file. Without a sound finisher, ``MIXED`` is skipped and simulation uses the
+silent render.
 Nothing here knows about HTTP; the API layer reads the log and ``run.json`` from the store.
 """
 
 from collections.abc import Sequence
+from typing import TYPE_CHECKING
 
 from preflight.config import Settings
 from preflight.contracts import RunRecord, RunState
@@ -44,6 +45,9 @@ from .stages import (
 )
 from .tracker import RunTracker
 
+if TYPE_CHECKING:
+    from preflight.motion import MotionPipeline
+
 
 class Pipeline:
     """Runs one project from its saved brief to a ranked, explained report."""
@@ -64,6 +68,7 @@ class Pipeline:
         ranker: Ranker = score_and_rank,
         next_time: NextTimeSuggester = next_time_suggestions,
         sound: SoundFinisher | None = None,
+        motion: "MotionPipeline | None" = None,
     ) -> None:
         """Wire the ports; ``ranker`` and ``next_time`` default to the real pure functions.
 
@@ -76,13 +81,16 @@ class Pipeline:
         self._simulator_names = tuple(simulator.name for simulator in simulators)
         self._stages: tuple[Stage, ...] = (
             PlanStage(planner, policy, settings.max_variants),
-            RenderStage(asset_generator, composer, renderer, policy),
+            RenderStage(asset_generator, composer, renderer, policy, motion=motion),
+        )
+        if sound is not None:
+            self._stages = (*self._stages, SoundStage(sound, policy))
+        self._stages = (
+            *self._stages,
             SimulateStage(simulators, policy),
             ScoreStage(ranker),
             ExplainStage(explainer, usage, policy, next_time),
         )
-        if sound is not None:
-            self._stages = (*self._stages, SoundStage(sound, policy))
 
     async def run(self, project_id: str) -> RunRecord:
         """Run or resume ``project_id`` and return its final record (``DONE`` or ``FAILED``).

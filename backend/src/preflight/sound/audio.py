@@ -11,6 +11,11 @@ from . import dsp
 _INT16_FULL_SCALE = 32768.0
 _SILENCE_FLOOR = 10 ** (-45 / 20)  # relative to the clip's peak
 _TRIM_MARGIN_S = 0.03
+_CLIP_PEAK = 0.95
+_GLITCH_HOP_S = 0.012
+_GLITCH_MAX_S = 0.08
+_FADE_IN_S = 0.012
+_FADE_OUT_S = 0.05
 
 
 def pcm16_to_float(pcm: bytes) -> NDArray[np.float32]:
@@ -47,6 +52,50 @@ def trim_silence(samples: NDArray[np.float32]) -> NDArray[np.float32]:
         return samples[:0]
     margin = dsp.seconds(_TRIM_MARGIN_S)
     return samples[max(loud[0] - margin, 0) : loud[-1] + margin]
+
+
+def deglitch_tail(samples: NDArray[np.float32], sample_rate: int) -> NDArray[np.float32]:
+    """Drop a clipped burst some TTS streams append after the last phoneme."""
+    hop = max(int(_GLITCH_HOP_S * sample_rate), 1)
+    max_cut = int(_GLITCH_MAX_S * sample_rate)
+    if len(samples) < max_cut + hop:
+        return samples
+    body = samples[:-max_cut]
+    body_rms = float(np.sqrt(np.mean(np.square(body)))) or 1e-9
+    body_peak = float(np.max(np.abs(body)))
+    out = samples
+    cut = 0
+    while cut + hop <= max_cut:
+        tail = out[-hop:]
+        tail_peak = float(np.max(np.abs(tail)))
+        tail_rms = float(np.sqrt(np.mean(np.square(tail))))
+        louder = tail_rms > body_rms * 1.2
+        clipped = tail_peak >= _CLIP_PEAK and (louder or tail_peak > body_peak * 1.15)
+        if not clipped:
+            break
+        out = out[:-hop]
+        cut += hop
+    return out
+
+
+def fade_edges(
+    samples: NDArray[np.float32],
+    sample_rate: int,
+    *,
+    in_s: float = _FADE_IN_S,
+    out_s: float = _FADE_OUT_S,
+) -> NDArray[np.float32]:
+    """Fade the first and last samples to zero so a hard TTS cut does not click."""
+    if len(samples) == 0:
+        return samples
+    shaped = samples.copy()
+    fade_in = min(int(in_s * sample_rate), len(shaped))
+    fade_out = min(int(out_s * sample_rate), len(shaped))
+    if fade_in:
+        shaped[:fade_in] *= np.linspace(0.0, 1.0, fade_in, dtype=np.float32)
+    if fade_out:
+        shaped[-fade_out:] *= np.linspace(1.0, 0.0, fade_out, dtype=np.float32)
+    return shaped
 
 
 def rms_normalise(samples: NDArray[np.float32], target_dbfs: float) -> NDArray[np.float32]:

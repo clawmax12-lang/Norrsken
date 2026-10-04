@@ -75,12 +75,20 @@ class ProjectPaths:
         """Composition spec JSON for a variant."""
         return self.root / "specs" / f"{variant_id}.json"
 
+    def motion_spec(self, variant_id: str) -> Path:
+        """Opt-in generative-motion spec; never overwrites Showcase ``specs/``."""
+        return self.root / "motion" / f"{variant_id}.json"
+
+    def extraction(self, screenshot: str) -> Path:
+        """Per-screenshot Vision extraction JSON."""
+        return self.root / "extraction" / f"{screenshot.replace('/', '__')}.json"
+
     def video(self, variant_id: str) -> Path:
         """Rendered MP4 for a variant."""
         return self.root / "videos" / f"{variant_id}.mp4"
 
     def final_video(self, variant_id: str) -> Path:
-        """Rendered MP4 with narration, music and sound effects added after the pretest."""
+        """Rendered MP4 with narration, music and sound effects mixed before the pretest."""
         return self.root / "videos" / f"{variant_id}.final.mp4"
 
     @property

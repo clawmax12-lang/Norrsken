@@ -91,9 +91,16 @@ class GenAIBackend:
             )
         return _to_backend_response(response)
 
-    async def synthesize_speech(self, *, model: str, text: str, voice: str) -> SpeechAudio:
+    async def synthesize_speech(
+        self, *, model: str, text: str, voice: str, style: str | None = None
+    ) -> SpeechAudio:
         """Speak ``text`` with a prebuilt voice; Gemini answers with raw 16-bit mono PCM."""
         prebuilt = types.PrebuiltVoiceConfig(voice_name=voice)
+        part = types.Part(
+            text=text,
+            speech_metadata=types.SpeechMetadata(style=style) if style else None,
+        )
+        contents = types.Content(role="user", parts=[part])
         config = types.GenerateContentConfig(
             response_modalities=["AUDIO"],
             speech_config=types.SpeechConfig(
@@ -103,7 +110,7 @@ class GenAIBackend:
         )
         with _mapped_provider_errors():
             response = await self._client.aio.models.generate_content(
-                model=model, contents=text, config=config
+                model=model, contents=contents, config=config
             )
         return _to_speech_audio(response)
 

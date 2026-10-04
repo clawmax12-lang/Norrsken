@@ -10,7 +10,9 @@ export type Cta = string;
 export type BriefField = "product_name" | "one_liner" | "goal_note" | "audience";
 export type DurationFrames = number;
 export type Fps = number;
+export type Headline = string;
 export type Height = number;
+export type Logo = string | null;
 /**
  * @minItems 1
  */
@@ -51,6 +53,7 @@ export type FontFamily = string;
 export type Foreground = string;
 export type VariantId = string;
 export type Width = number;
+export type Wordmark = string;
 
 /**
  * Everything Remotion needs to render one 1080x1920, 30 fps, 15 s variant.
@@ -60,11 +63,15 @@ export interface CompositionSpec {
   cta_source_field: BriefField;
   duration_frames: DurationFrames;
   fps?: Fps;
+  headline: Headline;
+  headline_source_field: BriefField;
   height?: Height;
+  logo?: Logo;
   scenes: Scenes;
   theme: Theme;
   variant_id: VariantId;
   width?: Width;
+  wordmark: Wordmark;
 }
 /**
  * One scene in frames, with its copy, real screenshot and optional generated backdrop.

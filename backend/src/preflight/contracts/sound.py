@@ -1,8 +1,7 @@
-"""PRD §9.3: what was added to a finished video after it was pretested.
+"""PRD §9.3: soundtrack mixed onto the rendered picture before pretest.
 
-The pretest ran on the silent render. Sound is added to the exported cut afterwards, so
-:class:`SoundRecord` keeps both hashes and says what was added; nothing here is, or may be
-presented as, a simulated-viewer result.
+:class:`SoundRecord` keeps the picture hash and the mixed-file hash. Simulated viewers
+watch the mixed file when mixing succeeded.
 """
 
 from enum import StrEnum
@@ -32,7 +31,7 @@ class SoundCue(Contract):
 
 
 class NarrationLine(Contract):
-    """One spoken line. ``text`` is on-screen copy, so it is traceable via ``source_field``."""
+    """One spoken VO line aligned to a picture beat; ``source_field`` traces the claim."""
 
     text: NonEmpty
     source_field: BriefField
@@ -43,8 +42,9 @@ class NarrationLine(Contract):
 class SoundRecord(Contract):
     """Persisted as ``sound/{variant}.json`` next to the final video.
 
-    ``tested_video_sha256`` is the silent render the simulated viewers watched;
-    ``final_video_sha256`` is the exported cut with sound. ``narrated`` is false when the
+    ``tested_video_sha256`` is the silent picture that was mixed;
+    ``final_video_sha256`` is the soundtrack cut the simulated viewers watch when mixing
+    succeeded. ``narrated`` is false when the
     voice step was off or failed, in which case ``note`` says why; the cut then has music and
     sound effects only. Loudness values are measured on the encoded file.
     """

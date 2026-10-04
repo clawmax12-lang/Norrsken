@@ -9,5 +9,6 @@
   ],
   "goal": "signups",
   "goal_note": "Confirm the actual launch goal before using this fixture in a demo.",
-  "audience": "Prospective tablehopp users"
+  "audience": "Prospective tablehopp users",
+  "render_mode": "showcase"
 }

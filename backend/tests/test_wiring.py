@@ -7,6 +7,7 @@ from pydantic import SecretStr
 from preflight.config import Settings
 from preflight.errors import ProviderError
 from preflight.llm import CondenseProxyBackend
+from preflight.motion import MotionPipeline
 from preflight.storage import ProjectStore
 from preflight.wiring import ProductionRunService
 
@@ -57,6 +58,11 @@ def test_renderer_uses_the_project_directory_for_assets(tmp_path) -> None:
     assert renderer._script.name == "render.mjs"
 
 
+def test_render_stage_has_a_fail_closed_motion_pipeline(tmp_path) -> None:
+    stage_obj = stage(build(tmp_path), "RenderStage")
+    assert isinstance(stage_obj._motion, MotionPipeline)
+
+
 def test_missing_gemini_key_is_an_explicit_error(tmp_path) -> None:
     settings = Settings(data_dir=tmp_path)
     service = ProductionRunService(
@@ -71,7 +77,7 @@ def test_exported_videos_get_sound_with_a_gemini_voice_by_default(tmp_path) -> N
     studio = stage(build(tmp_path), "SoundStage")._finisher
 
     assert studio._speech is not None
-    assert (studio._voice, studio._tts_model) == ("Kore", "gemini-3.8-flash-tts")
+    assert (studio._voice, studio._tts_model) == ("Leda", "gemini-3.8-flash-tts")
 
 
 def test_narration_can_be_switched_off_while_music_and_effects_stay(tmp_path) -> None:

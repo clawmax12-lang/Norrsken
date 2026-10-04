@@ -4,14 +4,24 @@ import type { FunctionCall } from "@google/genai";
 import Link from "next/link";
 import { FormEvent, PointerEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ThinkingOrb } from "thinking-orbs";
-import { VoiceBeam } from "voice-glow";
 
 import { CanvasBrain } from "@/components/brain/CanvasBrain";
+import { VoiceBeam } from "@/components/voice-beam";
 import { DirectorVoicePresence, VoiceIcon } from "@/components/director-voice-presence";
 import { DirectorConsole, type ConsoleEvent, type ConsoleEventKind, type JourneyStep } from "@/components/director-console";
+import { PictureTrackCards } from "@/components/picture-track-cards";
 import { RunResults, type PlannedVariant, type RunState } from "@/components/run-results";
 import { useLiveDirector } from "@/hooks/use-live-director";
-import { briefSchema, emptyBrief, type BriefDraft, type BriefField, type SourceMap } from "@/lib/brief";
+import {
+  applyBriefFieldInput,
+  briefSchema,
+  emptyBrief,
+  type BriefDraft,
+  type BriefField,
+  type BriefTextField,
+  type RenderMode,
+  type SourceMap,
+} from "@/lib/brief";
 import { isGroundedCopy, normalizeGoal, parseTypedCommand, type TypedBriefField } from "@/lib/canvas-commands";
 import {
   canvasDraftSchema,
@@ -27,6 +37,7 @@ import {
 import { buildDirectorContext } from "@/lib/director-context";
 import { assertEditableScene } from "@/lib/director-edit";
 import { DirectorRunBoundary, isExplicitRunConsent } from "@/lib/director-run";
+import { publicErrorMessage } from "@/lib/public-error";
 import type { DirectorUserTurn } from "@/lib/director-tool-queue";
 
 type LocalAsset = {
@@ -49,7 +60,7 @@ const fieldLabels: Record<BriefField, string> = {
   product_name: "Product",
   one_liner: "Description",
   goal: "Goal",
-  goal_note: "Goal detail",
+  goal_note: "Call to action",
   audience: "Audience",
 };
 
@@ -57,7 +68,7 @@ const sourceLabel: Record<SourceField, string> = {
   product_name: "product name",
   one_liner: "description",
   goal: "goal",
-  goal_note: "goal detail",
+  goal_note: "call to action",
   audience: "audience",
 };
 
@@ -237,10 +248,16 @@ export function CanvasWorkspace() {
     return next;
   }, [addNotice]);
 
-  const updateField = useCallback((field: BriefField, rawValue: string, source: "voice" | "typed") => {
-    const value = field === "goal" ? normalizeGoal(rawValue) : rawValue.trim();
+  const updateField = useCallback((
+    field: BriefField,
+    rawValue: string,
+    source: "voice" | "typed",
+    mode: "live" | "commit" = "commit",
+  ) => {
+    const value = field === "goal"
+      ? normalizeGoal(rawValue)
+      : applyBriefFieldInput(field as BriefTextField, rawValue, mode);
     if (value === null) throw new Error("Goal must be signups, downloads, understanding, or purchase.");
-    if (field === "one_liner" && value.length > 140) throw new Error("Description must be 140 characters or fewer.");
     const nextBrief = { ...briefRef.current, [field]: value } as BriefDraft;
     const nextSources = { ...sourcesRef.current, [field]: source };
     setBrief(nextBrief);
@@ -250,6 +267,21 @@ export function CanvasWorkspace() {
     localStorage.setItem(BRIEF_STORAGE, JSON.stringify({ brief: nextBrief, sources: nextSources }));
     return value;
   }, []);
+
+  const updateRenderMode = useCallback((render_mode: RenderMode) => {
+    const nextBrief = { ...briefRef.current, render_mode };
+    setBrief(nextBrief);
+    briefRef.current = nextBrief;
+    localStorage.setItem(BRIEF_STORAGE, JSON.stringify({ brief: nextBrief, sources: sourcesRef.current }));
+  }, []);
+
+  const commitBriefEdits = useCallback(() => {
+    for (const field of ["product_name", "one_liner", "audience", "goal_note"] as const) {
+      const raw = String(briefRef.current[field] ?? "");
+      const trimmed = applyBriefFieldInput(field, raw, "commit");
+      if (trimmed !== raw) updateField(field, trimmed, "typed", "commit");
+    }
+  }, [updateField]);
 
   const getProjectContext = useCallback(() => buildDirectorContext({
     brief: briefRef.current, sources: sourcesRef.current, draft: draftRef.current,
@@ -263,6 +295,7 @@ export function CanvasWorkspace() {
   }), []);
 
   const requestRunConfirmation = useCallback(() => {
+    commitBriefEdits();
     const current = getProjectContext();
     const ready = current.missing_brief_fields.length === 0 && selectedAssetsRef.current.length >= 3 && selectedAssetsRef.current.length <= 6;
     const summary = `Upload ${selectedAssetsRef.current.length} selected screenshots and submit one run of exactly three 15-second A/B/C candidate videos for ${briefRef.current.product_name || "this project"}, aimed at ${briefRef.current.audience || "the unconfirmed audience"}. Rendering and pretesting require the connected backend. Existing-video baseline analysis is not connected in this build.`;
@@ -270,7 +303,7 @@ export function CanvasWorkspace() {
     runApprovalRef.current = approval.id;
     setConfirmSummary(summary);
     return { confirmation_id: approval.id, revision: draftRef.current.revision, summary, ready, job_started: false, missing_brief_fields: current.missing_brief_fields };
-  }, [getProjectContext, runSignature]);
+  }, [commitBriefEdits, getProjectContext, runSignature]);
 
   const cancelRunConfirmation = useCallback(() => {
     setConfirmSummary(null);
@@ -524,6 +557,7 @@ export function CanvasWorkspace() {
   }, [addNotice, composerText, director, logEvent, runTypedFallback]);
 
   const submitRun = useCallback(async (commandId: string): Promise<Record<string, unknown>> => {
+    commitBriefEdits();
     setConfirmSummary(null);
     setJobState("saving");
     setJobMessage("Validating and saving the approved draft…");
@@ -533,8 +567,8 @@ export function CanvasWorkspace() {
       const form = new FormData();
       for (const asset of selected) form.append("files", asset.file, asset.name);
       const uploadResponse = await fetch(`/api/projects/${PROJECT_ID}/assets`, { method: "POST", body: form });
-      const upload = await uploadResponse.json() as { assets?: Array<{ storedPath: string }>; error?: string };
-      if (!uploadResponse.ok || !upload.assets) throw new Error(upload.error ?? "Screenshot upload failed.");
+      const upload = await uploadResponse.json() as { assets?: Array<{ storedPath: string }>; error?: unknown };
+      if (!uploadResponse.ok || !upload.assets) throw new Error(publicErrorMessage(upload.error, "Screenshot upload failed."));
       logEvent("sent", `${selected.length} screenshots uploaded to the backend`, upload.assets.map((asset) => asset.storedPath));
 
       const assetPathById = new Map(selected.map((asset, index) => [asset.id, upload.assets?.[index]?.storedPath]));
@@ -548,17 +582,18 @@ export function CanvasWorkspace() {
 
       const finalBrief = briefSchema.parse({ ...briefRef.current, project_id: PROJECT_ID, screenshots: upload.assets.map((asset) => asset.storedPath) });
       const briefResponse = await fetch(`/api/projects/${PROJECT_ID}/brief`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(finalBrief) });
-      if (!briefResponse.ok) throw new Error(((await briefResponse.json()) as { error?: string }).error ?? "Brief save failed.");
+      if (!briefResponse.ok) throw new Error(publicErrorMessage((await briefResponse.json()) as { error?: unknown }, "Brief save failed."));
       logEvent("sent", "Brief sent to the backend (brief.json)", finalBrief);
 
       const runResponse = await fetch(`/api/projects/${PROJECT_ID}/run`, { method: "POST", headers: { "Idempotency-Key": commandId } });
-      const run = await runResponse.json() as { error?: string; status?: string; run_id?: string; project_id?: string };
+      const run = await runResponse.json() as { error?: unknown; status?: string; run_id?: string; project_id?: string };
       logEvent(runResponse.ok ? "backend" : "error", runResponse.ok ? "Run accepted by the backend" : `Run refused (${runResponse.status})`, run);
       if (!runResponse.ok) {
+        const message = publicErrorMessage(run.error, "No job was started.");
         setJobState(runResponse.status === 503 ? "unavailable" : "error");
-        setJobMessage(run.error ?? "No job was started.");
-        addNotice("system", run.error ?? "No job was started.");
-        return { accepted: false, job_started: false, error: run.error ?? "Run rejected by the backend." };
+        setJobMessage(message);
+        addNotice("system", message);
+        return { accepted: false, job_started: false, error: message };
       }
       const acceptedProjectId = run.project_id && /^[A-Za-z0-9_-]{1,128}$/.test(run.project_id) ? run.project_id : PROJECT_ID;
       setBackendProjectId(acceptedProjectId);
@@ -579,7 +614,7 @@ export function CanvasWorkspace() {
       logEvent("error", error instanceof Error ? error.message : "No job was started.");
       throw new Error("Run submission could not be confirmed. Inspect the canvas before attempting another run.");
     }
-  }, [addNotice, assets, logEvent, persistDraft, selectedAssetIds]);
+  }, [addNotice, assets, commitBriefEdits, logEvent, persistDraft, selectedAssetIds]);
 
   const confirmRun = useCallback(async (id: string) => {
     if (!readyToConfirm) throw new Error("Required confirmed brief fields and 3–6 selected screenshots are missing.");
@@ -793,12 +828,13 @@ export function CanvasWorkspace() {
       </section>
 
       {showBrief && <aside className="side-drawer brief-drawer">
-        <div className="drawer-heading"><div><small>Confirmed source</small><h2>Launch brief</h2></div><button onClick={() => setShowBrief(false)}>×</button></div>
-        <label>Product name <span>{sources.product_name ?? "missing"}</span><input value={brief.product_name} onChange={(event) => updateField("product_name", event.target.value, "typed")} /></label>
-        <label>Description <span>{sources.one_liner ?? "missing"}</span><textarea maxLength={140} value={brief.one_liner} onChange={(event) => updateField("one_liner", event.target.value, "typed")} /><small>{brief.one_liner.length}/140</small></label>
-        <label>Audience <span>{sources.audience ?? "missing"}</span><input value={brief.audience} onChange={(event) => updateField("audience", event.target.value, "typed")} /></label>
+        <div className="drawer-heading"><div><small>Confirmed source</small><h2>Launch brief</h2></div><button onClick={() => { commitBriefEdits(); setShowBrief(false); }}>×</button></div>
+        <label>Product name <span>{sources.product_name ?? "missing"}</span><input maxLength={80} value={brief.product_name} onChange={(event) => updateField("product_name", event.target.value, "typed", "live")} onBlur={(event) => updateField("product_name", event.target.value, "typed")} /></label>
+        <label>Description <span>{sources.one_liner ?? "missing"}</span><textarea maxLength={140} value={brief.one_liner} onChange={(event) => updateField("one_liner", event.target.value, "typed", "live")} onBlur={(event) => updateField("one_liner", event.target.value, "typed")} /><small>{brief.one_liner.length}/140</small></label>
+        <label>Audience <span>{sources.audience ?? "missing"}</span><input maxLength={300} value={brief.audience} onChange={(event) => updateField("audience", event.target.value, "typed", "live")} onBlur={(event) => updateField("audience", event.target.value, "typed")} /></label>
         <label>Goal <span>{sources.goal ?? "missing"}</span><select value={sources.goal ? brief.goal : ""} onChange={(event) => updateField("goal", event.target.value, "typed")}><option value="" disabled>Choose a goal</option><option value="signups">Sign ups</option><option value="downloads">Downloads</option><option value="understand">Understand product</option><option value="purchase">Purchase</option></select></label>
-        <div className="drawer-note">Each visible claim keeps one of these fields as its source. Draft edits are validated before saving.</div>
+        <label>Call to action <span>{sources.goal_note ?? "optional"}</span><textarea maxLength={240} value={brief.goal_note ?? ""} placeholder="Start selling today" onChange={(event) => updateField("goal_note", event.target.value, "typed", "live")} onBlur={(event) => updateField("goal_note", event.target.value, "typed")} /><small>{(brief.goal_note ?? "").length}/240</small></label>
+        <div className="drawer-note">Each visible claim keeps one of these fields as its source. Draft edits are validated before saving. The call to action is optional; only words you type here can appear on the end card. Picture track is chosen when you confirm Run.</div>
       </aside>}
 
       {showAssets && <aside className="asset-drawer">
@@ -871,14 +907,22 @@ export function CanvasWorkspace() {
 
       {confirmSummary && <div className="modal-backdrop" role="presentation">
         <section className="run-modal" role="dialog" aria-modal="true" aria-labelledby="run-title">
-          <small>Nothing starts until you confirm</small><h2 id="run-title">{readyToConfirm ? "Ready to run Preflight" : "Almost ready"}</h2>
-          <p>{confirmSummary}</p>
+          <small>Nothing starts until you confirm</small><h2 id="run-title">{readyToConfirm ? "Which picture?" : "Almost ready"}</h2>
+          <p>Choose how the three 15-second videos are built, then start the run. One mode per run.</p>
+          <PictureTrackCards
+            mode={brief.render_mode ?? "showcase"}
+            photoUrl={assets.find((asset) => selectedAssetIds.includes(asset.id))?.previewUrl}
+            onChange={(next) => {
+              updateRenderMode(next);
+              requestRunConfirmation();
+            }}
+          />
           <ul>
             <li className={readiness.brief ? "ready" : ""}><span>{readiness.brief ? `Brief: ${brief.product_name} · goal ${brief.goal}` : `Brief is missing: ${missingBrief.join(", ")}`}</span>{!readiness.brief && <button onClick={() => { cancelRunConfirmation(); setShowBrief(true); }}>Fill in brief</button>}</li>
             <li className={readiness.screens ? "ready" : ""}><span>{readiness.screens ? `${selectedAssetIds.length} screenshots selected` : `Screenshots: ${selectedAssetIds.length} selected, need 3–6`}</span>{!readiness.screens && <button onClick={() => { cancelRunConfirmation(); filesInputRef.current?.click(); }}>Add screenshots</button>}</li>
             <li className={readiness.concepts ? "ready" : ""}><span>Three variants · A, B, C · 15 seconds each</span></li>
           </ul>
-          <div className="modal-warning">Planning, rendering, Gemini evaluation and TRIBE require their connected services. No neural or audience result is guaranteed.</div>
+          <div className="modal-warning">Planning, rendering, Gemini evaluation and TRIBE require their connected services. No neural or audience result is guaranteed.{brief.render_mode === "generative_motion" ? " Generative motion uses Vision and falls back to exact photos if it is unsure." : ""}</div>
           <div className="modal-actions"><button onClick={cancelRunConfirmation}>Keep editing</button><button className="confirm-run" disabled={!readyToConfirm || jobState === "saving"} onClick={() => reportAction(confirmRun(runApprovalRef.current ?? ""))}>{jobState === "saving" ? "Starting…" : readyToConfirm ? "Start run" : "Fix the items above"}</button></div>
         </section>
       </div>}

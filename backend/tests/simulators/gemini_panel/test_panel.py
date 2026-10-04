@@ -152,7 +152,9 @@ async def test_each_persona_receives_the_video_first_then_data_blocks(tmp_path) 
     assert parts[0] == MediaPart(b"fake-mp4-bytes", "video/mp4")
     texts = [p.text for p in parts if isinstance(p, TextPart)]
     assert texts[1].startswith("<<<BEGIN PERSONA") and texts[2].startswith("<<<BEGIN GOAL")
+    assert "audience:" in texts[2]
     assert "not a real person" in system
+    assert "different person than that audience" in system
     assert "untrusted customer data" in system
 
 

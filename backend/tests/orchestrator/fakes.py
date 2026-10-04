@@ -15,6 +15,7 @@ from pathlib import Path
 from preflight.config import Settings
 from preflight.contracts import (
     Brief,
+    BriefField,
     CompositionSpec,
     CreativeConcept,
     GeneratedAsset,
@@ -126,6 +127,10 @@ class FakeComposer:
             scenes=scenes,
             cta=concept.cta,
             cta_source_field=concept.cta_source_field,
+            wordmark=brief.product_name,
+            headline=brief.one_liner,
+            headline_source_field=BriefField.ONE_LINER,
+            logo=brief.logo,
         )
 
 
@@ -220,12 +225,13 @@ class FakeSoundFinisher:
             tested_video_sha256=request.video_sha256,
             final_video_sha256=hashlib.sha256(data).hexdigest(),
             final_video_path=request.output_path.name,
-            narrated=True,
-            voice="Kore",
-            tts_model="tts-test",
+            narrated=request.allow_narration,
+            voice="Leda" if request.allow_narration else None,
+            tts_model="tts-test" if request.allow_narration else None,
             bpm=120,
             integrated_lufs=-14.0,
             true_peak_dbtp=-1.5,
+            note=None if request.allow_narration else "Narration is off.",
         )
 
 

@@ -24,6 +24,7 @@ from preflight.contracts import (
     SoundRecord,
     TokenSavings,
 )
+from preflight.motion.scene import MotionSpec
 
 Clock = Callable[[], datetime]
 
@@ -118,6 +119,8 @@ class SoundRequest:
     video_sha256: str
     output_path: Path
     work_dir: Path
+    motion_spec: MotionSpec | None = None
+    allow_narration: bool = True
 
 
 class SoundFinisher(Protocol):

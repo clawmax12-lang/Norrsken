@@ -22,16 +22,24 @@ class Archetype:
 ARCHETYPES = (
     Archetype(
         "problem first",
-        "Open on the situation the audience is in, using only words the brief gives for it, "
-        "then present the product as the way out.",
+        "The first scene's text is the hook: the problem, using only audience or one-liner "
+        "words, and the product name may be mixed in. It is not a label of a screenshot. Then "
+        "show the product on one screen, then a different screen. Do not open with a yes/no "
+        "question about whether this is for the audience. Do not put a confirmation or "
+        "thank-you screen before the screen that leads to it.",
     ),
     Archetype(
         "outcome first",
-        "Open on what the one-liner says the product achieves, then show how with the screens.",
+        "The first scene's text is the hook: what the one-liner says the product achieves, "
+        "not a label of a screenshot. Then walk the screens forward, each scene a different "
+        "screenshot from the one before it. Do not put a confirmation or thank-you screen "
+        "before the screen that leads to it.",
     ),
     Archetype(
         "product first",
-        "Open on the product itself: its name and the one-liner, then walk through the screens.",
+        "The first scene's text is the hook: the product name and the one-liner, not a "
+        "screenshot label. Then walk through different screens. Do not put a confirmation or "
+        "thank-you screen before the screen that leads to it.",
     ),
     Archetype(
         "demo first",

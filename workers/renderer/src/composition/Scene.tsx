@@ -1,10 +1,11 @@
-import { AbsoluteFill, useCurrentFrame, useVideoConfig } from "remotion";
+import { AbsoluteFill, Img, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
 import type { SceneSpec, Theme } from "../spec/types.generated.ts";
 import { Backdrop } from "./Backdrop.tsx";
 import { DeviceFrame, deviceGeometry, useImageAspect } from "./DeviceFrame.tsx";
+import { fullBleedStyle, isPhoneAspect } from "./still.ts";
 import { Headline } from "./Headline.tsx";
-import { easeInOut, lerp, progress, springIn, SOFT_SPRING } from "./motion.ts";
-import { FRAME, SAFE_AREA, SAFE_WIDTH, TYPE } from "./tokens.ts";
+import { easeInOut, lerp, progress, springIn, SHOWCASE_SPRING } from "./motion.ts";
+import { FRAME, PRODUCT_ZONE, SAFE_WIDTH, TYPE, TYPE_ZONE } from "./tokens.ts";
 import { enterStyle, exitStyle } from "./transitions.ts";
 import type { SceneWindow } from "./timeline.ts";
 import type { Transition } from "../spec/types.generated.ts";
@@ -12,8 +13,6 @@ import type { Transition } from "../spec/types.generated.ts";
 /** Frames after the scene starts before the headline and device begin to move. */
 const HEADLINE_DELAY = 4;
 const DEVICE_DELAY = 8;
-/** Camera push-in: scale gained over a scene. */
-const PUSH_IN = 0.07;
 
 interface SceneProps {
   readonly window: SceneWindow;
@@ -55,14 +54,10 @@ interface ContentProps {
 }
 
 const SceneContent: React.FC<ContentProps> = ({ scene, theme, frame, fps, t }) => {
-  switch (scene.layout) {
-    case "text_only":
-      return <TextOnly scene={scene} theme={theme} frame={frame} />;
-    case "device_center":
-      return <DeviceCenter scene={scene} theme={theme} frame={frame} fps={fps} t={t} />;
-    case "device_float":
-      return <DeviceFloat scene={scene} theme={theme} frame={frame} fps={fps} t={t} />;
+  if (scene.layout === "text_only") {
+    return <TextOnly scene={scene} theme={theme} frame={frame} />;
   }
+  return <ProductShot scene={scene} theme={theme} frame={frame} fps={fps} t={t} float={scene.layout === "device_float"} />;
 };
 
 const TextOnly: React.FC<Omit<ContentProps, "fps" | "t">> = ({ scene, theme, frame }) => (
@@ -71,56 +66,85 @@ const TextOnly: React.FC<Omit<ContentProps, "fps" | "t">> = ({ scene, theme, fra
   </AbsoluteFill>
 );
 
-const DeviceCenter: React.FC<ContentProps> = ({ scene, theme, frame, fps, t }) => {
+const ProductShot: React.FC<ContentProps & { float: boolean }> = ({ scene, theme, frame, fps, t, float }) => {
   const aspect = useImageAspect(scene.screenshot);
   if (aspect === null) return null;
-  const geometry = deviceGeometry(aspect);
-  const enter = springIn(frame, fps, DEVICE_DELAY, SOFT_SPRING);
-  const top = geometry.isPhone ? 700 : 820;
+  const zoneW = SAFE_WIDTH;
+  const zoneH = FRAME.height - PRODUCT_ZONE.top - PRODUCT_ZONE.bottom;
   return (
-    <>
-      <div style={{ position: "absolute", top: SAFE_AREA.top, left: SAFE_AREA.left }}>
-        <Headline text={scene.text} color={theme.foreground} width={SAFE_WIDTH} align="center" range={TYPE.statement} delay={HEADLINE_DELAY} frame={frame} />
+    <AbsoluteFill>
+      <div
+        style={{
+          position: "absolute",
+          top: TYPE_ZONE.top,
+          left: PRODUCT_ZONE.left,
+          width: zoneW,
+          height: TYPE_ZONE.height,
+          overflow: "hidden",
+          zIndex: 2,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <Headline text={scene.text} color={theme.foreground} width={zoneW} align="center" range={TYPE.overlay} delay={HEADLINE_DELAY} frame={frame} />
       </div>
       <div
         style={{
           position: "absolute",
-          top,
-          left: (FRAME.width - geometry.width) / 2,
-          opacity: Math.min(1, enter * 1.6),
-          transform: `translateY(${(1 - enter) * 220}px) scale(${lerp(0.94, 1, enter) * (1 + PUSH_IN * t)})`,
-          transformOrigin: "50% 12%",
+          top: PRODUCT_ZONE.top,
+          left: PRODUCT_ZONE.left,
+          width: zoneW,
+          height: zoneH,
+          overflow: "hidden",
+          zIndex: 1,
         }}
       >
-        <DeviceFrame src={scene.screenshot} geometry={geometry} glare={t} />
+        {isPhoneAspect(aspect) ? (
+          <PhoneInBand scene={scene} zoneW={zoneW} zoneH={zoneH} aspect={aspect} frame={frame} fps={fps} t={t} float={float} />
+        ) : (
+          <Img src={staticFile(scene.screenshot)} style={fullBleedStyle(t)} />
+        )}
       </div>
-    </>
+    </AbsoluteFill>
   );
 };
 
-const DeviceFloat: React.FC<ContentProps> = ({ scene, theme, frame, fps, t }) => {
-  const aspect = useImageAspect(scene.screenshot);
-  if (aspect === null) return null;
+const PhoneInBand: React.FC<{
+  scene: SceneSpec;
+  zoneW: number;
+  zoneH: number;
+  aspect: number;
+  frame: number;
+  fps: number;
+  t: number;
+  float: boolean;
+}> = ({ scene, zoneW, zoneH, aspect, frame, fps, t, float }) => {
   const geometry = deviceGeometry(aspect);
-  const enter = springIn(frame, fps, DEVICE_DELAY, SOFT_SPRING);
-  const bob = Math.sin((frame / fps) * 1.2) * 10;
+  const fit = Math.min(zoneW / geometry.width, zoneH / geometry.height);
+  const drawnW = geometry.width * fit;
+  const drawnH = geometry.height * fit;
+  const enter = springIn(frame, fps, DEVICE_DELAY, SHOWCASE_SPRING);
+  const yaw = float ? lerp(-3, 2, t) : lerp(-2, 2, t);
   return (
-    <>
-      <div style={{ position: "absolute", top: SAFE_AREA.top, left: SAFE_AREA.left }}>
-        <Headline text={scene.text} color={theme.foreground} width={SAFE_WIDTH * 0.86} align="left" range={TYPE.statement} delay={HEADLINE_DELAY} frame={frame} />
-      </div>
-      <div
-        style={{
-          position: "absolute",
-          top: 760,
-          left: FRAME.width - geometry.width * 0.9,
-          opacity: Math.min(1, enter * 1.6),
-          transform: `perspective(2600px) translateY(${(1 - enter) * 260 + bob}px) rotateY(${lerp(-26, -14, t)}deg) rotateX(${lerp(8, 4, t)}deg) rotateZ(${lerp(-8, -4, t)}deg) scale(${1 + PUSH_IN * t})`,
-          transformOrigin: "50% 30%",
-        }}
-      >
-        <DeviceFrame src={scene.screenshot} geometry={geometry} glare={t} />
-      </div>
-    </>
+    <div
+      style={{
+        position: "absolute",
+        top: (zoneH - drawnH) / 2,
+        left: (zoneW - drawnW) / 2,
+        width: drawnW,
+        height: drawnH,
+        opacity: Math.min(1, enter * 1.6),
+        transform: `translateY(${(1 - enter) * 16}px) rotateY(${yaw}deg)`,
+        transformOrigin: "50% 50%",
+      }}
+    >
+      <DeviceFrame
+        src={scene.screenshot}
+        geometry={{ ...geometry, width: drawnW, height: drawnH, radius: geometry.radius * fit }}
+        glare={t}
+        kenBurns={t}
+      />
+    </div>
   );
 };

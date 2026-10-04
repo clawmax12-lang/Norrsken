@@ -86,6 +86,10 @@ class CompositionSpec(Contract):
     scenes: tuple[SceneSpec, ...] = Field(min_length=1)
     cta: NonEmpty
     cta_source_field: BriefField
+    wordmark: NonEmpty
+    headline: NonEmpty
+    headline_source_field: BriefField
+    logo: str | None = None
 
     @model_validator(mode="after")
     def _scenes_tile_the_timeline(self) -> Self:

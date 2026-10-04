@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Img, cancelRender, continueRender, delayRender, staticFile } from "remotion";
 import { getImageDimensions } from "@remotion/media-utils";
+import { kenBurnsImageStyle } from "./still.ts";
 import { DEVICE } from "./tokens.ts";
 
 /** Natural aspect ratio (width / height) of a staged screenshot; waits for it before rendering. */
@@ -36,10 +37,14 @@ interface DeviceFrameProps {
   readonly geometry: DeviceGeometry;
   /** Moves the glare across the glass over time (0-1). */
   readonly glare: number;
+  /** Scene progress 0–1; drives Ken Burns on the screenshot. */
+  readonly kenBurns: number;
+  /** Optional caption drawn over the lower screen (scrim lives in the caller). */
+  readonly caption?: ReactNode;
 }
 
 /** Brand-neutral device drawn in CSS: titanium-style edge, black bezel, the real screenshot. */
-export const DeviceFrame: React.FC<DeviceFrameProps> = ({ src, geometry, glare }) => {
+export const DeviceFrame: React.FC<DeviceFrameProps> = ({ src, geometry, glare, kenBurns, caption }) => {
   const { width, height, radius, isPhone } = geometry;
   const edge = 4;
   const bezel = DEVICE.bezel;
@@ -73,7 +78,7 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({ src, geometry, glare }
         }}
       >
         <div style={{ position: "relative", width: "100%", height: "100%", borderRadius: screenRadius, overflow: "hidden", background: "#fff" }}>
-          <Img src={staticFile(src)} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top center", display: "block" }} />
+          <Img src={staticFile(src)} style={kenBurnsImageStyle(kenBurns)} />
           <div
             style={{
               position: "absolute",
@@ -82,6 +87,7 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({ src, geometry, glare }
               mixBlendMode: "screen",
             }}
           />
+          {caption}
         </div>
         {isPhone ? (
           <div
