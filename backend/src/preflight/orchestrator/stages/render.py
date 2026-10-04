@@ -76,9 +76,7 @@ class RenderStage:
             concepts.append(concept)
             spec = await self._ensure_spec(ctx, concept)
             showcases[variant_id] = spec
-        ready = await self._motion.ready_for_all(
-            ctx.brief, tuple(concepts), showcases, ctx.paths
-        )
+        ready = await self._motion.ready_for_all(ctx.brief, tuple(concepts), showcases, ctx.paths)
         if not ready:
             ctx.log.skipped(
                 Step.RENDER,

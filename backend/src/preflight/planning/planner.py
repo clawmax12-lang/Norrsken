@@ -3,13 +3,13 @@
 import asyncio
 from pathlib import Path
 
-from preflight.contracts import Brief, CreativeConcept
+from preflight.contracts import Brief, CreativeConcept, PlanNotes
 from preflight.errors import PreflightValidationError
 from preflight.llm import GeminiClient, MediaPart
 from preflight.storage import ProjectStore
 
 from .archetypes import archetypes_for
-from .draft import PlanDraft, assemble_concepts
+from .draft import PlanDraft, assemble_concepts, plan_notes
 from .prompts import SYSTEM_PROMPT, build_plan_parts
 from .validation import plan_problems
 
@@ -21,6 +21,7 @@ class GeminiPlanner:
         """Screenshots are read from the brief's project directory in ``store``."""
         self._client = client
         self._store = store
+        self.last_notes = PlanNotes()
 
     async def plan_variants(self, brief: Brief, *, count: int) -> tuple[CreativeConcept, ...]:
         """Return ``count`` concepts with hypotheses assigned in a fixed order.
@@ -41,6 +42,7 @@ class GeminiPlanner:
             build_plan_parts(brief, archetypes, screenshots),
             validate=lambda plan: plan_problems(plan, brief, archetypes),
         )
+        self.last_notes = plan_notes(draft, brief)
         return assemble_concepts(draft, brief, archetypes)
 
     async def _load(self, project_id: str, relative_path: str) -> MediaPart:

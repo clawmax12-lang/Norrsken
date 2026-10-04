@@ -10,25 +10,23 @@ def test_archetype_names_are_distinct() -> None:
 
 def test_first_archetypes_are_assigned_in_fixed_order() -> None:
     assert [a.name for a in archetypes_for(3)] == [
-        "problem first",
-        "outcome first",
-        "product first",
+        "speed and ease",
+        "business outcome",
+        "product demo",
     ]
 
 
-def test_problem_first_opens_on_the_problem_then_the_product() -> None:
-    guidance = next(a.guidance for a in ARCHETYPES if a.name == "problem first").casefold()
-    assert "audience" in guidance and "product name" in guidance
-    assert "yes/no" in guidance
-    assert "not a label of a screenshot" in guidance
-    assert "thank-you" in guidance
-
-
-def test_the_three_launch_hypotheses_open_on_different_hooks() -> None:
+def test_the_three_launch_hypotheses_are_different_selling_angles() -> None:
     by_name = {a.name: a.guidance.casefold() for a in archetypes_for(3)}
-    assert "problem" in by_name["problem first"]
-    assert "one-liner says the product achieves" in by_name["outcome first"]
-    assert "product name and the one-liner" in by_name["product first"]
+    assert "quick or effortless" in by_name["speed and ease"]
+    assert "what the audience gains" in by_name["business outcome"]
+    assert "main job" in by_name["product demo"]
+
+
+def test_every_angle_is_capped_by_what_the_brief_supports() -> None:
+    by_name = {a.name: a.guidance.casefold() for a in archetypes_for(3)}
+    assert "brief supports" in by_name["speed and ease"]
+    assert "brief allows" in by_name["business outcome"]
 
 
 @pytest.mark.parametrize("count", [0, -1, len(ARCHETYPES) + 1])

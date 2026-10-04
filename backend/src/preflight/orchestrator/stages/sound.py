@@ -32,15 +32,49 @@ class SoundStage:
         self._policy = policy
 
     async def run(self, ctx: RunContext) -> str:
-        """Give each rendered variant its sound."""
+        """Give each rendered variant its sound, with narration on all of them or none."""
         targets = [v.variant_id for v in ctx.rendered_variants()]
         await gather_bounded(
             SOUND_CONCURRENCY, [partial(self._finish_one, ctx, v) for v in targets]
         )
+        fairness = await self._equalise_narration(ctx, targets)
         finished = sum(1 for v in targets if ctx.paths.final_video(v).is_file())
-        return f"Added sound to {finished} of {len(targets)} videos"
+        summary = f"Added sound to {finished} of {len(targets)} videos"
+        return f"{summary}; {fairness}" if fairness else summary
 
-    async def _finish_one(self, ctx: RunContext, variant_id: str) -> bool:
+    async def _equalise_narration(self, ctx: RunContext, targets: list[str]) -> str | None:
+        """Retry cuts that lost their voice once; if any still has none, mute the voice on all.
+
+        A ranking between a narrated cut and a silent one would measure the voice, not the
+        creative hypothesis, so the comparison is kept like for like.
+        """
+        finished = [v for v in targets if ctx.paths.sound(v).is_file()]
+        silent = [v for v in finished if not _narrated(ctx, v)]
+        if not silent or len(silent) == len(finished):
+            return None
+        for variant_id in silent:
+            _discard_mix(ctx, variant_id)
+            await self._finish_one(ctx, variant_id)
+        still_silent = [v for v in finished if not _narrated(ctx, v)]
+        if not still_silent:
+            return f"narration retried for {', '.join(silent)}"
+        reason = (
+            f"Narration failed for {', '.join(still_silent)}, so every cut uses music and "
+            "effects only to keep the comparison fair"
+        )
+        for variant_id in finished:
+            _discard_mix(ctx, variant_id)
+            await self._finish_one(ctx, variant_id, narrate=False, note=reason)
+        return reason
+
+    async def _finish_one(
+        self,
+        ctx: RunContext,
+        variant_id: str,
+        *,
+        narrate: bool = True,
+        note: str | None = None,
+    ) -> bool:
         paths, store = ctx.paths, ctx.store
         video_sha256 = _tested_sha256(ctx, variant_id)
         if _already_finished(ctx, variant_id, video_sha256):
@@ -54,7 +88,7 @@ class SoundStage:
             output_path=paths.final_video(variant_id),
             work_dir=paths.sound_work,
             motion_spec=motion,
-            allow_narration=True,
+            allow_narration=narrate,
         )
         title = f"Adding sound to variant {variant_id}"
         with ctx.log.step(Step.AUDIO, title, variant_id=variant_id) as handle:
@@ -63,10 +97,32 @@ class SoundStage:
             except PreflightError as exc:
                 handle.skip(f"Sound unavailable ({exc}); exporting the silent video")
                 return False
+            if note:
+                record = record.model_copy(update={"note": note})
             store.write(paths.sound(variant_id), record)
             _point_variant_at_mix(ctx, variant_id, record)
             handle.report(_summary(record))
         return True
+
+
+def _narrated(ctx: RunContext, variant_id: str) -> bool:
+    return ctx.store.read(ctx.paths.sound(variant_id), SoundRecord).narrated
+
+
+def _discard_mix(ctx: RunContext, variant_id: str) -> None:
+    """Forget a finished mix so the next finish redoes it; the variant points at the picture."""
+    silent_sha256 = _tested_sha256(ctx, variant_id)
+    ctx.paths.sound(variant_id).unlink(missing_ok=True)
+    ctx.paths.final_video(variant_id).unlink(missing_ok=True)
+    current = next(v for v in ctx.tracker.record.variants if v.variant_id == variant_id)
+    ctx.tracker.update_variant(
+        current.model_copy(
+            update={
+                "video_path": str(ctx.paths.video(variant_id).relative_to(ctx.paths.root)),
+                "video_sha256": silent_sha256,
+            }
+        )
+    )
 
 
 def _tested_sha256(ctx: RunContext, variant_id: str) -> str:
@@ -105,6 +161,8 @@ def _point_variant_at_mix(ctx: RunContext, variant_id: str, sound: SoundRecord) 
 
 def _summary(record: SoundRecord) -> str:
     voice = f"narration by {record.voice}" if record.narrated else "music and effects only"
+    if record.narrated and record.voice_coverage is not None:
+        voice += f", voice on {round(record.voice_coverage * 100)} % of the film"
     return (
         f"Added sound to variant {record.variant_id}: {voice} "
         f"({record.integrated_lufs:.1f} LUFS, {record.true_peak_dbtp:.1f} dBTP)"

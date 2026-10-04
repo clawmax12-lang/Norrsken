@@ -168,17 +168,19 @@ async def test_brain_files_are_404_when_the_tribe_result_has_no_brain_artifact(c
     assert (await client.get(file_url("brain-activity"))).status_code == 404
 
 
-async def test_the_cut_with_sound_is_a_separate_file_kind_from_the_tested_render(client, store):
+async def test_the_player_video_prefers_the_cut_with_sound_once_it_exists(client, store):
     paths = seed_project(store)
+    before = await client.get(file_url("video"))
     final = add_sound(store, paths, "A")
 
     with_sound = await client.get(file_url("video-final"))
-    silent = await client.get(file_url("video"))
+    player = await client.get(file_url("video"))
 
+    assert before.content == VIDEO_BYTES["A"]
     assert with_sound.status_code == 200
     assert with_sound.headers["content-type"] == "video/mp4"
     assert with_sound.content == final
-    assert silent.content == VIDEO_BYTES["A"]
+    assert player.content == final
 
 
 async def test_there_is_no_cut_with_sound_until_sound_was_added(client, store):

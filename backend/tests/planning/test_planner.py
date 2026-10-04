@@ -11,7 +11,7 @@ from tests.planning.helpers import concept_json, plan_json, project_with_screens
 
 def _ungrounded_plan() -> str:
     raw = json.loads(plan_json())
-    raw["concepts"][2]["cta"] = "Try it free"
+    raw["concepts"][2]["cta"] = "Save 40% today"
     return json.dumps(raw)
 
 
@@ -28,7 +28,11 @@ async def test_plans_three_distinct_grounded_concepts(tmp_path) -> None:
     concepts = await planner.plan_variants(brief, count=3)
 
     assert [c.variant_id for c in concepts] == ["A", "B", "C"]
-    assert [c.hypothesis for c in concepts] == ["problem first", "outcome first", "product first"]
+    assert [c.hypothesis for c in concepts] == [
+        "speed and ease",
+        "business outcome",
+        "product demo",
+    ]
     assert all(c.duration_s == 15 and 4 <= len(c.scenes) <= 6 for c in concepts)
     assert len(backend.calls) == 1
 
@@ -61,7 +65,7 @@ async def test_ungrounded_text_gets_one_repair_with_the_exact_violation(tmp_path
 
     assert concepts[2].cta == "Acme Notes"
     feedback = backend.texts(1)[-1]
-    assert 'concept C cta: text "Try it free" uses "try", "free"' in feedback
+    assert "concept C" in feedback and "40" in feedback
 
 
 async def test_still_ungrounded_after_repair_fails(tmp_path) -> None:

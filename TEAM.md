@@ -44,7 +44,7 @@ Statuses: `unclaimed` → `in_progress` → `in_review` → `done`. Use `blocked
 | --- | --- | --- | --- | --- | --- |
 | FR-01 | Brief intake and fixture | P0 | William / Codex | in_review | Original intake in merged PR #2; canvas integration on `williu16/fr-16-canvas-live` adds the shared typed/voice brief and approved-folder shelf. Unit/build/browser checks pass; real Gemini call remains unverified in this workspace. |
 | FR-02 | Three creative concepts | P0 | studieapp2 | in_review | Gemini planner with archetypes and grounding checks merged in [PR #7](https://github.com/clawmax12-lang/Norrsken/pull/7). Backend suite passes; a live Gemini run on a deployed backend is not yet recorded here. |
-| FR-03 | Three rendered MP4s | P0 | Cursor / local | in_progress | Type band + punch-in; same track A/B/C; mix all variants before panel. Opus not used. |
+| FR-03 | Three rendered MP4s | P0 | Cursor / local | in_progress | Type band + punch-in; same track A/B/C; mix all variants before panel. `untitled-v5`: product hook cut, focus punch-in, accent keyword, end-card chips, voice-led timing. Opus not used. |
 | FR-04 | Simulators and Gemini fallback | P0 | studieapp2 | in_review | Gemini viewer panel and TRIBE client behind `SimulationResult` merged in [PR #7](https://github.com/clawmax12-lang/Norrsken/pull/7); `workers/tribe` has CPU tests. TRIBE GPU go/no-go not yet recorded here. |
 | FR-05 | Deterministic score and rank | P0 | studieapp2 | in_review | Deterministic ranker merged in [PR #7](https://github.com/clawmax12-lang/Norrsken/pull/7); rule documented in [ARCHITECTURE.md](docs/backend/ARCHITECTURE.md#scoring-rule-fr-05-implementation-choice-logged-in-prd-16). |
 | FR-06 | Timestamped explanations | P0 | studieapp2 | in_review | Rule-based and Gemini explainers merged in [PR #7](https://github.com/clawmax12-lang/Norrsken/pull/7). |
@@ -162,6 +162,18 @@ These are gaps to clarify during implementation, not changes to the supplied req
 Update product requirements in PRD.md and append the decision to §16. Update this board for owners/status/evidence and README for actual run instructions. Keep the original PDF unchanged. Earlier advisor briefs under `.context/` are historical and are not team requirements.
 
 ## Current handoff
+
+- **FR-02/FR-03/§9.3 sellable Showcase (branch `untitled-v5`, 4 Oct):** this change works toward a sellable Mode 1.
+  - Planner `plan-v7` writes copy as a copywriter, with claim-level grounding: unknown numbers, unknown names, superlatives and quotes are rejected, and each claim needs a verbatim `source_span`.
+  - The brief gains optional `buyer_cta` and `proof_points`, and the CTA is checked against the audience.
+  - Archetypes are now selling angles.
+  - Screenshots that show another brand are left out, and the reason is shown in the activity log and the report.
+  - Voice-led timing: each scene has a voice line, scene lengths are fitted to the speech and snapped to the beat, and the voice-over is spoken in full.
+  - Narration fairness: one silent variant is retried once; if it stays silent, every variant drops the voice.
+  - Renderer: the hook hard-cuts onto the product, focus punch-in, an accent keyword and end-card chips.
+  - Mode 2, Opus/FR-17, TRIBE and Condense are untouched.
+  - **Verification:** backend format, ruff, mypy and pytest pass (673 tests, 95 % coverage). Renderer typecheck and its 26 tests pass. Frontend typecheck passes and all 142 vitest tests pass; vitest also collects the renderer's `node:test` files, and lint reports one error in `components/voice-beam.tsx`, both pre-existing. A real Remotion render of a synthetic three-screen spec produced 1080×1920, 30 fps, 15.0 s, and the frames show the product hook, focus zoom, accent keyword and chips.
+  - **Not verified:** a live Gemini planner/TTS run, because the key in this workspace is rejected. Run one full project with a valid `GEMINI_API_KEY` and check `plan_notes.json`, `sound/*.json` `voice_coverage` and the report.
 
 - **FR-02/FR-03 motion ads (local, 4 Oct):** `plan-v6` type-only hook; adjacent screenshot repeats and identical A/B/C sequences are rejected. Landscape stills fill the product band (zoom 1.00–1.16) with no second frame; portrait keeps one phone. `panel-v2` scores goal fit against audience and goal note. Condense and TRIBE stay optional and off. Opus/FR-17 untouched.
 

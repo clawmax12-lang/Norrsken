@@ -53,6 +53,11 @@ class ProjectPaths:
         return self.root / "report.json"
 
     @property
+    def plan_notes(self) -> Path:
+        """``plan_notes.json``: planner observations the customer should act on."""
+        return self.root / "plan_notes.json"
+
+    @property
     def uploads(self) -> Path:
         """Customer screenshots and logo."""
         return self.root / "uploads"

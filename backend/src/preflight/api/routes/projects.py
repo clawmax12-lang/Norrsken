@@ -26,6 +26,8 @@ def brief_form(  # noqa: PLR0913, PLR0917
     goal_note: Annotated[str | None, Form()] = None,
     brand_color: Annotated[str | None, Form()] = None,
     render_mode: Annotated[RenderMode, Form()] = RenderMode.SHOWCASE,
+    buyer_cta: Annotated[str | None, Form()] = None,
+    proof_points: Annotated[str | None, Form()] = None,
 ) -> BriefForm:
     """Collect the text fields of the multipart intake form."""
     return BriefForm(
@@ -36,6 +38,8 @@ def brief_form(  # noqa: PLR0913, PLR0917
         goal_note=goal_note,
         brand_color=brand_color,
         render_mode=render_mode.value,
+        buyer_cta=buyer_cta,
+        proof_points=proof_points,
     )
 
 

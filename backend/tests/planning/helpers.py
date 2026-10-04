@@ -11,8 +11,14 @@ OUTCOME = {"text": "Notes that organise themselves", "source_field": "one_liner"
 PRODUCT = {"text": "Acme Notes", "source_field": "product_name"}
 
 
-def scene(index: int, seconds: int, text: dict[str, str] = OUTCOME) -> dict[str, object]:
-    return {"screenshot_index": index, "duration_s": seconds, **text}
+VOICE = "Notes that organise themselves"
+
+
+def scene(
+    index: int, seconds: int, text: dict[str, str] = OUTCOME, voice: str | None = VOICE
+) -> dict[str, object]:
+    spoken = {"voice": voice} if voice else {}
+    return {"screenshot_index": index, "duration_s": seconds, **spoken, **text}
 
 
 def concept_json(**overrides: object) -> dict[str, object]:
@@ -24,10 +30,11 @@ def concept_json(**overrides: object) -> dict[str, object]:
             scene(1, 3, PRODUCT),
             scene(2, 3),
             scene(0, 3, PRODUCT),
-            scene(1, 3),
+            scene(1, 3, voice=None),
         ],
         "cta": "Acme Notes",
         "cta_source_field": "product_name",
+        "end_voice": "Acme Notes",
     }
     return {**data, **overrides}
 

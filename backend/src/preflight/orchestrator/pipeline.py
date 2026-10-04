@@ -23,6 +23,7 @@ from preflight.ports import (
     Renderer,
     Simulator,
     SoundFinisher,
+    SpeechSynthesizer,
     UsageMeter,
 )
 from preflight.scoring import score_and_rank
@@ -69,18 +70,20 @@ class Pipeline:
         next_time: NextTimeSuggester = next_time_suggestions,
         sound: SoundFinisher | None = None,
         motion: "MotionPipeline | None" = None,
+        voice: SpeechSynthesizer | None = None,
     ) -> None:
         """Wire the ports; ``ranker`` and ``next_time`` default to the real pure functions.
 
         ``sound`` adds narration, music and effects to the exported videos; without it they
-        stay silent.
+        stay silent. ``voice`` (the same narrator the sound stage uses) times each scene to
+        its spoken line right after planning.
         """
         policy = StepPolicy.from_settings(settings)
         self._store = store
         self._clock = clock
         self._simulator_names = tuple(simulator.name for simulator in simulators)
         self._stages: tuple[Stage, ...] = (
-            PlanStage(planner, policy, settings.max_variants),
+            PlanStage(planner, policy, settings.max_variants, voice=voice),
             RenderStage(asset_generator, composer, renderer, policy, motion=motion),
         )
         if sound is not None:

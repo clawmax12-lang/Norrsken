@@ -9,6 +9,8 @@ export const briefSchema = z.object({
   screenshots: z.array(z.string().min(1)).min(3).max(6),
   goal: z.enum(goals),
   goal_note: z.string().trim().max(240).optional(),
+  buyer_cta: z.string().trim().max(40).optional(),
+  proof_points: z.string().trim().max(400).optional(),
   audience: z.string().trim().min(1).max(300),
   brand_color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
   logo: z.string().optional(),
@@ -23,6 +25,11 @@ export type BriefDraft = Omit<Brief, "screenshots"> & {
 
 export type BriefField = "product_name" | "one_liner" | "goal" | "goal_note" | "audience";
 export type RenderMode = NonNullable<Brief["render_mode"]>;
+
+/** Optional copy inputs that steer the videos but are not voice/canvas source fields. */
+export type BriefExtraField = "buyer_cta" | "proof_points";
+
+export const BRIEF_EXTRA_MAX = { buyer_cta: 40, proof_points: 400 } as const satisfies Record<BriefExtraField, number>;
 
 export type BriefTextField = Exclude<BriefField, "goal">;
 

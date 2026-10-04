@@ -10,19 +10,40 @@ from .brief import BriefField, NonEmpty
 MAX_HOOK_WORDS = 8
 MIN_SCENES = 4
 MAX_SCENES = 6
+MAX_CHIPS = 3
+MAX_CHIP_WORDS = 4
 _EPSILON = 1e-6
 
 VariantId = Annotated[str, Field(pattern=VARIANT_ID_PATTERN)]
+Unit = Annotated[float, Field(ge=0, le=1)]
+FocusBox = tuple[Unit, Unit, Unit, Unit]
+"""``(x, y, width, height)`` of a screenshot region, each 0-1 of the image size."""
+
+
+class Claim(Contract):
+    """One factual statement in the copy and the exact brief text that backs it (PRD §15)."""
+
+    text: NonEmpty
+    source_field: BriefField
+    source_span: NonEmpty
 
 
 class Scene(Contract):
-    """One timed screen of a video. ``text`` must be traceable to ``source_field``."""
+    """One timed screen of a video. Every factual claim in ``text`` or ``voice`` is backed.
+
+    ``voice`` is the narrator's line for this scene (it may differ from the on-screen text);
+    ``focus`` is the region of the screenshot the camera punches into; ``emphasis`` is one
+    word of ``text`` drawn in the brand colour.
+    """
 
     t_start: Annotated[float, Field(ge=0)]
     t_end: Annotated[float, Field(gt=0)]
     screenshot: NonEmpty
     text: NonEmpty
     source_field: BriefField
+    voice: str | None = None
+    focus: FocusBox | None = None
+    emphasis: str | None = None
 
     @model_validator(mode="after")
     def _forward_in_time(self) -> Self:
@@ -30,9 +51,22 @@ class Scene(Contract):
             raise ValueError("scene must end after it starts")
         return self
 
+    @model_validator(mode="after")
+    def _focus_inside_image(self) -> Self:
+        if self.focus is not None:
+            x, y, width, height = self.focus
+            if width <= 0 or height <= 0 or x + width > 1 + _EPSILON or y + height > 1 + _EPSILON:
+                raise ValueError("focus must be a non-empty box inside the screenshot")
+        return self
+
 
 class CreativeConcept(Contract):
-    """A hypothesis about what makes viewers act, expressed as 4-6 contiguous scenes."""
+    """A hypothesis about what makes viewers act, expressed as 4-6 contiguous scenes.
+
+    ``closing_line`` is the end-card headline and ``end_voice`` the narrator's last line;
+    ``chips`` are up to three short benefits stacked on the end card. ``claims`` lists every
+    factual statement the copy makes with the brief text that backs it.
+    """
 
     variant_id: VariantId
     hypothesis: NonEmpty
@@ -42,11 +76,23 @@ class CreativeConcept(Contract):
     cta: NonEmpty
     cta_source_field: BriefField
     duration_s: Annotated[int, Field(ge=VIDEO_DURATION_S, le=VIDEO_DURATION_S)] = VIDEO_DURATION_S
+    angle: str | None = None
+    closing_line: str | None = None
+    end_voice: str | None = None
+    chips: Annotated[tuple[NonEmpty, ...], Field(max_length=MAX_CHIPS)] = ()
+    claims: tuple[Claim, ...] = ()
+    language: str | None = None
 
     @model_validator(mode="after")
     def _hook_is_short(self) -> Self:
         if len(self.hook.split()) > MAX_HOOK_WORDS:
             raise ValueError(f"hook has more than {MAX_HOOK_WORDS} words")
+        return self
+
+    @model_validator(mode="after")
+    def _chips_are_short(self) -> Self:
+        if any(len(chip.split()) > MAX_CHIP_WORDS for chip in self.chips):
+            raise ValueError(f"a chip has more than {MAX_CHIP_WORDS} words")
         return self
 
     @model_validator(mode="after")

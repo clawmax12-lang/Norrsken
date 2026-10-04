@@ -14,6 +14,13 @@ describe("briefSchema", () => {
     expect(briefSchema.parse(fixture)).toEqual(fixture);
   });
 
+  it("accepts an optional buyer button and backed-up facts within their caps", () => {
+    const extra = { ...fixture, buyer_cta: "Book a table", proof_points: "Setup takes 5 minutes." };
+    expect(briefSchema.parse(extra)).toMatchObject({ buyer_cta: "Book a table" });
+    expect(briefSchema.safeParse({ ...fixture, buyer_cta: "x".repeat(41) }).success).toBe(false);
+    expect(briefSchema.safeParse({ ...fixture, proof_points: "x".repeat(401) }).success).toBe(false);
+  });
+
   it("requires 3 to 6 screenshots", () => {
     expect(briefSchema.safeParse({ ...fixture, screenshots: ["one.png", "two.png"] }).success).toBe(false);
     expect(

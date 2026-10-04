@@ -12,7 +12,7 @@ from pydantic import Field, model_validator
 
 from ._base import SHA256_PATTERN, VIDEO_FPS, VIDEO_HEIGHT, VIDEO_WIDTH, Contract
 from .brief import BriefField, NonEmpty
-from .concept import VariantId
+from .concept import FocusBox, VariantId
 
 HexColor = Annotated[str, Field(pattern=r"^#[0-9a-fA-F]{6}$")]
 
@@ -72,6 +72,9 @@ class SceneSpec(Contract):
     layout: Layout
     transition_in: Transition
     backdrop: GeneratedAsset | None = None
+    voice: str | None = None
+    focus: FocusBox | None = None
+    emphasis: str | None = None
 
 
 class CompositionSpec(Contract):
@@ -90,6 +93,8 @@ class CompositionSpec(Contract):
     headline: NonEmpty
     headline_source_field: BriefField
     logo: str | None = None
+    end_voice: str | None = None
+    chips: tuple[NonEmpty, ...] = ()
 
     @model_validator(mode="after")
     def _scenes_tile_the_timeline(self) -> Self:

@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Img, cancelRender, continueRender, delayRender, staticFile } from "remotion";
 import { getImageDimensions } from "@remotion/media-utils";
-import { kenBurnsImageStyle } from "./still.ts";
+import { focusImageStyle, kenBurnsImageStyle, type FocusBox } from "./still.ts";
 import { DEVICE } from "./tokens.ts";
 
 /** Natural aspect ratio (width / height) of a staged screenshot; waits for it before rendering. */
@@ -37,14 +37,16 @@ interface DeviceFrameProps {
   readonly geometry: DeviceGeometry;
   /** Moves the glare across the glass over time (0-1). */
   readonly glare: number;
-  /** Scene progress 0–1; drives Ken Burns on the screenshot. */
+  /** Scene progress 0–1; drives Ken Burns (or the focus punch-in) on the screenshot. */
   readonly kenBurns: number;
+  /** Region to punch into instead of the generic Ken Burns drift. */
+  readonly focus?: FocusBox | null;
   /** Optional caption drawn over the lower screen (scrim lives in the caller). */
   readonly caption?: ReactNode;
 }
 
 /** Brand-neutral device drawn in CSS: titanium-style edge, black bezel, the real screenshot. */
-export const DeviceFrame: React.FC<DeviceFrameProps> = ({ src, geometry, glare, kenBurns, caption }) => {
+export const DeviceFrame: React.FC<DeviceFrameProps> = ({ src, geometry, glare, kenBurns, focus, caption }) => {
   const { width, height, radius, isPhone } = geometry;
   const edge = 4;
   const bezel = DEVICE.bezel;
@@ -78,7 +80,7 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({ src, geometry, glare, 
         }}
       >
         <div style={{ position: "relative", width: "100%", height: "100%", borderRadius: screenRadius, overflow: "hidden", background: "#fff" }}>
-          <Img src={staticFile(src)} style={kenBurnsImageStyle(kenBurns)} />
+          <Img src={staticFile(src)} style={focus ? focusImageStyle(kenBurns, focus) : kenBurnsImageStyle(kenBurns)} />
           <div
             style={{
               position: "absolute",

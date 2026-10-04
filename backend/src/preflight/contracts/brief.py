@@ -8,6 +8,8 @@ from pydantic import Field, field_validator
 from ._base import Contract
 
 MAX_ONE_LINER_CHARS = 140
+MAX_BUYER_CTA_CHARS = 40
+MAX_PROOF_POINTS_CHARS = 400
 MIN_SCREENSHOTS = 3
 MAX_SCREENSHOTS = 6
 
@@ -37,6 +39,8 @@ class BriefField(StrEnum):
     ONE_LINER = "one_liner"
     GOAL_NOTE = "goal_note"
     AUDIENCE = "audience"
+    BUYER_CTA = "buyer_cta"
+    PROOF_POINTS = "proof_points"
 
 
 class Brief(Contract):
@@ -51,6 +55,15 @@ class Brief(Contract):
     goal: Goal
     goal_note: str | None = None
     audience: NonEmpty
+    buyer_cta: Annotated[str, Field(max_length=MAX_BUYER_CTA_CHARS)] | None = Field(
+        default=None,
+        description="The action the buyer (the audience) should take, e.g. 'Kom igång gratis'.",
+    )
+    proof_points: Annotated[str, Field(max_length=MAX_PROOF_POINTS_CHARS)] | None = Field(
+        default=None,
+        description="Facts the customer asserts (numbers, integrations, customers); the only "
+        "source a video may take a statistic or proof from.",
+    )
     brand_color: Annotated[str, Field(pattern=r"^#[0-9a-fA-F]{6}$")] | None = None
     logo: str | None = None
     render_mode: RenderMode = RenderMode.SHOWCASE

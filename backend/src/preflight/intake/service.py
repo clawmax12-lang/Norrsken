@@ -42,6 +42,8 @@ class BriefForm:
     goal_note: str | None = None
     brand_color: str | None = None
     render_mode: str = RenderMode.SHOWCASE.value
+    buyer_cta: str | None = None
+    proof_points: str | None = None
 
 
 def create_project(
@@ -111,6 +113,8 @@ def _build_brief(
                 "goal": form.goal,
                 "goal_note": _blank_to_none(form.goal_note),
                 "audience": form.audience,
+                "buyer_cta": _blank_to_none(form.buyer_cta),
+                "proof_points": _blank_to_none(form.proof_points),
                 "brand_color": _blank_to_none(form.brand_color),
                 "logo": _upload_name("logo", logo) if logo else None,
                 "render_mode": form.render_mode or RenderMode.SHOWCASE.value,

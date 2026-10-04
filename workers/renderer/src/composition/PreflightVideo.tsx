@@ -43,6 +43,7 @@ export const PreflightVideo: React.FC<PreflightVideoProps> = ({ spec }) => {
           button={spec.cta}
           theme={spec.theme}
           logo={spec.logo ?? null}
+          chips={spec.chips ?? []}
         />
       </Sequence>
     </AbsoluteFill>

@@ -1,9 +1,10 @@
 """The fixed hypotheses a plan chooses from (FR-02).
 
 Archetypes are assigned to variants by index, so the three concepts differ by construction
-instead of by hoping the model varies them. Every archetype can be written using only the
-customer's own brief text: none needs a testimonial, a statistic or a customer count, which
-Preflight must never invent (PRD §15).
+instead of by hoping the model varies them. Each archetype is a selling angle (what the film
+leads with), not a scene order, so an A/B test compares messages. Every angle can be written
+from the customer's own facts: none needs a testimonial, statistic or customer count that the
+brief does not contain, which Preflight must never invent (PRD §15).
 """
 
 from dataclasses import dataclass
@@ -21,30 +22,27 @@ class Archetype:
 
 ARCHETYPES = (
     Archetype(
-        "problem first",
-        "The first scene's text is the hook: the problem, using only audience or one-liner "
-        "words, and the product name may be mixed in. It is not a label of a screenshot. Then "
-        "show the product on one screen, then a different screen. Do not open with a yes/no "
-        "question about whether this is for the audience. Do not put a confirmation or "
-        "thank-you screen before the screen that leads to it.",
+        "speed and ease",
+        "Lead with how quick or effortless the product makes the audience's job, as far as "
+        "the brief supports it. Hook: a short promise about speed or ease. Open on the screen "
+        "where that happens and zoom into the control that does it.",
     ),
     Archetype(
-        "outcome first",
-        "The first scene's text is the hook: what the one-liner says the product achieves, "
-        "not a label of a screenshot. Then walk the screens forward, each scene a different "
-        "screenshot from the one before it. Do not put a confirmation or thank-you screen "
-        "before the screen that leads to it.",
+        "business outcome",
+        "Lead with what the audience gains (for example more completed purchases or less "
+        "manual work), stated only as strongly as the brief allows. Hook: the gain in the "
+        "audience's words. Show the result screen early, then how the product gets there.",
     ),
     Archetype(
-        "product first",
-        "The first scene's text is the hook: the product name and the one-liner, not a "
-        "screenshot label. Then walk through different screens. Do not put a confirmation or "
-        "thank-you screen before the screen that leads to it.",
+        "product demo",
+        "Lead straight into the product doing its main job. Hook: name the job in a few "
+        "words. Each scene shows one step on a different screen or zoomed region, and the "
+        "voice explains the step while the text labels it.",
     ),
     Archetype(
-        "demo first",
-        "Open straight on the most telling screenshot with minimal copy, and let the screens "
-        "carry the story; text only labels what is visible.",
+        "pain relief",
+        "Open on the friction the audience has today, in words the brief supports, then show "
+        "the product removing it.",
     ),
     Archetype(
         "audience first",

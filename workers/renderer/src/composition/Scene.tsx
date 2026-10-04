@@ -2,7 +2,7 @@ import { AbsoluteFill, Img, staticFile, useCurrentFrame, useVideoConfig } from "
 import type { SceneSpec, Theme } from "../spec/types.generated.ts";
 import { Backdrop } from "./Backdrop.tsx";
 import { DeviceFrame, deviceGeometry, useImageAspect } from "./DeviceFrame.tsx";
-import { fullBleedStyle, isPhoneAspect } from "./still.ts";
+import { focusImageStyle, focusOf, fullBleedStyle, isPhoneAspect } from "./still.ts";
 import { Headline } from "./Headline.tsx";
 import { easeInOut, lerp, progress, springIn, SHOWCASE_SPRING } from "./motion.ts";
 import { FRAME, PRODUCT_ZONE, SAFE_WIDTH, TYPE, TYPE_ZONE } from "./tokens.ts";
@@ -31,6 +31,8 @@ export const Scene: React.FC<SceneProps> = ({ window, theme, enter, exit, enterP
   const t = progress(frame, 0, length, easeInOut);
   const entering = enterStyle(enter, enterProgress);
   const leaving = exitStyle(exit.kind, exit.p);
+  // The opening cut shows the product on frame 0: the scroll-stopper is the product itself.
+  const instant = index === 0 && enter === "cut";
   return (
     <AbsoluteFill
       style={{
@@ -40,7 +42,7 @@ export const Scene: React.FC<SceneProps> = ({ window, theme, enter, exit, enterP
       }}
     >
       <Backdrop theme={theme} asset={scene.backdrop} sceneIndex={index} t={t} />
-      <SceneContent scene={scene} theme={theme} frame={frame} fps={fps} t={t} />
+      <SceneContent scene={scene} theme={theme} frame={frame} fps={fps} t={t} instant={instant} />
     </AbsoluteFill>
   );
 };
@@ -51,26 +53,37 @@ interface ContentProps {
   readonly frame: number;
   readonly fps: number;
   readonly t: number;
+  readonly instant: boolean;
 }
 
-const SceneContent: React.FC<ContentProps> = ({ scene, theme, frame, fps, t }) => {
-  if (scene.layout === "text_only") {
-    return <TextOnly scene={scene} theme={theme} frame={frame} />;
+const SceneContent: React.FC<ContentProps> = (props) => {
+  if (props.scene.layout === "text_only") {
+    return <TextOnly {...props} />;
   }
-  return <ProductShot scene={scene} theme={theme} frame={frame} fps={fps} t={t} float={scene.layout === "device_float"} />;
+  return <ProductShot {...props} float={props.scene.layout === "device_float"} />;
 };
 
-const TextOnly: React.FC<Omit<ContentProps, "fps" | "t">> = ({ scene, theme, frame }) => (
+const TextOnly: React.FC<ContentProps> = ({ scene, theme, frame }) => (
   <AbsoluteFill style={{ justifyContent: "center", alignItems: "center", paddingBottom: 120 }}>
-    <Headline text={scene.text} color={theme.foreground} width={SAFE_WIDTH} align="center" range={TYPE.hook} delay={HEADLINE_DELAY} frame={frame} />
+    <Headline
+      text={scene.text}
+      color={theme.foreground}
+      accent={emphasisOf(scene, theme)}
+      width={SAFE_WIDTH}
+      align="center"
+      range={TYPE.hook}
+      delay={HEADLINE_DELAY}
+      frame={frame}
+    />
   </AbsoluteFill>
 );
 
-const ProductShot: React.FC<ContentProps & { float: boolean }> = ({ scene, theme, frame, fps, t, float }) => {
+const ProductShot: React.FC<ContentProps & { float: boolean }> = ({ scene, theme, frame, fps, t, float, instant }) => {
   const aspect = useImageAspect(scene.screenshot);
   if (aspect === null) return null;
   const zoneW = SAFE_WIDTH;
   const zoneH = FRAME.height - PRODUCT_ZONE.top - PRODUCT_ZONE.bottom;
+  const focus = focusOf(scene.focus);
   return (
     <AbsoluteFill>
       <div
@@ -87,7 +100,16 @@ const ProductShot: React.FC<ContentProps & { float: boolean }> = ({ scene, theme
           justifyContent: "center",
         }}
       >
-        <Headline text={scene.text} color={theme.foreground} width={zoneW} align="center" range={TYPE.overlay} delay={HEADLINE_DELAY} frame={frame} />
+        <Headline
+          text={scene.text}
+          color={theme.foreground}
+          accent={emphasisOf(scene, theme)}
+          width={zoneW}
+          align="center"
+          range={TYPE.overlay}
+          delay={instant ? 0 : HEADLINE_DELAY}
+          frame={frame}
+        />
       </div>
       <div
         style={{
@@ -101,9 +123,9 @@ const ProductShot: React.FC<ContentProps & { float: boolean }> = ({ scene, theme
         }}
       >
         {isPhoneAspect(aspect) ? (
-          <PhoneInBand scene={scene} zoneW={zoneW} zoneH={zoneH} aspect={aspect} frame={frame} fps={fps} t={t} float={float} />
+          <PhoneInBand scene={scene} zoneW={zoneW} zoneH={zoneH} aspect={aspect} frame={frame} fps={fps} t={t} float={float} instant={instant} />
         ) : (
-          <Img src={staticFile(scene.screenshot)} style={fullBleedStyle(t)} />
+          <Img src={staticFile(scene.screenshot)} style={focus ? focusImageStyle(t, focus) : fullBleedStyle(t)} />
         )}
       </div>
     </AbsoluteFill>
@@ -119,12 +141,13 @@ const PhoneInBand: React.FC<{
   fps: number;
   t: number;
   float: boolean;
-}> = ({ scene, zoneW, zoneH, aspect, frame, fps, t, float }) => {
+  instant: boolean;
+}> = ({ scene, zoneW, zoneH, aspect, frame, fps, t, float, instant }) => {
   const geometry = deviceGeometry(aspect);
   const fit = Math.min(zoneW / geometry.width, zoneH / geometry.height);
   const drawnW = geometry.width * fit;
   const drawnH = geometry.height * fit;
-  const enter = springIn(frame, fps, DEVICE_DELAY, SHOWCASE_SPRING);
+  const enter = instant ? 1 : springIn(frame, fps, DEVICE_DELAY, SHOWCASE_SPRING);
   const yaw = float ? lerp(-3, 2, t) : lerp(-2, 2, t);
   return (
     <div
@@ -144,7 +167,12 @@ const PhoneInBand: React.FC<{
         geometry={{ ...geometry, width: drawnW, height: drawnH, radius: geometry.radius * fit }}
         glare={t}
         kenBurns={t}
+        focus={focusOf(scene.focus)}
       />
     </div>
   );
 };
+
+function emphasisOf(scene: SceneSpec, theme: Theme): { word: string; color: string } | null {
+  return scene.emphasis ? { word: scene.emphasis, color: theme.accent } : null;
+}

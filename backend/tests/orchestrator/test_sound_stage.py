@@ -75,6 +75,34 @@ def _recovered(finisher: FakeSoundFinisher) -> FakeSoundFinisher:
     return finisher
 
 
+async def test_a_cut_that_lost_its_voice_is_retried_once(world: World) -> None:
+    world.sound = FakeSoundFinisher()
+    world.sound.voiceless["B"] = 1
+
+    await world.pipeline().run(world.project_id)
+
+    paths = world.store.paths(world.project_id)
+    assert world.sound.calls.count("B") == 2
+    assert all(world.store.read(paths.sound(v), SoundRecord).narrated for v in ("A", "B", "C"))
+
+
+async def test_if_one_cut_stays_silent_every_cut_drops_the_voice(world: World) -> None:
+    world.sound = FakeSoundFinisher()
+    world.sound.voiceless["B"] = 2
+
+    record = await world.pipeline().run(world.project_id)
+
+    paths = world.store.paths(world.project_id)
+    sounds = [world.store.read(paths.sound(v), SoundRecord) for v in ("A", "B", "C")]
+    assert record.state is RunState.DONE
+    assert not any(s.narrated for s in sounds)
+    assert all("keep the comparison fair" in (s.note or "") for s in sounds)
+    for sound in sounds:
+        tested = next(v for v in record.variants if v.variant_id == sound.variant_id)
+        assert tested.video_sha256 == sound.final_video_sha256
+        assert paths.final_video(sound.variant_id).is_file()
+
+
 async def test_without_a_finisher_there_is_no_sound_step(world: World) -> None:
     await world.pipeline().run(world.project_id)
 

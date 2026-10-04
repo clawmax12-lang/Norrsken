@@ -63,4 +63,7 @@ class SoundRecord(Contract):
     true_peak_dbtp: float
     tts_input_tokens: Annotated[int, Field(ge=0)] = 0
     tts_output_tokens: Annotated[int, Field(ge=0)] = 0
+    voice_coverage: Annotated[float, Field(ge=0, le=1)] | None = Field(
+        default=None, description="Share of the video during which the narrator speaks."
+    )
     note: str | None = None

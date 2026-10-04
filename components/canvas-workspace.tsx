@@ -14,9 +14,11 @@ import { RunResults, type PlannedVariant, type RunState } from "@/components/run
 import { useLiveDirector } from "@/hooks/use-live-director";
 import {
   applyBriefFieldInput,
+  BRIEF_EXTRA_MAX,
   briefSchema,
   emptyBrief,
   type BriefDraft,
+  type BriefExtraField,
   type BriefField,
   type BriefTextField,
   type RenderMode,
@@ -266,6 +268,14 @@ export function CanvasWorkspace() {
     sourcesRef.current = nextSources;
     localStorage.setItem(BRIEF_STORAGE, JSON.stringify({ brief: nextBrief, sources: nextSources }));
     return value;
+  }, []);
+
+  const updateExtra = useCallback((field: BriefExtraField, rawValue: string, mode: "live" | "commit") => {
+    const value = (mode === "commit" ? rawValue.trim() : rawValue).slice(0, BRIEF_EXTRA_MAX[field]);
+    const nextBrief = { ...briefRef.current, [field]: value };
+    setBrief(nextBrief);
+    briefRef.current = nextBrief;
+    localStorage.setItem(BRIEF_STORAGE, JSON.stringify({ brief: nextBrief, sources: sourcesRef.current }));
   }, []);
 
   const updateRenderMode = useCallback((render_mode: RenderMode) => {
@@ -834,7 +844,9 @@ export function CanvasWorkspace() {
         <label>Audience <span>{sources.audience ?? "missing"}</span><input maxLength={300} value={brief.audience} onChange={(event) => updateField("audience", event.target.value, "typed", "live")} onBlur={(event) => updateField("audience", event.target.value, "typed")} /></label>
         <label>Goal <span>{sources.goal ?? "missing"}</span><select value={sources.goal ? brief.goal : ""} onChange={(event) => updateField("goal", event.target.value, "typed")}><option value="" disabled>Choose a goal</option><option value="signups">Sign ups</option><option value="downloads">Downloads</option><option value="understand">Understand product</option><option value="purchase">Purchase</option></select></label>
         <label>Call to action <span>{sources.goal_note ?? "optional"}</span><textarea maxLength={240} value={brief.goal_note ?? ""} placeholder="Start selling today" onChange={(event) => updateField("goal_note", event.target.value, "typed", "live")} onBlur={(event) => updateField("goal_note", event.target.value, "typed")} /><small>{(brief.goal_note ?? "").length}/240</small></label>
-        <div className="drawer-note">Each visible claim keeps one of these fields as its source. Draft edits are validated before saving. The call to action is optional; only words you type here can appear on the end card. Picture track is chosen when you confirm Run.</div>
+        <label>Button for your customers <span>optional</span><input maxLength={40} value={brief.buyer_cta ?? ""} placeholder="Book a table" onChange={(event) => updateExtra("buyer_cta", event.target.value, "live")} onBlur={(event) => updateExtra("buyer_cta", event.target.value, "commit")} /><small>{(brief.buyer_cta ?? "").length}/40</small></label>
+        <label>Facts you can back up <span>optional</span><textarea maxLength={400} value={brief.proof_points ?? ""} placeholder="Setup takes 5 minutes. Works with Swish." onChange={(event) => updateExtra("proof_points", event.target.value, "live")} onBlur={(event) => updateExtra("proof_points", event.target.value, "commit")} /><small>{(brief.proof_points ?? "").length}/400</small></label>
+        <div className="drawer-note">The videos may phrase copy freely, but every number, name and claim must come from these fields. The button uses &ldquo;Button for your customers&rdquo; when set; a call to action aimed at someone else (for example investors) is replaced and explained in the report. Picture track is chosen when you confirm Run.</div>
       </aside>}
 
       {showAssets && <aside className="asset-drawer">

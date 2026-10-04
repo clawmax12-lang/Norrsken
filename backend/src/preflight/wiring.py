@@ -71,6 +71,8 @@ class ProductionRunService:
             node=settings.node_binary,
             concurrency=settings.render_concurrency,
         )
+        paths = self._store.paths(project_id)
+        speech = _narrator(settings, paths)
         return Pipeline(
             self._store,
             GeminiPlanner(client, self._store),
@@ -82,8 +84,9 @@ class ProductionRunService:
             ledger,
             settings,
             self._clock,
-            sound=_sound_studio(settings, self._store.paths(project_id)),
+            sound=_sound_studio(settings, speech),
             motion=MotionPipeline(client, renderer, self._store),
+            voice=speech,
         )
 
     def finalization_service(self) -> FinalizationService:
@@ -124,22 +127,28 @@ class ProductionRunService:
         )
 
 
-def _sound_studio(settings: Settings, paths: ProjectPaths) -> SoundStudio | None:
-    """Narration, music and effects for the exported videos, or ``None`` when sound is off.
+def _narrator(settings: Settings, paths: ProjectPaths) -> GeminiSpeech | None:
+    """The run's one narrator, shared by voice-led timing and the sound stage (same cache).
 
     Narration calls Gemini's text-to-speech model directly, not through Condense: Condense
-    documents only text chat routes, and each call sends a single on-screen line, so there is
+    documents only text chat routes, and each call sends a single voice line, so there is
     nothing to compress. This is a logged exception to FR-10 (PRD §16).
     """
+    if not (settings.sound_enabled and settings.narration_enabled):
+        return None
+    if settings.gemini_api_key is None:
+        return None
+    return GeminiSpeech(
+        GenAIBackend.from_api_key(settings.gemini_api_key.get_secret_value()),
+        model=settings.tts_model,
+        voice=settings.narration_voice,
+        cache_dir=paths.sound_work / "cache",
+    )
+
+
+def _sound_studio(settings: Settings, speech: GeminiSpeech | None) -> SoundStudio | None:
+    """Narration, music and effects for the exported videos, or ``None`` when sound is off."""
     if not settings.sound_enabled:
         return None
-    speech = None
-    if settings.narration_enabled and settings.gemini_api_key is not None:
-        speech = GeminiSpeech(
-            GenAIBackend.from_api_key(settings.gemini_api_key.get_secret_value()),
-            model=settings.tts_model,
-            voice=settings.narration_voice,
-            cache_dir=paths.sound_work / "cache",
-        )
     ffmpeg = Ffmpeg(settings.ffmpeg_binary, settings.ffprobe_binary)
     return SoundStudio(ffmpeg, speech, voice=settings.narration_voice, tts_model=settings.tts_model)

@@ -73,6 +73,8 @@ def compose(
         headline=str(card["headline"]),
         headline_source_field=BriefField(str(card["headline_source_field"])),
         logo=card["logo"],
+        end_voice=concept.end_voice,
+        chips=concept.chips,
     )
 
 
@@ -126,24 +128,37 @@ def _scene_spec(
     is_hook = index == 0
     is_end = index == last_index
     if is_hook:
-        layout = Layout.TEXT_ONLY
-        transition = Transition.FADE
+        # The product is on screen from the first frame; a type-only card lost viewers at 0:02.
+        layout = Layout.DEVICE_CENTER
+        transition = Transition.CUT
     elif is_end:
         layout = Layout.DEVICE_CENTER
         transition = Transition.FADE
     else:
         layout = _DEVICE_LAYOUTS[(index - 1) % len(_DEVICE_LAYOUTS)]
         transition = _TRANSITIONS[(index - 1) % len(_TRANSITIONS)]
+    text = concept.hook if is_hook else scene.text
     return SceneSpec(
         start_frame=start,
         end_frame=end,
-        text=concept.hook if is_hook else scene.text,
+        text=text,
         source_field=concept.hook_source_field if is_hook else scene.source_field,
         screenshot=scene.screenshot,
         layout=layout,
         transition_in=transition,
         backdrop=_backdrop_for(assets, index, end - start + TRANSITION_FRAMES),
+        voice=None if is_end else scene.voice,
+        focus=None if is_end else scene.focus,
+        emphasis=_emphasis_in(scene.emphasis, text),
     )
+
+
+def _emphasis_in(word: str | None, text: str) -> str | None:
+    """``word`` when it is one of the words shown (case-insensitive), else ``None``."""
+    if not word:
+        return None
+    shown = {w.strip(".,!?:;").casefold() for w in text.split()}
+    return word if word.casefold() in shown else None
 
 
 def _backdrop_for(

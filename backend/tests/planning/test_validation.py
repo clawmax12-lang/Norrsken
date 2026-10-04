@@ -33,27 +33,66 @@ def test_out_of_range_screenshot_index_names_the_scene_and_valid_range() -> None
     assert result == ["concept B scene 4: screenshot_index 3 does not exist; use 0 to 2"]
 
 
-def test_ungrounded_text_is_reported_with_the_concept_id() -> None:
+def test_free_phrasing_without_new_facts_is_allowed() -> None:
     raw = json.loads(plan_json())
     raw["concepts"][2]["cta"] = "Try it free"
 
     result = problems(json.dumps(raw))
 
+    assert result == []
+
+
+def test_unknown_numbers_in_copy_are_reported_with_the_concept_id() -> None:
+    raw = json.loads(plan_json())
+    raw["concepts"][2]["scenes"][0]["voice"] = "Save 40 percent with Acme Notes"
+
+    result = problems(json.dumps(raw))
+
     assert len(result) == 1
-    assert result[0].startswith('concept C cta: text "Try it free" uses "try", "free"')
+    assert result[0].startswith("concept C")
+    assert "40" in result[0]
 
 
 def test_adjacent_screenshot_repeats_are_rejected() -> None:
     repeated = concept_json(
-        scenes=[scene(0, 3), scene(0, 3, PRODUCT), scene(1, 3), scene(2, 3), scene(1, 3)]
+        scenes=[
+            scene(0, 3),
+            scene(0, 3, PRODUCT),
+            scene(1, 3),
+            scene(2, 3),
+            scene(1, 3, voice=None),
+        ]
     )
     others = json.loads(plan_json())["concepts"]
 
     result = problems(plan_json(repeated, others[1], others[2]))
 
     assert result == [
-        "concept A scenes 1 and 2 repeat screenshot_index 0; pick a different screenshot"
+        "concept A scenes 1 and 2 repeat screenshot_index 0; "
+        "pick a different screenshot or zoom into a different region with focus"
     ]
+
+
+def test_a_repeat_is_allowed_when_the_second_scene_zooms_somewhere_new() -> None:
+    zoomed = {**scene(0, 3, PRODUCT), "focus": [0.1, 0.5, 0.6, 0.3]}
+    repeated = concept_json(
+        scenes=[scene(0, 3), zoomed, scene(1, 3), scene(2, 3), scene(1, 3, voice=None)]
+    )
+    others = json.loads(plan_json())["concepts"]
+
+    assert problems(plan_json(repeated, others[1], others[2])) == []
+
+
+def test_every_body_scene_needs_a_voice_line() -> None:
+    raw = json.loads(plan_json())
+    raw["concepts"][0]["scenes"][1]["voice"] = ""
+
+    result = problems(json.dumps(raw))
+
+    assert (
+        "concept A: scenes 2 have no voice line; every scene before the end card "
+        "needs one so the narration never stops"
+    ) in result
 
 
 def test_identical_screenshot_sequences_are_rejected() -> None:
@@ -120,8 +159,8 @@ def test_assemble_uses_goal_note_as_cta_when_present() -> None:
     assert all(c.cta_source_field is BriefField.GOAL_NOTE for c in concepts)
 
 
-def test_assemble_keeps_a_goal_note_cta_the_model_already_wrote() -> None:
-    brief = make_brief(goal_note="Start selling today")
+def test_assemble_keeps_a_goal_note_cta_the_model_shortened_from_a_long_note() -> None:
+    brief = make_brief(goal_note="Start selling today with your whole team")
     sourced = concept_json(cta="Start selling", cta_source_field="goal_note")
     draft = PlanDraft.model_validate_json(plan_json(sourced, sourced, sourced))
 

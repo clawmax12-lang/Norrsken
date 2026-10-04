@@ -109,6 +109,7 @@ class SoundStudio:
             true_peak_dbtp=loudness.true_peak_dbtp,
             tts_input_tokens=narration.input_tokens,
             tts_output_tokens=narration.output_tokens,
+            voice_coverage=_coverage(narration.clips, plan.duration_s) if spoken else 0.0,
             note=note or (None if spoken else "No line fit its scene; music and effects only."),
         )
 
@@ -140,7 +141,9 @@ class SoundStudio:
         tokens_out = 0
         last_error: Exception | None = None
         for line, outcome in zip(lines, outcomes, strict=True):
-            if isinstance(outcome, Exception):
+            if isinstance(outcome, BaseException):
+                if not isinstance(outcome, Exception):
+                    raise outcome
                 last_error = outcome
                 _LOG.warning("line %r unspoken (%s); keeping the rest", line.text, outcome)
                 continue
@@ -185,6 +188,14 @@ class SoundStudio:
         if len(faded) > max_samples:
             faded = fade_edges(faded[:max_samples], dsp.SAMPLE_RATE)
         return faded
+
+
+def _coverage(clips: list[SpokenClip], duration_s: float) -> float:
+    """Share of the video during which a spoken clip plays (clips never overlap)."""
+    if duration_s <= 0:
+        return 0.0
+    spoken_s = sum(len(clip.samples) / dsp.SAMPLE_RATE for clip in clips)
+    return round(min(1.0, spoken_s / duration_s), 3)
 
 
 def _render_bed(plan: SoundPlan, speech: list[SpokenClip]) -> Stereo:

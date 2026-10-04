@@ -47,6 +47,7 @@ class _Beat:
     text: str
     source_field: BriefField
     transition: Transition | None
+    voice: str | None = None
 
 
 @dataclass(frozen=True)
@@ -55,6 +56,7 @@ class _Copy:
     headline_field: BriefField
     cta: str
     cta_field: BriefField
+    end_voice: str | None = None
 
 
 def plan_soundtrack(spec: CompositionSpec) -> SoundPlan:
@@ -68,10 +70,17 @@ def plan_soundtrack(spec: CompositionSpec) -> SoundPlan:
             text=scene.text,
             source_field=scene.source_field,
             transition=None if index == 0 else scene.transition_in,
+            voice=scene.voice,
         )
         for index, scene in enumerate(body)
     )
-    copy = _Copy(spec.headline, spec.headline_source_field, spec.cta, spec.cta_source_field)
+    copy = _Copy(
+        spec.headline,
+        spec.headline_source_field,
+        spec.cta,
+        spec.cta_source_field,
+        spec.end_voice,
+    )
     return _plan(duration_s, beats, copy, cta_s)
 
 
@@ -127,7 +136,9 @@ def _narration(
     cta_s: float,
     duration_s: float,
 ) -> tuple[NarrationLine, ...]:
-    """One line per distinct on-screen text, then the end-card headline."""
+    """The planner's voice-over when it wrote one; else one line per distinct on-screen text."""
+    if any(beat.voice for beat in beats):
+        return _voice_over(beats, copy, cta_s, duration_s)
     starts = [beat.start_s for beat in beats]
     boundaries = [*starts[1:], cta_s]
     spoken: list[tuple[str, BriefField, float, float]] = []
@@ -152,6 +163,42 @@ def _narration(
             lines.append(
                 NarrationLine(text=fitted, source_field=field, start_s=start, window_s=window)
             )
+    return tuple(lines)
+
+
+def _voice_over(
+    beats: tuple[_Beat, ...], copy: _Copy, cta_s: float, duration_s: float
+) -> tuple[NarrationLine, ...]:
+    """Every scene's own voice line in full, then the end-card line.
+
+    Lines are never shortened here: scene lengths were already fitted to the spoken lines
+    (voice-led timing), and the studio speeds up a line that still runs long.
+    """
+    starts = [beat.start_s for beat in beats]
+    boundaries = [*starts[1:], cta_s]
+    lines: list[NarrationLine] = []
+    for beat, start, next_start in zip(beats, starts, boundaries, strict=True):
+        window = next_start - SPEECH_GAP_S - (start + SPEECH_LEAD_S)
+        if beat.voice and beat.voice.strip() and window > 0:
+            lines.append(
+                NarrationLine(
+                    text=beat.voice.strip(),
+                    source_field=beat.source_field,
+                    start_s=start + SPEECH_LEAD_S,
+                    window_s=window,
+                )
+            )
+    closing = (copy.end_voice or copy.headline or copy.cta).strip()
+    window = duration_s - SPEECH_TAIL_S - (cta_s + SPEECH_LEAD_S)
+    if closing and window > 0:
+        lines.append(
+            NarrationLine(
+                text=closing,
+                source_field=copy.headline_field,
+                start_s=cta_s + SPEECH_LEAD_S,
+                window_s=window,
+            )
+        )
     return tuple(lines)
 
 

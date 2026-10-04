@@ -11,9 +11,9 @@ from .composition import (
     Theme,
     Transition,
 )
-from .concept import CreativeConcept, Scene, VariantId
+from .concept import Claim, CreativeConcept, FocusBox, Scene, VariantId
 from .ranking import Confidence, Ranking
-from .report import Reason, Report, TokenSavings
+from .report import PlanNotes, Reason, Report, TokenSavings
 from .run import (
     ActivityEvent,
     RenderStatus,
@@ -32,15 +32,18 @@ __all__ = [
     "BrainArtifact",
     "Brief",
     "BriefField",
+    "Claim",
     "CompositionSpec",
     "Confidence",
     "CreativeConcept",
     "CueKind",
     "EventType",
+    "FocusBox",
     "GeneratedAsset",
     "Goal",
     "Layout",
     "NarrationLine",
+    "PlanNotes",
     "Ranking",
     "Reason",
     "RenderMode",

@@ -55,6 +55,17 @@ class TokenSavings(Contract):
         return round(100.0 * self.tokens_saved / self.input_tokens_original, 1)
 
 
+class PlanNotes(Contract):
+    """What the planner observed that the customer should act on (``plan_notes.json``).
+
+    ``excluded_screenshots`` are zero-based indexes left out of every video because they do
+    not show the customer's product; ``messages`` are shown in the log and the report.
+    """
+
+    excluded_screenshots: tuple[Annotated[int, Field(ge=0)], ...] = ()
+    messages: tuple[Annotated[str, Field(min_length=1)], ...] = ()
+
+
 class Report(Contract):
     """What the founder downloads as ``report.json`` (PRD §10.3 ``Report``)."""
 

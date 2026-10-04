@@ -19,10 +19,12 @@ interface HeadlineProps {
   /** Local frame at which the reveal starts. */
   readonly delay: number;
   readonly frame: number;
+  /** One word drawn heavy in the accent colour (the line's keyword). */
+  readonly accent?: { readonly word: string; readonly color: string } | null;
 }
 
 /** Large statement type whose lines slide up out of a mask, with heavy/light weight contrast. */
-export const Headline: React.FC<HeadlineProps> = ({ text, color, width, align, range, delay, frame }) => {
+export const Headline: React.FC<HeadlineProps> = ({ text, color, width, align, range, delay, frame, accent }) => {
   const { fps } = useVideoConfig();
   const layout = useMemo(() => layoutHeadline(text, width, range, measureInBrowser), [text, width, range]);
   const { fontSize, lines } = layout;
@@ -57,10 +59,14 @@ export const Headline: React.FC<HeadlineProps> = ({ text, color, width, align, r
               {line.map((word, w) => (
                 <span
                   key={w}
-                  style={{
-                    fontWeight: word.weight,
-                    color: word.weight < 500 ? withAlpha(color, LIGHT_WORD_ALPHA) : color,
-                  }}
+                  style={
+                    accent && isWord(word.text, accent.word)
+                      ? { fontWeight: Math.max(word.weight, 700), color: accent.color }
+                      : {
+                          fontWeight: word.weight,
+                          color: word.weight < 500 ? withAlpha(color, LIGHT_WORD_ALPHA) : color,
+                        }
+                  }
                 >
                   {w > 0 ? " " : ""}
                   {word.text}
@@ -73,3 +79,8 @@ export const Headline: React.FC<HeadlineProps> = ({ text, color, width, align, r
     </div>
   );
 };
+
+export function isWord(candidate: string, word: string): boolean {
+  const bare = (s: string) => s.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, "").toLocaleLowerCase();
+  return bare(candidate) !== "" && bare(candidate) === bare(word);
+}

@@ -49,6 +49,37 @@ def test_narration_covers_distinct_copy_then_the_end_card() -> None:
     assert varied_plan.lines[-1].start_s > varied_plan.outro_s - BEAT_S
 
 
+VOICES = (
+    "Your notes sort themselves",
+    "Find anything in seconds",
+    "Every idea lands in place",
+    "Built for busy founders",
+)
+
+
+def _voiced_spec():
+    scenes = tuple(
+        scene.model_copy(update={"voice": voice})
+        for scene, voice in zip(make_concept().scenes, (*VOICES, None), strict=True)
+    )
+    return make_spec(scenes=scenes, end_voice="Try Acme Notes")
+
+
+def test_a_written_voice_over_is_spoken_in_full_without_dedupe() -> None:
+    plan = plan_soundtrack(_voiced_spec())
+
+    assert [line.text for line in plan.lines] == [*VOICES, "Try Acme Notes"]
+    assert plan.lines[-1].start_s > plan.outro_s - BEAT_S
+
+
+def test_the_voice_over_has_no_gap_longer_than_a_second_before_the_end_card() -> None:
+    plan = plan_soundtrack(_voiced_spec())
+
+    ends = [line.start_s + line.window_s for line in plan.lines]
+    gaps = [later.start_s - end for end, later in zip(ends, plan.lines[1:], strict=False)]
+    assert all(0 < gap <= 1.0 for gap in gaps)
+
+
 def test_lines_never_overlap_and_end_before_the_video_does() -> None:
     plan = plan_soundtrack(make_spec())
 

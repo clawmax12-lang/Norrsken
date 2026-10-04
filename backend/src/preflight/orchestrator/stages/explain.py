@@ -4,6 +4,7 @@ from collections.abc import Callable, Sequence
 from functools import partial
 
 from preflight.contracts import (
+    PlanNotes,
     Ranking,
     Reason,
     Report,
@@ -76,11 +77,16 @@ class ExplainStage:
         reasons: dict[str, tuple[Reason, ...]],
     ) -> Report:
         winner, *others = ranking.order
+        notes = (
+            ctx.store.read(ctx.paths.plan_notes, PlanNotes).messages
+            if ctx.paths.plan_notes.is_file()
+            else ()
+        )
         return Report(
             winner=winner,
             runner_up=others[0] if others else None,
             reasons=reasons,
-            next_time=self._next_time(ctx.read_concept(winner), ranking, results),
+            next_time=(*notes, *self._next_time(ctx.read_concept(winner), ranking, results)),
             token_savings=self._usage.snapshot(),
             brain_sim=any(r.simulator is SimulatorName.TRIBE_V2 for r in results),
         )
