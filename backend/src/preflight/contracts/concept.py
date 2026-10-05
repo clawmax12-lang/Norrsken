@@ -33,7 +33,8 @@ class Scene(Contract):
 
     ``voice`` is the narrator's line for this scene (it may differ from the on-screen text);
     ``focus`` is the region of the screenshot the camera punches into; ``emphasis`` is one
-    word of ``text`` drawn in the brand colour.
+    word of ``text`` drawn in the brand colour. ``crop`` is the device display inside a mockup
+    (a phone on a backdrop); when set, ``focus`` is relative to that crop.
     """
 
     t_start: Annotated[float, Field(ge=0)]
@@ -43,6 +44,7 @@ class Scene(Contract):
     source_field: BriefField
     voice: str | None = None
     focus: FocusBox | None = None
+    crop: FocusBox | None = None
     emphasis: str | None = None
 
     @model_validator(mode="after")
@@ -53,10 +55,12 @@ class Scene(Contract):
 
     @model_validator(mode="after")
     def _focus_inside_image(self) -> Self:
-        if self.focus is not None:
-            x, y, width, height = self.focus
+        for name, box in (("focus", self.focus), ("crop", self.crop)):
+            if box is None:
+                continue
+            x, y, width, height = box
             if width <= 0 or height <= 0 or x + width > 1 + _EPSILON or y + height > 1 + _EPSILON:
-                raise ValueError("focus must be a non-empty box inside the screenshot")
+                raise ValueError(f"{name} must be a non-empty box inside the screenshot")
         return self
 
 

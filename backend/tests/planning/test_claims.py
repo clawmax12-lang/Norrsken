@@ -30,6 +30,21 @@ def test_names_the_brief_never_mentions_are_rejected() -> None:
     assert "Shopify" in result[0] and "Notion" in result[0]
 
 
+def test_a_name_inside_a_brief_compound_is_known() -> None:
+    brief = make_brief(one_liner="En blixtsnabb Stripe-checkout med Apple Pay")
+
+    assert (
+        copy_problems(
+            [CopyLine("voice", "Med Stripe och Apple Pay betalar kunden direkt.")], (), brief
+        )
+        == []
+    )
+    assert copy_problems([CopyLine("voice", "Med Klarna betalar kunden direkt.")], (), brief) != []
+    hanging = CopyLine("voice", "Vår Stripe- och Apple Pay-kassa tar bort hinder.")
+    assert copy_problems([hanging], (), brief) == []
+    assert copy_problems([CopyLine("voice", "Vår Shopify-kassa är klar.")], (), brief) != []
+
+
 def test_the_first_word_of_a_sentence_is_not_a_name() -> None:
     assert problems("Organise everything. Then relax") == []
 

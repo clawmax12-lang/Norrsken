@@ -9,6 +9,7 @@ customer's product or another brand) and whether the brief's own call to action 
 audience. Code, not the model, decides what to do with those observations.
 """
 
+from collections.abc import Mapping
 from typing import Annotated, Self
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -24,9 +25,13 @@ from preflight.contracts.concept import (
 from preflight.timing import BUTTON_MAX_WORDS, END_CARD_S
 
 from .archetypes import Archetype
+from .claims import brief_mentions
+from .screens import ScreenImage, crop_focus
 
 VIDEO_SECONDS = 15
 FIRST_VARIANT_ID = "A"
+# Below this many source pixels across the shown product, the film cannot look sharp.
+MIN_SHARP_PRODUCT_PX = 450
 END_CARD_SECONDS = int(END_CARD_S)
 
 
@@ -98,6 +103,14 @@ class ScreenshotNote(_Draft):
     other_brand: Annotated[
         str, Field(description="Name of another company/product it shows, or empty")
     ] = ""
+    device_box: Annotated[
+        list[int],
+        Field(
+            description="[ymin, xmin, ymax, xmax] 0-1000 tightly around the whole device when "
+            "the image shows a phone/tablet/laptop on a backdrop (a mockup); empty for a plain "
+            "screenshot"
+        ),
+    ] = []
     note: str = ""
 
 
@@ -150,14 +163,18 @@ def variant_id(index: int) -> str:
     return chr(ord(FIRST_VARIANT_ID) + index)
 
 
-def excluded_screenshots(draft: PlanDraft, screenshot_count: int) -> tuple[int, ...]:
-    """Indexes that show another brand or not the product, unless too few would remain."""
+def excluded_screenshots(draft: PlanDraft, brief: Brief) -> tuple[int, ...]:
+    """Indexes that show another brand or not the product, unless too few would remain.
+
+    A brand the brief itself names (a payment partner, an integration) is not another brand.
+    """
+    screenshot_count = len(brief.screenshots)
     excluded = tuple(
         sorted(
             {
                 note.index
                 for note in draft.screenshots
-                if note.index < screenshot_count and (not note.shows_product or note.other_brand)
+                if note.index < screenshot_count and _off_brand(note, brief)
             }
         )
     )
@@ -166,10 +183,25 @@ def excluded_screenshots(draft: PlanDraft, screenshot_count: int) -> tuple[int, 
     return excluded
 
 
-def plan_notes(draft: PlanDraft, brief: Brief) -> PlanNotes:
-    """Customer-facing notes on screenshots left out and on a call to action that mismatches."""
-    excluded = excluded_screenshots(draft, len(brief.screenshots))
+def _off_brand(note: ScreenshotNote, brief: Brief) -> bool:
+    other = bool(note.other_brand) and not brief_mentions(brief, note.other_brand)
+    return not note.shows_product or other
+
+
+def plan_notes(
+    draft: PlanDraft, brief: Brief, screens: Mapping[int, ScreenImage] | None = None
+) -> PlanNotes:
+    """Customer-facing notes: screenshots left out or too small, and a mismatched CTA."""
+    excluded = excluded_screenshots(draft, brief)
     messages: list[str] = []
+    for index, screen in sorted((screens or {}).items()):
+        if index not in excluded and screen.product_width_px < MIN_SHARP_PRODUCT_PX:
+            where = "its screen is" if screen.crop else "it is"
+            messages.append(
+                f"Screenshot {index + 1}: {where} only {screen.product_width_px} px wide, so it "
+                "looks soft in a 1080 px video. Upload the original screenshot from the device "
+                "(for example 1170 x 2532 from an iPhone) for a sharp result."
+            )
     by_index = {note.index: note for note in draft.screenshots}
     for index in excluded:
         note = by_index[index]
@@ -178,9 +210,7 @@ def plan_notes(draft: PlanDraft, brief: Brief) -> PlanNotes:
             f"Screenshot {index + 1} {shows}, not {brief.product_name}; it was left out of every "
             "video. Upload a screen of your own product to use it."
         )
-    if not excluded and any(
-        not note.shows_product or note.other_brand for note in draft.screenshots
-    ):
+    if not excluded and any(_off_brand(note, brief) for note in draft.screenshots):
         messages.append(
             "Some screenshots may not show your product, but too few would remain without them; "
             "replace them before launching."
@@ -197,7 +227,10 @@ def plan_notes(draft: PlanDraft, brief: Brief) -> PlanNotes:
 
 
 def assemble_concepts(
-    draft: PlanDraft, brief: Brief, archetypes: tuple[Archetype, ...]
+    draft: PlanDraft,
+    brief: Brief,
+    archetypes: tuple[Archetype, ...],
+    crops: Mapping[int, tuple[float, float, float, float]] | None = None,
 ) -> tuple[CreativeConcept, ...]:
     """Turn ``draft`` into contract concepts, assigning ids and hypotheses by position.
 
@@ -207,7 +240,7 @@ def assemble_concepts(
         pydantic.ValidationError: a concept breaks the ``CreativeConcept`` contract.
     """
     return tuple(
-        _assemble(concept, draft, brief, variant_id(index), archetype)
+        _assemble(concept, draft, brief, variant_id(index), archetype, crops or {})
         for index, (concept, archetype) in enumerate(zip(draft.concepts, archetypes, strict=True))
     )
 
@@ -218,10 +251,12 @@ def _assemble(
     brief: Brief,
     identifier: str,
     archetype: Archetype,
+    crops: Mapping[int, tuple[float, float, float, float]],
 ) -> CreativeConcept:
     scenes: list[Scene] = []
     elapsed = 0
     for scene in concept.scenes:
+        crop = crops.get(scene.screenshot_index)
         scenes.append(
             Scene(
                 t_start=elapsed,
@@ -230,7 +265,8 @@ def _assemble(
                 text=scene.text,
                 source_field=scene.source_field,
                 voice=scene.voice or None,
-                focus=_focus(scene.focus),
+                focus=crop_focus(_focus(scene.focus), crop),
+                crop=crop,
                 emphasis=_emphasis(scene.emphasis, scene.text),
             )
         )

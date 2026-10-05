@@ -11,6 +11,7 @@ from preflight.storage import ProjectStore
 from .archetypes import archetypes_for
 from .draft import PlanDraft, assemble_concepts, plan_notes
 from .prompts import SYSTEM_PROMPT, build_plan_parts
+from .screens import ScreenImage, inspect_screen
 from .validation import plan_problems
 
 
@@ -42,8 +43,10 @@ class GeminiPlanner:
             build_plan_parts(brief, archetypes, screenshots),
             validate=lambda plan: plan_problems(plan, brief, archetypes),
         )
-        self.last_notes = plan_notes(draft, brief)
-        return assemble_concepts(draft, brief, archetypes)
+        screens = await asyncio.to_thread(_inspect, draft, screenshots)
+        self.last_notes = plan_notes(draft, brief, screens)
+        crops = {index: s.crop for index, s in screens.items() if s.crop is not None}
+        return assemble_concepts(draft, brief, archetypes, crops)
 
     async def _load(self, project_id: str, relative_path: str) -> MediaPart:
         root = self._store.paths(project_id).root.resolve()
@@ -51,6 +54,18 @@ class GeminiPlanner:
         if not path.is_relative_to(root):
             raise PreflightValidationError(f"screenshot path escapes the project: {relative_path}")
         return await asyncio.to_thread(_read_screenshot, path)
+
+
+def _inspect(draft: PlanDraft, screenshots: list[MediaPart]) -> dict[int, ScreenImage]:
+    """Pixel size of every screenshot and the display to cut out of each mockup."""
+    boxes = {note.index: note.device_box for note in draft.screenshots}
+    screens: dict[int, ScreenImage] = {}
+    for index, part in enumerate(screenshots):
+        try:
+            screens[index] = inspect_screen(part.data, boxes.get(index))
+        except (OSError, ValueError):
+            continue
+    return screens
 
 
 def _read_screenshot(path: Path) -> MediaPart:

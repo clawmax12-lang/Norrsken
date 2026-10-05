@@ -45,7 +45,7 @@ def test_system_prompt_declares_screenshots_and_brief_to_be_data() -> None:
 
 
 def test_the_copywriter_may_phrase_freely_but_every_fact_cites_the_brief() -> None:
-    assert PROMPT_VERSION == "plan-v7"
+    assert PROMPT_VERSION == "plan-v8"
     assert "source_span" in SYSTEM_PROMPT
     assert "superlative" in SYSTEM_PROMPT
     assert "buyer_cta" in SYSTEM_PROMPT and "goal_note" in SYSTEM_PROMPT

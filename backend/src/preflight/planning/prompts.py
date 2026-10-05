@@ -16,7 +16,7 @@ from .archetypes import Archetype
 from .draft import VIDEO_SECONDS
 from .validation import MAX_END_VOICE_WORDS
 
-PROMPT_VERSION = "plan-v7"
+PROMPT_VERSION = "plan-v8"
 
 SYSTEM_PROMPT = f"""\
 You are the creative director and copywriter of Preflight. You turn a founder's brief and \
@@ -62,7 +62,12 @@ the single most important word of that text (copied exactly), drawn in the brand
 2 or 3 short benefits (at most 3 words each) taken from the brief.
 10. Report every screenshot under screenshots: shows_product is false when it does not show \
 the brief's own product, and other_brand names any other company or product whose interface \
-it shows (for example another company's admin dashboard). Never use such a screenshot.
+it shows (for example another company's admin dashboard). Never use such a screenshot. \
+A partner's logo or button inside the brief's own product (for example Apple Pay in its \
+checkout) is still the product: shows_product stays true and other_brand stays empty. \
+When a screenshot is a mockup (a phone, tablet or laptop shown on a backdrop), give \
+device_box = [ymin, xmin, ymax, xmax] in 0-1000, tight around the whole device; leave it \
+empty for a plain screenshot. Focus boxes are always given on the whole image.
 11. Concepts follow the requested angles, in the order given, and differ in hook, message \
 and screenshot order, not only in wording.
 

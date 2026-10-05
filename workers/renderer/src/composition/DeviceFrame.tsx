@@ -1,21 +1,60 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Img, cancelRender, continueRender, delayRender, staticFile } from "remotion";
 import { getImageDimensions } from "@remotion/media-utils";
-import { focusImageStyle, kenBurnsImageStyle, type FocusBox } from "./still.ts";
+import { coverLayout, stageTransform, type FocusBox, type ImageSize } from "./still.ts";
 import { DEVICE } from "./tokens.ts";
 
-/** Natural aspect ratio (width / height) of a staged screenshot; waits for it before rendering. */
-export function useImageAspect(path: string): number | null {
-  const [aspect, setAspect] = useState<number | null>(null);
+/** Natural pixel size of a staged screenshot; waits for it before rendering. */
+export function useImageSize(path: string): ImageSize | null {
+  const [size, setSize] = useState<ImageSize | null>(null);
   useEffect(() => {
     const handle = delayRender(`Measuring ${path}`);
     getImageDimensions(staticFile(path))
-      .then(({ width, height }) => setAspect(width / height))
+      .then(({ width, height }) => setSize({ width, height }))
       .catch((error: unknown) => cancelRender(error))
       .finally(() => continueRender(handle));
   }, [path]);
-  return aspect;
+  return size;
 }
+
+/** Natural aspect ratio (width / height) of a staged screenshot; waits for it before rendering. */
+export function useImageAspect(path: string): number | null {
+  const size = useImageSize(path);
+  return size === null ? null : size.width / size.height;
+}
+
+interface ScreenImageProps {
+  readonly src: string;
+  readonly image: ImageSize;
+  /** The part of the image to show (a mockup's display), or null for all of it. */
+  readonly crop: FocusBox | null;
+  readonly width: number;
+  readonly height: number;
+  /** Scene progress 0-1. */
+  readonly t: number;
+  readonly focus: FocusBox | null;
+}
+
+/** A screenshot (or the display cut out of a mockup) filling a box, moving within the upscale cap. */
+export const ScreenImage: React.FC<ScreenImageProps> = ({ src, image, crop, width, height, t, focus }) => {
+  const layout = coverLayout(image, crop, width, height);
+  return (
+    <div style={{ position: "absolute", inset: 0, transform: stageTransform(t, focus, layout.scale), transformOrigin: "50% 50%" }}>
+      <Img
+        src={staticFile(src)}
+        style={{
+          position: "absolute",
+          left: layout.left,
+          top: layout.top,
+          width: layout.width,
+          height: layout.height,
+          maxWidth: "none",
+          display: "block",
+        }}
+      />
+    </div>
+  );
+};
 
 export interface DeviceGeometry {
   readonly width: number;
@@ -34,6 +73,9 @@ export function deviceGeometry(aspect: number): DeviceGeometry {
 
 interface DeviceFrameProps {
   readonly src: string;
+  readonly image: ImageSize;
+  /** The device display cut out of a mockup; it brings its own status bar and island. */
+  readonly crop?: FocusBox | null;
   readonly geometry: DeviceGeometry;
   /** Moves the glare across the glass over time (0-1). */
   readonly glare: number;
@@ -46,10 +88,12 @@ interface DeviceFrameProps {
 }
 
 /** Brand-neutral device drawn in CSS: titanium-style edge, black bezel, the real screenshot. */
-export const DeviceFrame: React.FC<DeviceFrameProps> = ({ src, geometry, glare, kenBurns, focus, caption }) => {
+export const DeviceFrame: React.FC<DeviceFrameProps> = ({ src, image, crop = null, geometry, glare, kenBurns, focus = null, caption }) => {
   const { width, height, radius, isPhone } = geometry;
   const edge = 4;
   const bezel = DEVICE.bezel;
+  const glassW = width - 2 * (edge + bezel);
+  const glassH = height - 2 * (edge + bezel);
   const screenRadius = radius - edge - bezel * 0.55;
   return (
     <div
@@ -80,7 +124,7 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({ src, geometry, glare, 
         }}
       >
         <div style={{ position: "relative", width: "100%", height: "100%", borderRadius: screenRadius, overflow: "hidden", background: "#fff" }}>
-          <Img src={staticFile(src)} style={focus ? focusImageStyle(kenBurns, focus) : kenBurnsImageStyle(kenBurns)} />
+          <ScreenImage src={src} image={image} crop={crop} width={glassW} height={glassH} t={kenBurns} focus={focus} />
           <div
             style={{
               position: "absolute",
@@ -91,7 +135,7 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({ src, geometry, glare, 
           />
           {caption}
         </div>
-        {isPhone ? (
+        {isPhone && crop === null ? (
           <div
             style={{
               position: "absolute",

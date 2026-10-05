@@ -67,6 +67,7 @@ export async function renderSpec(options: RenderOptions): Promise<RenderSummary>
       browserExecutable,
       codec: "h264",
       crf: 16,
+      jpegQuality: 95,
       pixelFormat: "yuv420p",
       concurrency: options.concurrency ?? null,
       outputLocation: options.outPath,

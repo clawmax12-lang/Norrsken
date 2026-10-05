@@ -31,6 +31,10 @@ export type Model = string;
 export type Path = string;
 export type Prompt = string;
 export type Sha256 = string;
+/**
+ * Device display inside a mockup; focus is relative to it.
+ */
+export type Crop = [unknown, unknown, unknown, unknown] | null;
 export type Emphasis = string | null;
 export type EndFrame = number;
 export type Focus = [unknown, unknown, unknown, unknown] | null;
@@ -88,6 +92,7 @@ export interface CompositionSpec {
  */
 export interface SceneSpec {
   backdrop?: GeneratedAsset | null;
+  crop?: Crop;
   emphasis?: Emphasis;
   end_frame: EndFrame;
   focus?: Focus;

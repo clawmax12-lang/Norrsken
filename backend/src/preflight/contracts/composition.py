@@ -74,6 +74,9 @@ class SceneSpec(Contract):
     backdrop: GeneratedAsset | None = None
     voice: str | None = None
     focus: FocusBox | None = None
+    crop: FocusBox | None = Field(
+        default=None, description="Device display inside a mockup; focus is relative to it."
+    )
     emphasis: str | None = None
 
 

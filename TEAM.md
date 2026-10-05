@@ -163,6 +163,14 @@ Update product requirements in PRD.md and append the decision to §16. Update th
 
 ## Current handoff
 
+- **FR-02/FR-03/§9.3 sharp product shots, Fas 1 (branch `untitled-v5`, 5 Oct):**
+  - Planner `plan-v8` reports a `device_box` for mockups; `planning/screens.py` finds the real device edge and cuts out its display, which reaches the renderer as `Scene.crop` / `SceneSpec.crop`.
+  - The renderer shows only that display in its own phone frame, caps upscaling at 2× source pixels, keeps the focus region in view and captures frames at JPEG quality 95.
+  - A plan note asks for the original screenshot when a screen is narrower than 450 px.
+  - A partner the brief names (Apple Pay, Stripe in "Stripe-checkout") no longer excludes a screenshot or fails grounding.
+  - Opus/FR-17, TRIBE, Condense and Mode 2 are untouched.
+  - **Verification:** ruff, mypy and pytest pass (682 tests); renderer typecheck and 29 tests pass. The launch-draft brief was rerun end to end; before/after frames show the grey mockup box gone and a sharper screen.
+
 - **FR-02/FR-03/§9.3 sellable Showcase (branch `untitled-v5`, 4 Oct):** this change works toward a sellable Mode 1.
   - Planner `plan-v7` writes copy as a copywriter, with claim-level grounding: unknown numbers, unknown names, superlatives and quotes are rejected, and each claim needs a verbatim `source_span`.
   - The brief gains optional `buyer_cta` and `proof_points`, and the CTA is checked against the audience.

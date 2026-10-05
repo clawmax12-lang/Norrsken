@@ -1,8 +1,8 @@
-import { AbsoluteFill, Img, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
+import { AbsoluteFill, useCurrentFrame, useVideoConfig } from "remotion";
 import type { SceneSpec, Theme } from "../spec/types.generated.ts";
 import { Backdrop } from "./Backdrop.tsx";
-import { DeviceFrame, deviceGeometry, useImageAspect } from "./DeviceFrame.tsx";
-import { focusImageStyle, focusOf, fullBleedStyle, isPhoneAspect } from "./still.ts";
+import { DeviceFrame, ScreenImage, deviceGeometry, useImageSize } from "./DeviceFrame.tsx";
+import { focusOf, isPhoneAspect, regionAspect, type FocusBox, type ImageSize } from "./still.ts";
 import { Headline } from "./Headline.tsx";
 import { easeInOut, lerp, progress, springIn, SHOWCASE_SPRING } from "./motion.ts";
 import { FRAME, PRODUCT_ZONE, SAFE_WIDTH, TYPE, TYPE_ZONE } from "./tokens.ts";
@@ -79,11 +79,13 @@ const TextOnly: React.FC<ContentProps> = ({ scene, theme, frame }) => (
 );
 
 const ProductShot: React.FC<ContentProps & { float: boolean }> = ({ scene, theme, frame, fps, t, float, instant }) => {
-  const aspect = useImageAspect(scene.screenshot);
-  if (aspect === null) return null;
+  const image = useImageSize(scene.screenshot);
+  if (image === null) return null;
   const zoneW = SAFE_WIDTH;
   const zoneH = FRAME.height - PRODUCT_ZONE.top - PRODUCT_ZONE.bottom;
   const focus = focusOf(scene.focus);
+  const crop = focusOf(scene.crop);
+  const aspect = regionAspect(image, crop);
   return (
     <AbsoluteFill>
       <div
@@ -123,9 +125,21 @@ const ProductShot: React.FC<ContentProps & { float: boolean }> = ({ scene, theme
         }}
       >
         {isPhoneAspect(aspect) ? (
-          <PhoneInBand scene={scene} zoneW={zoneW} zoneH={zoneH} aspect={aspect} frame={frame} fps={fps} t={t} float={float} instant={instant} />
+          <PhoneInBand
+            scene={scene}
+            image={image}
+            crop={crop}
+            zoneW={zoneW}
+            zoneH={zoneH}
+            aspect={aspect}
+            frame={frame}
+            fps={fps}
+            t={t}
+            float={float}
+            instant={instant}
+          />
         ) : (
-          <Img src={staticFile(scene.screenshot)} style={focus ? focusImageStyle(t, focus) : fullBleedStyle(t)} />
+          <ScreenImage src={scene.screenshot} image={image} crop={crop} width={zoneW} height={zoneH} t={t} focus={focus} />
         )}
       </div>
     </AbsoluteFill>
@@ -134,6 +148,8 @@ const ProductShot: React.FC<ContentProps & { float: boolean }> = ({ scene, theme
 
 const PhoneInBand: React.FC<{
   scene: SceneSpec;
+  image: ImageSize;
+  crop: FocusBox | null;
   zoneW: number;
   zoneH: number;
   aspect: number;
@@ -142,7 +158,7 @@ const PhoneInBand: React.FC<{
   t: number;
   float: boolean;
   instant: boolean;
-}> = ({ scene, zoneW, zoneH, aspect, frame, fps, t, float, instant }) => {
+}> = ({ scene, image, crop, zoneW, zoneH, aspect, frame, fps, t, float, instant }) => {
   const geometry = deviceGeometry(aspect);
   const fit = Math.min(zoneW / geometry.width, zoneH / geometry.height);
   const drawnW = geometry.width * fit;
@@ -164,6 +180,8 @@ const PhoneInBand: React.FC<{
     >
       <DeviceFrame
         src={scene.screenshot}
+        image={image}
+        crop={crop}
         geometry={{ ...geometry, width: drawnW, height: drawnH, radius: geometry.radius * fit }}
         glare={t}
         kenBurns={t}

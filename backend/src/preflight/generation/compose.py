@@ -149,6 +149,7 @@ def _scene_spec(
         backdrop=_backdrop_for(assets, index, end - start + TRANSITION_FRAMES),
         voice=None if is_end else scene.voice,
         focus=None if is_end else scene.focus,
+        crop=scene.crop,
         emphasis=_emphasis_in(scene.emphasis, text),
     )
 

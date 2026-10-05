@@ -34,7 +34,7 @@ def plan_problems(draft: PlanDraft, brief: Brief, archetypes: tuple[Archetype, .
         return index_problems
     sequence_problems = [
         *_screenshot_sequence_problems(draft, len(brief.screenshots)),
-        *_excluded_screenshot_problems(draft, len(brief.screenshots)),
+        *_excluded_screenshot_problems(draft, brief),
     ]
     if sequence_problems:
         return sequence_problems
@@ -90,8 +90,8 @@ def _new_focus(left: SceneDraft, right: SceneDraft) -> bool:
     return right.focus is not None and right.focus != left.focus
 
 
-def _excluded_screenshot_problems(draft: PlanDraft, screenshot_count: int) -> list[str]:
-    excluded = set(excluded_screenshots(draft, screenshot_count))
+def _excluded_screenshot_problems(draft: PlanDraft, brief: Brief) -> list[str]:
+    excluded = set(excluded_screenshots(draft, brief))
     return [
         f"concept {variant_id(c)} scene {s}: screenshot_index {scene.screenshot_index} does not "
         "show the brief's product (you reported it under screenshots); use another index"

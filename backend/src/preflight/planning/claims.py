@@ -64,6 +64,12 @@ def brief_corpus(brief: Brief) -> str:
     return " ".join(brief.field_text(field) for field in BriefField)
 
 
+def brief_mentions(brief: Brief, name: str) -> bool:
+    """True when every word of ``name`` (for example "Apple Pay") appears in the brief."""
+    words = _words(name)
+    return bool(words) and words <= _words(brief_corpus(brief))
+
+
 def copy_problems(lines: Iterable[CopyLine], claims: Sequence[ClaimRef], brief: Brief) -> list[str]:
     """Every grounding problem in ``lines`` and ``claims``, worded for a repair prompt."""
     corpus = brief_corpus(brief)
@@ -84,7 +90,7 @@ def _line_problems(line: CopyLine, numbers: set[str], names: set[str]) -> list[s
             f'{line.location}: "{line.text}" uses the number(s) {", ".join(unknown_numbers)}, '
             "which the brief does not contain; only use numbers from the brief"
         )
-    unknown_names = [name for name in _names(line.text) if name.casefold() not in names]
+    unknown_names = [name for name in _names(line.text) if not _known_name(name, names)]
     if unknown_names:
         problems.append(
             f'{line.location}: "{line.text}" names {", ".join(unknown_names)}, which the brief '
@@ -101,6 +107,14 @@ def _line_problems(line: CopyLine, numbers: set[str], names: set[str]) -> list[s
             f'{line.location}: "{line.text}" contains quotation marks; never quote anyone'
         )
     return problems
+
+
+def _known_name(name: str, names: set[str]) -> bool:
+    """In the brief, or a compound whose capitalised parts are ("Stripe-", "Pay-kassa")."""
+    if name.casefold() in names:
+        return True
+    capitalised = [part for part in name.split("-") if any(char.isupper() for char in part)]
+    return bool(capitalised) and all(part.casefold() in names for part in capitalised)
 
 
 def _claim_problems(claims: Sequence[ClaimRef], brief: Brief) -> list[str]:
@@ -129,7 +143,9 @@ def _tokens(text: str) -> list[str]:
 
 
 def _words(text: str) -> set[str]:
-    return {word.casefold() for word in _WORD.findall(text)}
+    """Words of ``text``; a compound like "Stripe-checkout" also yields "stripe" and "checkout"."""
+    words = {word.casefold() for word in _WORD.findall(text)}
+    return words | {part for word in words for part in word.split("-") if part}
 
 
 def _names(text: str) -> list[str]:
