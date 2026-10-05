@@ -13,3 +13,21 @@ export function publicErrorMessage(value: unknown, fallback: string): string {
   }
   return fallback;
 }
+
+export const SERVER_UNREACHABLE =
+  "The Preflight server did not answer (it may be restarting). Nothing was started; try again in a minute.";
+
+/**
+ * The JSON body of ``response``. A non-JSON body (a proxy or tunnel error page) becomes
+ * ``{ error }`` with a readable message instead of the browser's parse error.
+ */
+export async function readJson(response: Response): Promise<Record<string, unknown>> {
+  const text = await response.text();
+  try {
+    const parsed: unknown = JSON.parse(text);
+    if (parsed && typeof parsed === "object") return parsed as Record<string, unknown>;
+  } catch {
+    // fall through
+  }
+  return { error: SERVER_UNREACHABLE };
+}

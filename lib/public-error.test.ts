@@ -1,6 +1,17 @@
 import { describe, expect, it } from "vitest";
 
-import { publicErrorMessage } from "./public-error";
+import { publicErrorMessage, readJson, SERVER_UNREACHABLE } from "./public-error";
+
+describe("readJson", () => {
+  it("returns the parsed body", async () => {
+    expect(await readJson(new Response('{"status":"queued"}'))).toEqual({ status: "queued" });
+  });
+
+  it("turns a tunnel error page into a readable error", async () => {
+    const page = new Response("<html>Error 1033 Cloudflare Tunnel error</html>", { status: 530 });
+    expect(await readJson(page)).toEqual({ error: SERVER_UNREACHABLE });
+  });
+});
 
 describe("publicErrorMessage", () => {
   it("reads FastAPI {code, message} objects instead of crashing React", () => {

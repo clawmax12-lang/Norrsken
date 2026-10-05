@@ -39,7 +39,7 @@ import {
 import { buildDirectorContext } from "@/lib/director-context";
 import { assertEditableScene } from "@/lib/director-edit";
 import { DirectorRunBoundary, isExplicitRunConsent } from "@/lib/director-run";
-import { publicErrorMessage } from "@/lib/public-error";
+import { publicErrorMessage, readJson } from "@/lib/public-error";
 import type { DirectorUserTurn } from "@/lib/director-tool-queue";
 
 type LocalAsset = {
@@ -577,7 +577,7 @@ export function CanvasWorkspace() {
       const form = new FormData();
       for (const asset of selected) form.append("files", asset.file, asset.name);
       const uploadResponse = await fetch(`/api/projects/${PROJECT_ID}/assets`, { method: "POST", body: form });
-      const upload = await uploadResponse.json() as { assets?: Array<{ storedPath: string }>; error?: unknown };
+      const upload = await readJson(uploadResponse) as { assets?: Array<{ storedPath: string }>; error?: unknown };
       if (!uploadResponse.ok || !upload.assets) throw new Error(publicErrorMessage(upload.error, "Screenshot upload failed."));
       logEvent("sent", `${selected.length} screenshots uploaded to the backend`, upload.assets.map((asset) => asset.storedPath));
 
@@ -592,11 +592,11 @@ export function CanvasWorkspace() {
 
       const finalBrief = briefSchema.parse({ ...briefRef.current, project_id: PROJECT_ID, screenshots: upload.assets.map((asset) => asset.storedPath) });
       const briefResponse = await fetch(`/api/projects/${PROJECT_ID}/brief`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(finalBrief) });
-      if (!briefResponse.ok) throw new Error(publicErrorMessage((await briefResponse.json()) as { error?: unknown }, "Brief save failed."));
+      if (!briefResponse.ok) throw new Error(publicErrorMessage((await readJson(briefResponse)).error, "Brief save failed."));
       logEvent("sent", "Brief sent to the backend (brief.json)", finalBrief);
 
       const runResponse = await fetch(`/api/projects/${PROJECT_ID}/run`, { method: "POST", headers: { "Idempotency-Key": commandId } });
-      const run = await runResponse.json() as { error?: unknown; status?: string; run_id?: string; project_id?: string };
+      const run = await readJson(runResponse) as { error?: unknown; status?: string; run_id?: string; project_id?: string };
       logEvent(runResponse.ok ? "backend" : "error", runResponse.ok ? "Run accepted by the backend" : `Run refused (${runResponse.status})`, run);
       if (!runResponse.ok) {
         const message = publicErrorMessage(run.error, "No job was started.");
