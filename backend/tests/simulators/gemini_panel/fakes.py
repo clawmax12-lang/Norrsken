@@ -28,13 +28,14 @@ def persona_set_json() -> str:
 def rating_json(
     goal_fit: Callable[[int], float] = lambda s: 0.5,
     clarity: Callable[[int], float] = lambda s: 0.4,
+    craft: Callable[[int], float] = lambda s: 1.0,
     moments: Sequence[tuple[str, str, str]] = (),
     seconds: int = 15,
 ) -> str:
     return json.dumps(
         {
             "seconds": [
-                {"second": s, "goal_fit": goal_fit(s), "clarity": clarity(s)}
+                {"second": s, "goal_fit": goal_fit(s), "clarity": clarity(s), "craft": craft(s)}
                 for s in range(seconds)
             ],
             "moments": [{"timestamp": t, "kind": k, "label": label} for t, k, label in moments],

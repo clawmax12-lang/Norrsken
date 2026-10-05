@@ -9,10 +9,12 @@ An unchanged brief keeps resuming from the last completed state.
 import hashlib
 import shutil
 
-from preflight.contracts import RunRecord, RunState
+from preflight.contracts import RunRecord
 from preflight.errors import StorageError
 from preflight.ports import Clock
 from preflight.storage import ProjectPaths, ProjectStore
+
+from .tracker import RunTracker
 
 BRIEF_DIGEST_FILE = "brief.sha256"
 _RUN_OUTPUTS = (
@@ -33,6 +35,9 @@ _RUN_OUTPUTS = (
 def prepare_run(store: ProjectStore, project_id: str, clock: Clock) -> RunRecord:
     """Archive a stale run if the brief changed, ensure ``run.json`` exists and return it.
 
+    A ``FAILED`` run is reopened at its last completed state here, before the run starts, so
+    the caller and anyone polling see it resuming instead of the old failure.
+
     Raises:
         StorageError: The project has no readable ``brief.json``.
     """
@@ -47,12 +52,7 @@ def prepare_run(store: ProjectStore, project_id: str, clock: Clock) -> RunRecord
     if previous is not None and previous != digest:
         _archive_outputs(paths, clock)
     marker.write_text(digest, encoding="utf-8")
-    if not paths.run.exists():
-        store.write(
-            paths.run,
-            RunRecord(project_id=project_id, state=RunState.BRIEF_RECEIVED, updated_at=clock()),
-        )
-    return store.read(paths.run, RunRecord)
+    return RunTracker.open(store, project_id, clock).record
 
 
 def _archive_outputs(paths: ProjectPaths, clock: Clock) -> None:

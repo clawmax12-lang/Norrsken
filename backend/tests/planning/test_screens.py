@@ -80,3 +80,10 @@ def test_focus_is_re_expressed_inside_the_crop() -> None:
     assert crop_focus((0.0, 0.0, 0.1, 0.1), crop) is None
     assert crop_focus(None, crop) is None
     assert crop_focus((0.1, 0.1, 0.2, 0.2), None) == (0.1, 0.1, 0.2, 0.2)
+
+
+def test_a_focus_box_mostly_outside_the_display_is_dropped() -> None:
+    crop = (0.4, 0.1, 0.25, 0.8)
+
+    assert crop_focus((0.3, 0.3, 0.2, 0.1), crop) is None
+    assert crop_focus((0.42, 0.3, 0.2, 0.1), crop) is not None

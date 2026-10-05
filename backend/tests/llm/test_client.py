@@ -198,3 +198,30 @@ async def test_unmeasurable_compression_falls_back_to_the_original() -> None:
 
 async def test_model_property_reports_the_configured_model() -> None:
     assert make_client(FakeGeminiBackend()).model == "gemini-test"
+
+
+async def test_a_spent_model_falls_back_to_the_next_and_cools_down() -> None:
+    now = [0.0]
+    backend = FakeGeminiBackend(TransientProviderError("429 quota"), GOOD, GOOD, GOOD)
+    client = make_client(backend, fallback_models=("flash-b", "flash-c"), clock=lambda: now[0])
+
+    for _ in range(2):
+        assert await client.generate_json(Answer, "system", [TextPart("go")]) == Answer(
+            word="hi", n=1
+        )
+        assert client.answered_by == "flash-b"
+    now[0] = 61.0
+    await client.generate_json(Answer, "system", [TextPart("go")])
+
+    assert backend.models == ["gemini-test", "flash-b", "flash-b", "gemini-test"]
+    assert client.answered_by == "gemini-test"
+
+
+async def test_when_every_model_fails_the_first_is_retried_once_then_it_raises() -> None:
+    backend = FakeGeminiBackend(*(TransientProviderError(str(n)) for n in range(3)))
+    client = make_client(backend, fallback_models=("flash-b",))
+
+    with pytest.raises(TransientProviderError, match="2"):
+        await client.generate_json(Answer, "system", [TextPart("go")])
+
+    assert backend.models == ["gemini-test", "flash-b", "gemini-test"]

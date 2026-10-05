@@ -164,7 +164,7 @@ def _sound_section(sounds: Mapping[str, SoundRecord]) -> str:
     lines = [
         "## Sound in the exported videos",
         "",
-        "Narration, music and sound effects were mixed before the pretest. Simulated "
+        "Narration, ambience and sound effects were mixed before the pretest. Simulated "
         "viewers watched the soundtrack cut, so the ranking above includes the audio.",
         "",
     ]
@@ -178,9 +178,9 @@ def _sound_line(record: SoundRecord) -> str:
         spoken = "; ".join(f'"{line.text}"' for line in record.narration)
         return (
             f"narrated by the Gemini voice {record.voice}, reading only the on-screen text "
-            f"({spoken}), with music and sound effects."
+            f"({spoken}), with ambience and sound effects."
         )
-    return f"music and sound effects only. {record.note or ''}".strip()
+    return f"ambience and sound effects only. {record.note or ''}".strip()
 
 
 def _token_savings_section(report: Report) -> str:

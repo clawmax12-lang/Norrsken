@@ -1,4 +1,4 @@
-from preflight.contracts import Layout, Transition
+from preflight.contracts import BeatKind, Layout, Transition
 from preflight.generation.compose import TRANSITION_FRAMES, compose
 from tests.factories import make_brief, make_concept
 
@@ -61,3 +61,29 @@ def test_voice_focus_emphasis_and_chips_reach_the_renderer() -> None:
     assert spec.scenes[-1].focus is None and spec.scenes[-1].voice is None
     assert spec.end_voice == "Try Acme Notes"
     assert spec.chips == ("For busy founders",)
+
+
+def test_the_spec_carries_one_clock_for_words_beats_and_sound() -> None:
+    base = make_concept("A")
+    timed = base.scenes[1].model_copy(
+        update={
+            "text": "Save 3 hours",
+            "voice": "Save three hours",
+            "voice_s": 1.2,
+            "voice_words": (0.0, 0.4, 0.8),
+            "focus": (0.1, 0.2, 0.4, 0.2),
+        }
+    )
+    concept = base.model_copy(update={"scenes": (base.scenes[0], timed, *base.scenes[2:])})
+
+    spec = compose(make_brief(), concept, ())
+
+    kinds = [(beat.kind, beat.scene) for beat in spec.beats]
+    assert kinds[0] == (BeatKind.HOOK, 0)
+    assert (BeatKind.MOVE, 1) in kinds and (BeatKind.COUNT, 1) in kinds
+    assert (BeatKind.TAP, 1) in kinds and (BeatKind.PUNCH, 1) in kinds
+    assert kinds[-2:] == [(BeatKind.CTA, 4), (BeatKind.TAP, 4)]  # the finger presses the button
+    assert [beat.frame for beat in spec.beats] == sorted(beat.frame for beat in spec.beats)
+    assert spec.scenes[0].text_frames == (0, 0, 0, 0)
+    assert spec.scenes[1].text_frames[0] == round((3 + 0.3) * 30)
+    assert spec.scenes[-1].text_frames == ()

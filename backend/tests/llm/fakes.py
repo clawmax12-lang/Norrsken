@@ -16,6 +16,7 @@ class FakeGeminiBackend:
     def __init__(self, *script: BackendResponse | Exception | str) -> None:
         self._script = list(script)
         self.calls: list[tuple[str, tuple[Part, ...]]] = []
+        self.models: list[str] = []
         self.counted: list[str] = []
         self.count_error: ProviderError | None = None
 
@@ -29,6 +30,7 @@ class FakeGeminiBackend:
         temperature: float,
     ) -> BackendResponse:
         self.calls.append((system, tuple(parts)))
+        self.models.append(model)
         step = self._script.pop(0)
         if isinstance(step, Exception):
             raise step

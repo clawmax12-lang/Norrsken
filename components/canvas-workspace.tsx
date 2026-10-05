@@ -51,6 +51,19 @@ type LocalAsset = {
 };
 
 type Notice = { id: string; role: "user" | "director" | "system"; text: string };
+
+// Narrower screenshots blur when the ad cut zooms in on a button or a price.
+const MIN_SCREEN_WIDTH = 600;
+
+async function lowResolution(assets: { name: string; previewUrl: string }[]): Promise<string[]> {
+  const widths = await Promise.all(assets.map((asset) => new Promise<number>((resolve) => {
+    const image = new Image();
+    image.onload = () => resolve(image.naturalWidth);
+    image.onerror = () => resolve(Number.POSITIVE_INFINITY);
+    image.src = asset.previewUrl;
+  })));
+  return assets.filter((_, index) => widths[index] < MIN_SCREEN_WIDTH).map((asset) => asset.name);
+}
 type JobState = "draft" | "saving" | "queued" | "unavailable" | "error";
 
 const PROJECT_ID = "launch-draft";
@@ -508,6 +521,9 @@ export function CanvasWorkspace() {
     selectedAssetsRef.current = selected;
     setShowAssets(true);
     addNotice("system", `${next.length} screenshots loaded · ${selected.length} selected for the run.`);
+    void lowResolution(next).then((names) => {
+      if (names.length) addNotice("system", `Low resolution, these will look blurry in a close-up: ${names.join(", ")}. Use full-size screenshots (at least ${MIN_SCREEN_WIDTH} px wide).`);
+    });
   }, [addNotice]);
 
   const toggleAsset = useCallback((assetId: string) => {
@@ -626,6 +642,48 @@ export function CanvasWorkspace() {
     }
   }, [addNotice, assets, commitBriefEdits, logEvent, persistDraft, selectedAssetIds]);
 
+  // A failed run resumes on the backend from its last completed step. Only POST /run: saving
+  // the brief or uploading the screenshots again would change the brief and start over.
+  const resumeRun = useCallback(async () => {
+    const projectId = backendProjectId ?? PROJECT_ID;
+    setJobState("saving");
+    setJobMessage("Resuming the run from its last completed step…");
+    try {
+      const response = await fetch(`/api/projects/${encodeURIComponent(projectId)}/run`, { method: "POST", headers: { "Idempotency-Key": crypto.randomUUID() } });
+      const run = await readJson(response) as { error?: unknown; state?: string };
+      logEvent(response.ok ? "backend" : "error", response.ok ? `Run resumed by the backend (${run.state ?? "queued"})` : `Resume refused (${response.status})`, run);
+      if (!response.ok) throw new Error(publicErrorMessage(run.error, "The run could not be resumed."));
+      setJobState("queued");
+      setJobMessage("Run resumed · follow progress in Results");
+      setRunState(null);
+      setRunNonce((current) => current + 1);
+      setShowResults(true);
+      addNotice("system", "Run resumed from its last completed step. Progress is in the Results panel.");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "The run could not be resumed.";
+      setJobState("error");
+      setJobMessage(message);
+      addNotice("system", message);
+    }
+  }, [addNotice, backendProjectId, logEvent]);
+
+  const startOrResume = useCallback(async () => {
+    let failed = runState === "FAILED";
+    const apiBase = process.env.NEXT_PUBLIC_PREFLIGHT_API_BASE?.replace(/\/+$/, "");
+    if (!failed && runState === null && backendProjectId && apiBase) {
+      try {
+        const response = await fetch(`${apiBase}/api/projects/${encodeURIComponent(backendProjectId)}`, { cache: "no-store" });
+        const project = response.ok ? await response.json() as { run?: { state?: string } } : null;
+        failed = project?.run?.state === "FAILED";
+      } catch { /* unknown state: fall through to a normal run */ }
+    }
+    if (failed && backendProjectId) {
+      await resumeRun();
+      return;
+    }
+    try { requestRunConfirmation(); } catch (error) { addNotice("system", error instanceof Error ? error.message : "Run unavailable."); }
+  }, [addNotice, backendProjectId, requestRunConfirmation, resumeRun, runState]);
+
   const confirmRun = useCallback(async (id: string) => {
     if (!readyToConfirm) throw new Error("Required confirmed brief fields and 3–6 selected screenshots are missing.");
     return runBoundaryRef.current.confirm(id, runSignature(), submitRun);
@@ -719,7 +777,7 @@ export function CanvasWorkspace() {
   const journey: JourneyStep[] = [
     { id: "screens", label: "Add screenshots", hint: readiness.screens ? `${selectedAssetIds.length} selected` : `${selectedAssetIds.length}/3–6 selected`, state: readiness.screens ? "done" : "active", action: openFilePicker, actionLabel: "Choose" },
     { id: "brief", label: "Fill in the brief", hint: readiness.brief ? `${brief.product_name} · goal ${brief.goal}` : `Missing: ${missingBrief.join(", ")}`, state: readiness.brief ? "done" : readiness.screens ? "active" : "todo", action: () => { setShowResults(false); setShowBrief(true); }, actionLabel: "Open" },
-    { id: "run", label: "Confirm the run", hint: runNonce > 0 ? "Run started" : "Nothing runs until you confirm", state: runNonce > 0 ? "done" : readyToConfirm ? "active" : "todo", action: () => { try { requestRunConfirmation(); } catch (error) { addNotice("system", error instanceof Error ? error.message : "Run unavailable."); } }, actionLabel: "Run" },
+    { id: "run", label: "Confirm the run", hint: runNonce > 0 ? "Run started" : "Nothing runs until you confirm", state: runNonce > 0 ? "done" : readyToConfirm ? "active" : "todo", action: () => void startOrResume(), actionLabel: runState === "FAILED" ? "Resume run" : "Run" },
     { id: "plan", label: "Plan A, B and C", hint: "Gemini writes three concepts from your facts", state: runStep("PLANNED", "BRIEF_RECEIVED") },
     { id: "render", label: "Render the videos", hint: "Three 15 s vertical videos", state: runStep("RENDERED", "PLANNED") },
     { id: "test", label: "Simulated viewers watch", hint: "Gemini viewer panel via Condense", state: runStep("SIMULATED", "RENDERED") },
@@ -737,7 +795,7 @@ export function CanvasWorkspace() {
           <Link href="/admin">Dashboard</Link>
           <button onClick={() => { setShowResults(false); setShowBrief((current) => !current); }}>Brief</button>
           {backendProjectId && <button onClick={() => { setShowBrief(false); setShowResults((current) => !current); }}>Results</button>}
-          <button className="run-top" onClick={() => { try { requestRunConfirmation(); } catch (error) { addNotice("system", error instanceof Error ? error.message : "Run unavailable."); } }}>Run</button>
+          <button className="run-top" onClick={() => void startOrResume()}>{runState === "FAILED" ? "Resume run" : "Run"}</button>
         </div>
       </header>
 
@@ -859,7 +917,7 @@ export function CanvasWorkspace() {
         <div className="asset-count">{selectedAssetIds.length}/3–6 selected for the run</div>
       </aside>}
 
-      {(showResults || runNonce > 0) && backendProjectId && <RunResults visible={showResults} apiBase={process.env.NEXT_PUBLIC_PREFLIGHT_API_BASE} projectId={backendProjectId} runNonce={runNonce} onClose={() => setShowResults(false)} onProgress={onRunProgress} />}
+      {(showResults || runNonce > 0) && backendProjectId && <RunResults visible={showResults} apiBase={process.env.NEXT_PUBLIC_PREFLIGHT_API_BASE} projectId={backendProjectId} runNonce={runNonce} onClose={() => setShowResults(false)} onProgress={onRunProgress} onResume={() => void resumeRun()} />}
 
       {showTranscript && <aside className="transcript-drawer">
         <div className="drawer-heading"><div><small>One shared conversation</small><h2>Director transcript</h2></div><button onClick={() => setShowTranscript(false)}>×</button></div>

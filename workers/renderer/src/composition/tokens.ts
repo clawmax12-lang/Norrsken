@@ -54,7 +54,7 @@ export const TYPE = {
   /** Headline size ranges in px, chosen per layout; text is fitted inside the range. */
   hook: { max: 176, min: 84, maxLines: 5 },
   /** Overlay copy above the product. Two lines, sized to stay inside TYPE_ZONE. */
-  overlay: { max: 84, min: 40, maxLines: 2 },
+  overlay: { max: 108, min: 56, maxLines: 2 },
   statement: { max: 116, min: 64, maxLines: 4 },
   cta: { max: 150, min: 72, maxLines: 4 },
   lineHeight: 1.04,
@@ -70,4 +70,8 @@ export const DEVICE = {
   minAspect: 0.4,
   maxAspect: 1.8,
   bezel: 13,
+  /** Metal edge around the black bezel, in px at hero size. */
+  edge: 4,
+  /** How far below the device its drop shadow reaches (offset + blur - spread), in px. */
+  shadowReach: 190,
 } as const;

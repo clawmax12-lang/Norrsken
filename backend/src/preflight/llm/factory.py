@@ -60,4 +60,10 @@ def build_gemini_client(
         compression_rate=settings.condense_compression_rate,
         session_id=session_id,
     )
-    return GeminiClient(backend, settings.gemini_model, ledger=ledger, compressor=compressor)
+    return GeminiClient(
+        backend,
+        settings.gemini_model,
+        ledger=ledger,
+        compressor=compressor,
+        fallback_models=settings.gemini_fallback_models,
+    )

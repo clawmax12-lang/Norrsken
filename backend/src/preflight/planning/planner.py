@@ -1,18 +1,25 @@
 """``GeminiPlanner``: FR-02's ``plan_variants`` on top of :class:`GeminiClient`."""
 
 import asyncio
+import logging
+from collections.abc import Sequence
 from pathlib import Path
 
-from preflight.contracts import Brief, CreativeConcept, PlanNotes
+from preflight.contracts import Brief, CreativeConcept, PlanNotes, Reason
 from preflight.errors import PreflightValidationError
-from preflight.llm import GeminiClient, MediaPart
+from preflight.llm import CallUsage, GeminiClient, MediaPart
+from preflight.llm.parts import Part, TextPart
 from preflight.storage import ProjectStore
 
-from .archetypes import archetypes_for
+from .archetypes import ARCHETYPES, Archetype, archetypes_for
 from .draft import PlanDraft, assemble_concepts, plan_notes
-from .prompts import SYSTEM_PROMPT, build_plan_parts
+from .prompts import SYSTEM_PROMPT, build_plan_parts, rewrite_block
 from .screens import ScreenImage, inspect_screen
-from .validation import plan_problems
+from .validation import craft_problems, plan_problems, without_unsourced_extras
+
+logger = logging.getLogger(__name__)
+
+PLAN_ATTEMPTS = 2
 
 
 class GeminiPlanner:
@@ -30,23 +37,80 @@ class GeminiPlanner:
         Raises:
             PreflightValidationError: ``count`` is unsupported, a screenshot is unreadable, or
                 the model's plan is still invalid (schema, screenshot index, or text not found in
-                its source field) after one repair.
+                its source field) after one repair, ``PLAN_ATTEMPTS`` times.
             ProviderError: Gemini failed.
         """
         archetypes = archetypes_for(count)
-        screenshots = await asyncio.gather(
-            *(self._load(brief.project_id, name) for name in brief.screenshots)
-        )
-        draft = await self._client.generate_json(
-            PlanDraft,
-            SYSTEM_PROMPT,
-            build_plan_parts(brief, archetypes, screenshots),
-            validate=lambda plan: plan_problems(plan, brief, archetypes),
+        screenshots = await self._screenshots(brief)
+        draft, _ = await self._draft(
+            brief, archetypes, build_plan_parts(brief, archetypes, screenshots)
         )
         screens = await asyncio.to_thread(_inspect, draft, screenshots)
         self.last_notes = plan_notes(draft, brief, screens)
-        crops = {index: s.crop for index, s in screens.items() if s.crop is not None}
-        return assemble_concepts(draft, brief, archetypes, crops)
+        return assemble_concepts(draft, brief, archetypes, screens)
+
+    async def rewrite(
+        self, brief: Brief, winner: CreativeConcept, reasons: Sequence[Reason]
+    ) -> tuple[CreativeConcept, CallUsage]:
+        """The pretest's winner rewritten as the final ad, held to every plan rule.
+
+        Same angle and variant id; the model may reorder scenes, pick other screens and
+        rewrite the hook, voice and end card. Claims are checked against the brief as in a run.
+
+        Raises:
+            PreflightValidationError: the rewrite is still invalid after its repairs.
+            ProviderError: Gemini failed.
+        """
+        archetype = next(
+            (a for a in ARCHETYPES if a.name == winner.hypothesis),
+            Archetype(winner.hypothesis, winner.angle or "Keep the winner's angle."),
+        )
+        screenshots = await self._screenshots(brief)
+        parts = build_plan_parts(brief, (archetype,), screenshots)
+        parts.insert(1, TextPart(rewrite_block(winner, reasons)))
+        draft, usage = await self._draft(brief, (archetype,), parts, attempts=1)
+        screens = await asyncio.to_thread(_inspect, draft, screenshots)
+        (concept,) = assemble_concepts(draft, brief, (archetype,), screens)
+        return concept.model_copy(update={"variant_id": winner.variant_id}), usage
+
+    async def _draft(
+        self,
+        brief: Brief,
+        archetypes: tuple[Archetype, ...],
+        parts: list[Part],
+        attempts: int = PLAN_ATTEMPTS,
+    ) -> tuple[PlanDraft, CallUsage]:
+        for attempt in range(1, attempts + 1):
+            checks = 0
+
+            def validate(plan: PlanDraft) -> list[str]:
+                # The first answer hears every rule; the repair is held only to the ones that
+                # keep the film truthful and timed, so a missed craft rule does not end the run.
+                nonlocal checks
+                checks += 1
+                return plan_problems(plan, brief, archetypes, craft=checks == 1)
+
+            try:
+                answer = await self._client.generate_json_measured(
+                    PlanDraft, SYSTEM_PROMPT, parts, validate=validate
+                )
+                break
+            except PreflightValidationError:
+                if attempt == attempts:
+                    raise
+                logger.warning("Plan still invalid after its repair, planning afresh")
+        draft = without_unsourced_extras(answer.value, brief)
+        missed = craft_problems(draft, brief)
+        if missed:
+            logger.warning("Plan accepted with craft rules missed: %s", "; ".join(missed))
+        return draft, answer.usage
+
+    async def _screenshots(self, brief: Brief) -> list[MediaPart]:
+        return list(
+            await asyncio.gather(
+                *(self._load(brief.project_id, name) for name in brief.screenshots)
+            )
+        )
 
     async def _load(self, project_id: str, relative_path: str) -> MediaPart:
         root = self._store.paths(project_id).root.resolve()

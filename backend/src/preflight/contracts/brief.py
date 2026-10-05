@@ -1,5 +1,6 @@
 """FR-01: the customer's brief (PRD §10.3 ``Brief``)."""
 
+import re
 from enum import StrEnum
 from typing import Annotated
 
@@ -14,6 +15,23 @@ MIN_SCREENSHOTS = 3
 MAX_SCREENSHOTS = 6
 
 NonEmpty = Annotated[str, Field(min_length=1)]
+
+# A form's character counter pasted along with the text: "(99/140 tecken)", "(38/40)".
+_COUNTER = re.compile(
+    r"\s*(?:\(\s*(\d{1,4})\s*/\s*(\d{2,4})\s*(?:tecken|characters?|chars?)?\s*\)"
+    r"|\b(\d{1,4})\s*/\s*(\d{2,4})\s*(?:tecken|characters?|chars?)\b)",
+    re.IGNORECASE,
+)
+
+
+def strip_counters(text: str) -> str:
+    """``text`` without pasted character counters; "24/7" and other fractions stay."""
+
+    def drop(match: re.Match[str]) -> str:
+        used, limit = (int(n) for n in (match.group(1, 2) if match.group(1) else match.group(3, 4)))
+        return "" if used <= limit else match.group(0)
+
+    return _COUNTER.sub(drop, text).strip()
 
 
 class Goal(StrEnum):
@@ -67,6 +85,13 @@ class Brief(Contract):
     brand_color: Annotated[str, Field(pattern=r"^#[0-9a-fA-F]{6}$")] | None = None
     logo: str | None = None
     render_mode: RenderMode = RenderMode.SHOWCASE
+
+    @field_validator(
+        "one_liner", "goal_note", "audience", "buyer_cta", "proof_points", mode="before"
+    )
+    @classmethod
+    def _without_counters(cls, value: object) -> object:
+        return strip_counters(value) if isinstance(value, str) else value
 
     @field_validator("screenshots")
     @classmethod

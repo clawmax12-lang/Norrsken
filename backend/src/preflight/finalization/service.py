@@ -40,7 +40,7 @@ class FinalizationService:
         only with its original command id and explicit confirmation; at most two Opus attempts
         are allowed across requests/crashes. Render and simulation checkpoints are reused.
         """
-        self._configured()
+        self._configured(command.director)
         source = read_source(self._store, project_id, command, self._settings)
         paths = self._store.paths(project_id)
         paths.opus_dir.mkdir(exist_ok=True)
@@ -72,7 +72,11 @@ class FinalizationService:
             task.cancel()
         await asyncio.gather(*tasks, return_exceptions=True)
 
-    def _configured(self) -> None:
+    def _configured(self, director: str) -> None:
+        if self._settings.gemini_api_key is None:
+            raise ProviderError("GEMINI_API_KEY is required to pretest the finished video")
+        if director == "gemini":
+            return
         if (
             self._settings.anthropic_api_key is None
             or not self._settings.anthropic_api_key.get_secret_value().strip()
@@ -83,8 +87,6 @@ class FinalizationService:
             or not self._settings.condense_api_key.get_secret_value().strip()
         ):
             raise ProviderError("CONDENSE_API_KEY is required for Opus finalization")
-        if self._settings.gemini_api_key is None:
-            raise ProviderError("GEMINI_API_KEY is required to pretest the finished video")
 
     def _prepare(
         self, project_id: str, source: FinalSource, command: FinalizeCommand
@@ -97,6 +99,11 @@ class FinalizationService:
                 return record
             if record.command_id != command.command_id:
                 raise PreflightValidationError("Resume with the existing finalization command id")
+            if record.director != command.director:
+                raise PreflightValidationError(
+                    f"This finish was started with {record.director}; resume it with the same "
+                    "director"
+                )
             record = record.model_copy(
                 update={"status": FinalStatus.QUEUED, "error": None, "updated_at": self._clock()}
             )
@@ -108,6 +115,7 @@ class FinalizationService:
                 source_fingerprint=source.fingerprint,
                 status=FinalStatus.QUEUED,
                 updated_at=self._clock(),
+                director=command.director,
             )
         self._store.write(path, record)
         return record

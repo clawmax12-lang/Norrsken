@@ -58,6 +58,20 @@ def test_weakness_in_the_opening_scene_points_at_the_hook() -> None:
     )
 
 
+def test_opening_and_closing_scenes_are_named_by_the_copy_on_screen() -> None:
+    concept = concept_with_distinct_scenes()
+
+    opening = next_time_suggestions(
+        concept, HIGH_CONFIDENCE, [make_result("A", GEMINI, events=(drop(1),))]
+    )
+    closing = next_time_suggestions(
+        concept, HIGH_CONFIDENCE, [make_result("A", GEMINI, events=(drop(13),))]
+    )
+
+    assert f"'{concept.hook}' (0:00-0:03" in opening[0]
+    assert f"'{concept.cta}' (0:12-0:15" in closing[0]
+
+
 def test_weakness_in_the_closing_scene_points_at_the_call_to_action() -> None:
     result = make_result("A", GEMINI, events=(drop(13),))
 
@@ -87,6 +101,27 @@ def test_always_between_one_and_three_suggestions_without_forbidden_wording() ->
 
     assert 1 <= len(suggestions) <= 3
     assert not any(FORBIDDEN.search(text) for text in suggestions)
+
+
+def test_suggestions_follow_the_concepts_language() -> None:
+    swedish = concept_with_distinct_scenes().model_copy(update={"language": "sv"})
+    result = make_result("A", GEMINI, events=(drop(1, "för långsam start"),))
+
+    suggestions = next_time_suggestions(swedish, LOW_CONFIDENCE, [result])
+
+    assert suggestions[0].startswith(
+        "Simulerade tittare tappade vid 'Notes that organise themselves' (0:00-0:03"
+    )
+    assert "den simulerade tittarpanelen: för långsam start" in suggestions[0]
+    assert "skriv om kroken" in suggestions[1]
+    assert "A/B-testa" in suggestions[2]
+
+
+def test_unsupported_languages_get_english_advice() -> None:
+    german = concept_with_distinct_scenes().model_copy(update={"language": "de"})
+    result = make_result("A", GEMINI, events=(drop(13),))
+
+    assert "A/B test it" in next_time_suggestions(german, LOW_CONFIDENCE, [result])[2]
 
 
 def test_requires_a_result_for_the_variant() -> None:

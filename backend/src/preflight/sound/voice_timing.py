@@ -3,18 +3,20 @@
 Each scene's voice line is spoken once (the clip is cached, so the sound stage reuses it at no
 cost) and measured. A scene lasts at least as long as its line needs; the time left over is
 shared out in proportion to the planner's lengths. Boundaries snap to the 120 BPM half-second
-beat, so cuts land on the music. The 3 s end card is never moved.
+beat, so cuts and effects share one grid. The 3 s end card is never moved.
 """
 
 import asyncio
 from collections.abc import Sequence
+from dataclasses import dataclass
 
 from preflight.contracts import CreativeConcept
 from preflight.contracts._base import VIDEO_DURATION_S
 from preflight.ports import SpeechSynthesizer
 from preflight.timing import END_CARD_S, SPEECH_GAP_S, SPEECH_LEAD_S
 
-from .audio import pcm16_to_float, trim_silence
+from .alignment import word_starts
+from .audio import spoken
 
 BEAT_S = 0.5
 MIN_SCENE_S = 1.5
@@ -23,23 +25,40 @@ COMFORT_SPEEDUP = 1.1
 _CONCURRENCY = 2
 
 
-async def spoken_seconds(speech: SpeechSynthesizer, lines: Sequence[str]) -> list[float]:
-    """Length in seconds of each line as the narrator speaks it (0 for an empty line)."""
+@dataclass(frozen=True)
+class SpokenLine:
+    """A line as the narrator speaks it: its length and when each word starts (seconds)."""
+
+    seconds: float
+    word_starts: tuple[float, ...]
+
+
+_SILENT = SpokenLine(0.0, ())
+
+
+async def measure_lines(speech: SpeechSynthesizer, lines: Sequence[str]) -> list[SpokenLine]:
+    """Speak each line (cached) and measure it exactly as the mix will play it."""
     gate = asyncio.Semaphore(_CONCURRENCY)
 
-    async def measure(text: str) -> float:
+    async def measure(text: str) -> SpokenLine:
         if not text.strip():
-            return 0.0
+            return _SILENT
         async with gate:
             clip = await speech.synthesize(text)
-        samples = trim_silence(pcm16_to_float(clip.pcm))
-        return len(samples) / clip.sample_rate
+        samples = spoken(clip.pcm, clip.sample_rate)
+        seconds = len(samples) / clip.sample_rate
+        return SpokenLine(seconds, word_starts(text, samples, clip.sample_rate))
 
     return list(await asyncio.gather(*(measure(line) for line in lines)))
 
 
+async def spoken_seconds(speech: SpeechSynthesizer, lines: Sequence[str]) -> list[float]:
+    """Length in seconds of each line as the narrator speaks it (0 for an empty line)."""
+    return [line.seconds for line in await measure_lines(speech, lines)]
+
+
 async def time_to_voice(concept: CreativeConcept, speech: SpeechSynthesizer) -> CreativeConcept:
-    """Return ``concept`` with scene lengths that fit its voice lines.
+    """Return ``concept`` with scene lengths that fit its voice lines, and their word timings.
 
     Raises:
         ProviderError, SoundError: the narrator could not speak a line.
@@ -47,10 +66,17 @@ async def time_to_voice(concept: CreativeConcept, speech: SpeechSynthesizer) -> 
     body = concept.scenes[:-1]
     if not any(scene.voice for scene in body):
         return concept
-    spoken = await spoken_seconds(speech, [scene.voice or "" for scene in body])
+    measured = await measure_lines(speech, [scene.voice or "" for scene in body])
     planned = [scene.t_end - scene.t_start for scene in body]
-    lengths = fit_to_voice(planned, spoken, VIDEO_DURATION_S - END_CARD_S)
-    return retime(concept, lengths)
+    spoken_s = [line.seconds for line in measured]
+    timed = retime(concept, fit_to_voice(planned, spoken_s, VIDEO_DURATION_S - END_CARD_S))
+    scenes = [
+        scene.model_copy(update={"voice_s": line.seconds, "voice_words": line.word_starts})
+        if scene.voice and line.seconds > 0
+        else scene
+        for scene, line in zip(timed.scenes[:-1], measured, strict=True)
+    ]
+    return timed.model_copy(update={"scenes": (*scenes, timed.scenes[-1])})
 
 
 def fit_to_voice(planned: Sequence[float], spoken: Sequence[float], total: float) -> list[float]:

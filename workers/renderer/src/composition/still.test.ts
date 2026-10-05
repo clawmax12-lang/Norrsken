@@ -36,7 +36,7 @@ describe("focus punch-in", () => {
   it("shows the whole screen first, then zooms and holds", () => {
     assert.deepEqual(focusTransform(0, box), { scale: 1, x: 0, y: 0 });
     const end = focusTransform(1, box);
-    assert.ok(end.scale > 1.9 && end.scale <= 2);
+    assert.ok(Math.abs(end.scale - 0.85 / 0.5) < 1e-9);
     assert.deepEqual(focusTransform(0.9, box), end);
   });
 

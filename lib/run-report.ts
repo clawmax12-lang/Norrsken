@@ -47,7 +47,19 @@ export type RunReportSource = {
   next_time: string[];
   token_savings: { calls: number; input_tokens_original: number; input_tokens_sent: number; tokens_saved: number; percent: number } | null;
   brain_sim: boolean;
+  production?: Production | null;
+  craft?: Record<VariantId, Craft>;
 };
+/** Measured pace and sound of one cut: beats per second, the longest still stretch, voice and loudness. */
+export type Craft = {
+  events_per_s: number;
+  longest_still_s: number;
+  voice_coverage?: number | null;
+  integrated_lufs?: number | null;
+  issues: string[];
+};
+/** A known production limit (for example soft screenshots) that caps every variant's score alike. */
+export type Production = { factor: number; reasons: string[] };
 export type Results = {
   state: RunState;
   ranking: Ranking | null;
@@ -80,6 +92,7 @@ export type VariantVerdict = {
   firstDrop: SimEvent | null;
   reasons: Reason[];
   why: string;
+  craft: Craft | null;
 };
 
 export type StepSummary = {
@@ -118,6 +131,8 @@ export type RunReport = {
   steps: StepSummary[];
   variants: VariantVerdict[];
   nextTime: string[];
+  /** Applied to the measured scores above; null when nothing capped them. */
+  production: Production | null;
 };
 
 const STEP_LABELS: Record<string, string> = {
@@ -230,10 +245,12 @@ export function usesPanelScoreScale(ranking: Ranking, variants: VariantResults[]
     && Boolean(ranking.per_simulator?.gemini_panel)
     && ranking.order.every((id) => {
       const simulations = variants.find((variant) => variant.variant_id === id)?.simulations;
+      const primary = simulations?.[0]?.primary_series;
+      const series = primary ? simulations?.[0]?.series?.[primary] : undefined;
       return simulations?.length === 1 && simulations[0].simulator === "gemini_panel"
-        && simulations[0].primary_series === "goal_fit"
-        && Boolean(simulations[0].series?.goal_fit?.length)
-        && simulations[0].series!.goal_fit.every((value) => Number.isFinite(value) && value >= 0 && value <= 1);
+        && (primary === "goal_fit" || primary === "score")
+        && Boolean(series?.length)
+        && series!.every((value) => Number.isFinite(value) && value >= 0 && value <= 1);
     });
 }
 
@@ -241,7 +258,13 @@ export function leadOf(winner: number | null | undefined, other: number | null |
   return winner != null && other != null ? points(winner - other) : null;
 }
 
-function explain(verdict: Omit<VariantVerdict, "why">, winner: VariantVerdict | undefined, excludedReason: string | undefined, renderError: string | null, closeCall: boolean) {
+/** The report's production factor (0–1], or 1 when the run recorded none. The ranking never changes. */
+export function productionFactor(report: Pick<RunReportSource, "production"> | null | undefined) {
+  const factor = report?.production?.factor;
+  return typeof factor === "number" && Number.isFinite(factor) && factor > 0 && factor <= 1 ? factor : 1;
+}
+
+function explain(verdict: Omit<VariantVerdict, "why">, winner: VariantVerdict | undefined, excludedReason: string | undefined, renderError: string | null, closeCall: boolean, factor: number) {
   if (verdict.outcome === "render failed") return `The render failed${renderError ? `: ${renderError}` : ""}. It was never shown to simulated viewers.`;
   if (verdict.outcome === "excluded") return `Left out of the ranking: ${excludedReason ?? "no reason recorded"}.`;
   if (verdict.outcome === "not simulated") return "Rendered, but no simulator returned a result for it, so it could not be ranked.";
@@ -252,7 +275,7 @@ function explain(verdict: Omit<VariantVerdict, "why">, winner: VariantVerdict | 
     return `Highest score${score}.${lead}${drop || " No drop moment was recorded."}`;
   }
   const gap = leadOf(winner?.score, verdict.score);
-  const behind = gap != null ? ` ${gap} points behind ${winner?.id}${gap < CLOSE_CALL_POINTS ? ", too close to call" : ""}.` : "";
+  const behind = gap != null ? ` ${gap} points behind ${winner?.id}${gap < CLOSE_CALL_POINTS * factor ? ", too close to call" : ""}.` : "";
   const earlier = verdict.firstDrop && winner?.firstDrop && verdict.firstDrop.t < winner.firstDrop.t ? ` That is earlier than ${winner.id}'s first drop at ${clock(winner.firstDrop.t)}.` : "";
   const role = verdict.outcome === "runner-up" ? (closeCall ? "Effectively tied with the winner: test both live." : "Kept as the live A/B challenger.") : "Not launched and not boosted.";
   return `${role}${behind}${drop}${earlier}`;
@@ -265,6 +288,8 @@ export function buildRunReport(results: Results, events: ActivityEvent[] = []): 
   const perSim = ranking.per_simulator ?? {};
   const measured = new Map(results.variants.map((variant) => [variant.variant_id, measuredScores(variant)]));
   const scoreScale: ScoreScale = usesPanelScoreScale(ranking, results.variants) ? "measured" : "relative";
+  const factor = scoreScale === "measured" ? productionFactor(report) : 1;
+  const capped = (score: number | null | undefined) => (score == null ? null : score * factor);
 
   const base = results.variants.map((variant) => {
     const id = variant.variant_id;
@@ -291,9 +316,10 @@ export function buildRunReport(results: Results, events: ActivityEvent[] = []): 
       hook: variant.concept.hook,
       outcome,
       rank: rankIndex >= 0 ? rankIndex + 1 : null,
-      score: scoreScale === "measured" ? (measured.get(id)?.score ?? null) : rankIndex >= 0 ? (ranking.scores[id] ?? null) : null,
+      score: scoreScale === "measured" ? capped(measured.get(id)?.score) : rankIndex >= 0 ? (ranking.scores[id] ?? null) : null,
       perSimulator: scoreScale === "measured" ? (measured.get(id)?.perSimulator ?? []) : Object.entries(perSim).flatMap(([simulator, scores]) => scores[id] == null ? [] : [{ simulator, score: scores[id] }]),
       renderSeconds: variant.render?.render_seconds ?? null,
+      craft: report.craft?.[id] ?? null,
       holds: evs.filter((event) => event.type === "hold").length,
       drops: drops.length,
       firstDrop: drops[0] ?? null,
@@ -307,9 +333,9 @@ export function buildRunReport(results: Results, events: ActivityEvent[] = []): 
   const winnerBase = base.find((entry) => entry.verdict.outcome === "winner")?.verdict;
   const runnerBase = base.find((entry) => entry.verdict.outcome === "runner-up")?.verdict;
   const margin = scoreScale === "measured" ? leadOf(winnerBase?.score, runnerBase?.score) : null;
-  const closeCall = margin != null && margin < CLOSE_CALL_POINTS;
+  const closeCall = margin != null && margin < CLOSE_CALL_POINTS * factor;
   const winnerVerdict = winnerBase ? { ...winnerBase, why: "" } : undefined;
-  const variants = base.map(({ verdict, excludedReason, renderError }) => ({ ...verdict, why: explain(verdict, winnerVerdict, excludedReason, renderError, closeCall) }));
+  const variants = base.map(({ verdict, excludedReason, renderError }) => ({ ...verdict, why: explain(verdict, winnerVerdict, excludedReason, renderError, closeCall, factor) }));
 
   const winner = variants.find((variant) => variant.outcome === "winner");
   const others = variants.filter((variant) => variant.outcome !== "winner" && variant.firstDrop);
@@ -343,5 +369,6 @@ export function buildRunReport(results: Results, events: ActivityEvent[] = []): 
     steps: summariseSteps(events),
     variants,
     nextTime: report.next_time,
+    production: factor < 1 && report.production ? { factor, reasons: report.production.reasons } : null,
   };
 }

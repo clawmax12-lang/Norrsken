@@ -13,6 +13,11 @@ from .schemas import MomentFlag, Persona, PersonaRating, parse_timestamp
 
 GOAL_FIT = "goal_fit"
 CLARITY = "clarity"
+CRAFT = "craft"
+SCORE = "score"
+# A moment that would move the viewer still counts for less when it looks unfinished:
+# craft 1 keeps the full goal fit, craft 0 keeps this share of it.
+CRAFT_FLOOR = 0.4
 MIN_AGREEING_PERSONAS = 2
 MERGE_WINDOW_S = 1.0
 
@@ -36,6 +41,17 @@ class PersonaReading:
     goal_fit: tuple[float, ...]
     clarity: tuple[float, ...]
     moments: tuple[FlaggedMoment, ...]
+    craft: tuple[float, ...] = ()
+
+    @property
+    def score(self) -> tuple[float, ...]:
+        """Goal fit weighed by craft, second by second (goal fit alone without craft)."""
+        if not self.craft:
+            return self.goal_fit
+        return tuple(
+            goal * (CRAFT_FLOOR + (1 - CRAFT_FLOOR) * craft)
+            for goal, craft in zip(self.goal_fit, self.craft, strict=True)
+        )
 
 
 def reading_from(index: int, persona: Persona, rating: PersonaRating) -> PersonaReading:
@@ -51,6 +67,7 @@ def reading_from(index: int, persona: Persona, rating: PersonaRating) -> Persona
         goal_fit=tuple(entry.goal_fit for entry in ordered),
         clarity=tuple(entry.clarity for entry in ordered),
         moments=moments,
+        craft=tuple(entry.craft for entry in ordered),
     )
 
 
@@ -93,11 +110,17 @@ def _groups(flags: list[FlaggedMoment]) -> list[list[FlaggedMoment]]:
 
 
 def build_series(readings: list[PersonaReading]) -> dict[str, tuple[float, ...]]:
-    """``goal_fit`` and ``clarity`` as persona means, plus each persona's own ``goal_fit``."""
+    """Persona means of ``score``, ``goal_fit``, ``clarity`` and ``craft``.
+
+    Each persona's own ``goal_fit`` is kept too.
+    """
     series = {
+        SCORE: _mean_series([r.score for r in readings]),
         GOAL_FIT: _mean_series([r.goal_fit for r in readings]),
         CLARITY: _mean_series([r.clarity for r in readings]),
     }
+    if all(r.craft for r in readings):
+        series[CRAFT] = _mean_series([r.craft for r in readings])
     series.update({f"persona_{r.index}_goal_fit": r.goal_fit for r in readings})
     return series
 
@@ -126,7 +149,7 @@ def to_result(
         duration_s=duration_s,
         timestamps_s=tuple(float(second) for second in range(len(series[GOAL_FIT]))),
         series=series,
-        primary_series=GOAL_FIT,
+        primary_series=SCORE,
         events=merge_moments(readings),
         meta=meta,
     )

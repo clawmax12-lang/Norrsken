@@ -54,6 +54,7 @@ class SecondRating(_Output):
     second: Annotated[int, Field(ge=0)]
     goal_fit: Rating
     clarity: Rating
+    craft: Rating
 
 
 class MomentFlag(_Output):

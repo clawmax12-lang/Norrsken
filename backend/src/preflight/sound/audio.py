@@ -54,6 +54,11 @@ def trim_silence(samples: NDArray[np.float32]) -> NDArray[np.float32]:
     return samples[max(loud[0] - margin, 0) : loud[-1] + margin]
 
 
+def spoken(pcm: bytes, sample_rate: int) -> NDArray[np.float32]:
+    """The voiced part of a TTS clip exactly as the mix plays it: padding and tail glitch gone."""
+    return deglitch_tail(trim_silence(pcm16_to_float(pcm)), sample_rate)
+
+
 def deglitch_tail(samples: NDArray[np.float32], sample_rate: int) -> NDArray[np.float32]:
     """Drop a clipped burst some TTS streams append after the last phoneme."""
     hop = max(int(_GLITCH_HOP_S * sample_rate), 1)

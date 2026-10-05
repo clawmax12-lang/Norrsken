@@ -1,14 +1,14 @@
-"""Narration, music and effects for every rendered variant (PRD §9.3).
+"""Narration, ambience and effects for every rendered variant (PRD §9.3).
 
 Runs after picture render and before simulated viewers, so the pretest watches the mixed
-file. Sound is an enhancement: a variant that cannot be finished is logged as skipped and
-stays silent; it never fails the run.
+file. A mix that cannot be made (ffmpeg) is logged as skipped and the variant stays silent,
+but a voice that cannot be spoken pauses the run: running it again resumes here.
 """
 
 from functools import partial
 
 from preflight.contracts import CompositionSpec, RenderStatus, RunState, SoundRecord, Step
-from preflight.errors import PreflightError
+from preflight.errors import NarrationError, PreflightError
 from preflight.hashing import sha256_file
 from preflight.motion.scene import MotionSpec
 from preflight.orchestrator.concurrency import gather_bounded
@@ -24,7 +24,7 @@ class SoundStage:
 
     step = Step.AUDIO
     completes = RunState.MIXED
-    title = "Adding narration, music and sound effects"
+    title = "Adding narration, ambience and sound effects"
 
     def __init__(self, finisher: SoundFinisher, policy: StepPolicy) -> None:
         """Finish videos with ``finisher`` under ``policy``."""
@@ -59,8 +59,8 @@ class SoundStage:
         if not still_silent:
             return f"narration retried for {', '.join(silent)}"
         reason = (
-            f"Narration failed for {', '.join(still_silent)}, so every cut uses music and "
-            "effects only to keep the comparison fair"
+            f"Narration failed for {', '.join(still_silent)}, so every cut uses ambience "
+            "and effects only to keep the comparison fair"
         )
         for variant_id in finished:
             _discard_mix(ctx, variant_id)
@@ -94,6 +94,10 @@ class SoundStage:
         with ctx.log.step(Step.AUDIO, title, variant_id=variant_id) as handle:
             try:
                 record = await self._policy.run(partial(self._finisher.finish, request))
+            except NarrationError as exc:
+                raise NarrationError(
+                    f"{exc}. The run paused after rendering; run it again to resume with the voice"
+                ) from exc
             except PreflightError as exc:
                 handle.skip(f"Sound unavailable ({exc}); exporting the silent video")
                 return False
@@ -160,7 +164,7 @@ def _point_variant_at_mix(ctx: RunContext, variant_id: str, sound: SoundRecord) 
 
 
 def _summary(record: SoundRecord) -> str:
-    voice = f"narration by {record.voice}" if record.narrated else "music and effects only"
+    voice = f"narration by {record.voice}" if record.narrated else "ambience and effects only"
     if record.narrated and record.voice_coverage is not None:
         voice += f", voice on {round(record.voice_coverage * 100)} % of the film"
     return (

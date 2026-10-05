@@ -42,6 +42,12 @@ class ScreenImage:
         """Width in source pixels of what the film actually shows."""
         return round(self.width * (self.crop[2] if self.crop else 1.0))
 
+    @property
+    def aspect(self) -> float:
+        """Width / height of what the film shows."""
+        _, _, w, h = self.crop or (0.0, 0.0, 1.0, 1.0)
+        return (self.width * w) / (self.height * h)
+
 
 def inspect_screen(data: bytes, device_box: list[int] | None) -> ScreenImage:
     """Size of the image and, for a mockup, the display to cut out (``None`` otherwise)."""
@@ -148,6 +154,10 @@ def _inner_step(edges: NDArray[np.bool_]) -> int | None:
     return inset if inset >= 2 else None
 
 
+# A focus box that lies this much outside the display was drawn on the mockup, not the screen.
+MAX_FOCUS_OUTSIDE = 0.2
+
+
 def crop_focus(focus: FocusBox | None, crop: FocusBox | None) -> FocusBox | None:
     """Re-express a focus box given on the whole image in the coordinates of ``crop``."""
     if focus is None or crop is None:
@@ -159,5 +169,8 @@ def crop_focus(focus: FocusBox | None, crop: FocusBox | None) -> FocusBox | None
     right = min(max((fx + fw - cx) / cw, 0.0), 1.0)
     bottom = min(max((fy + fh - cy) / ch, 0.0), 1.0)
     if right - left < 0.08 or bottom - top < 0.05:
+        return None
+    inside = (right - left) * cw * (bottom - top) * ch
+    if inside < (1 - MAX_FOCUS_OUTSIDE) * fw * fh:
         return None
     return (left, top, right - left, bottom - top)

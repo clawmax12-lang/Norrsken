@@ -98,9 +98,11 @@ export function RunReport({ apiBase, projectId, results, onClose }: {
             <p className="run-report-why">{winner?.why}</p>
             <p className="run-report-tags">
               {report.closeCall && <span className="close-call">Close call</span>}
+              {report.production && <span className="close-call">Not ready to publish</span>}
               <span className={`confidence ${report.confidence}`}>{report.confidence} confidence</span>
               <span>Brain sim {report.brainSim ? "on" : "off"}</span>
             </p>
+            {report.production && <p className="run-report-why">{report.production.reasons.join(" ")}</p>}
             <p className="run-report-rule">{report.rule}</p>
           </div>
         </section>
@@ -125,7 +127,12 @@ export function RunReport({ apiBase, projectId, results, onClose }: {
                     <div><dt>Holds</dt><dd>{variant.holds}</dd></div>
                     <div><dt>Drops</dt><dd>{variant.drops}</dd></div>
                     {variant.renderSeconds != null && <div><dt>Render</dt><dd>{duration(variant.renderSeconds)}</dd></div>}
+                    {variant.craft && <div><dt>Pace</dt><dd title="Beats per second before the end card">{variant.craft.events_per_s.toFixed(1)}/s</dd></div>}
+                    {variant.craft && <div><dt>Longest still</dt><dd>{variant.craft.longest_still_s.toFixed(1)} s</dd></div>}
+                    {variant.craft?.voice_coverage != null && <div><dt>Voice</dt><dd>{Math.round(variant.craft.voice_coverage * 100)} %</dd></div>}
+                    {variant.craft?.integrated_lufs != null && <div><dt>Loudness</dt><dd>{variant.craft.integrated_lufs.toFixed(1)} LUFS</dd></div>}
                   </dl>
+                  {variant.craft?.issues.map((issue) => <p key={issue} className="run-report-why">{issue}</p>)}
                   {variant.reasons.length > 0 && <ul className="run-report-reasons">{variant.reasons.map((reason) => <li key={`${reason.t}-${reason.text}`}><span>{clock(reason.t)}</span>{reason.text}</li>)}</ul>}
                 </div>
               </li>

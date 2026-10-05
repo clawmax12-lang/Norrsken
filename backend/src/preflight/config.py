@@ -27,6 +27,11 @@ class Settings(BaseSettings):
         description="Gemini model for planning, the viewer panel and explanations "
         "(the default in Google's docs on 2026-10-03).",
     )
+    gemini_fallback_models: tuple[str, ...] = Field(
+        default=("gemini-3.6-flash", "gemini-3.5-flash", "gemini-3.5-flash-lite"),
+        description="Gemini models tried in order when GEMINI_MODEL's quota is spent or it "
+        "is overloaded (each has its own free-tier quota). JSON list in the environment.",
+    )
     condense_api_key: SecretStr | None = None
     condense_base_url: str = "https://api.condense.chat"
     condense_compression_rate: float = Field(default=0.2, ge=0.0, le=1.0)
@@ -56,7 +61,7 @@ class Settings(BaseSettings):
 
     sound_enabled: bool = Field(
         default=True,
-        description="Add music and sound effects (and narration) to the exported videos.",
+        description="Add narration, ambience and sound effects to the exported videos.",
     )
     narration_enabled: bool = Field(
         default=True, description="Gemini text-to-speech narration of the on-screen copy."
@@ -65,9 +70,14 @@ class Settings(BaseSettings):
         default="gemini-3.8-flash-tts",
         description="Gemini text-to-speech model (the id in Google's docs on 2026-10-03).",
     )
+    tts_fallback_models: tuple[str, ...] = Field(
+        default=("gemini-3.8-flash-lite-tts", "gemini-3.1-flash-tts-preview"),
+        description="Text-to-speech models tried in order when TTS_MODEL's quota is spent or "
+        "it is overloaded. JSON list in the environment.",
+    )
     narration_voice: str = Field(
-        default="Leda",
-        description="Gemini prebuilt voice for ad narration (youthful feminine). "
+        default="Sulafat",
+        description="Gemini prebuilt voice for ad narration (warm, mature feminine). "
         "Live Director stays Kore.",
     )
     ffmpeg_binary: str = Field(default="ffmpeg", description="ffmpeg for mixing and muxing.")

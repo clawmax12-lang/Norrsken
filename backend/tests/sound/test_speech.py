@@ -2,7 +2,7 @@ import pytest
 
 from preflight.errors import ProviderError, TransientProviderError
 from preflight.llm import SpeechAudio
-from preflight.sound.speech import DELIVERY, GeminiSpeech
+from preflight.sound.speech import DELIVERY, GeminiSpeech, rate_wait_s
 
 
 class FakeSpeechBackend:
@@ -28,9 +28,10 @@ def speech(tmp_path, backend: FakeSpeechBackend, voice: str = "Kore") -> GeminiS
     return GeminiSpeech(backend, model="tts-model", voice=voice, cache_dir=tmp_path / "cache")
 
 
-def test_delivery_asks_for_an_energetic_feminine_ad_voice() -> None:
+def test_delivery_asks_for_a_calm_persuasive_mature_voice() -> None:
     folded = DELIVERY.casefold()
-    assert "energetic" in folded and "selling" in folded and "young woman" in folded
+    assert "calm" in folded and "persuasive" in folded and "woman" in folded
+    assert "young" not in folded and "energetic" not in folded
     assert "unhurried" not in folded
     assert not folded.startswith("say ")
 
@@ -42,6 +43,19 @@ async def test_the_line_is_sent_with_a_delivery_direction_and_the_chosen_voice(t
 
     assert backend.requests == [("tts-model", "Notes that organise themselves", "Kore", DELIVERY)]
     assert (clip.sample_rate, clip.input_tokens, clip.output_tokens) == (24_000, 9, 60)
+
+
+async def test_a_gemini_2_5_voice_gets_its_delivery_in_the_prompt_instead(tmp_path) -> None:
+    backend = FakeSpeechBackend()
+    narrator = GeminiSpeech(
+        backend, model="gemini-2.5-pro-preview-tts", voice="Leda", cache_dir=tmp_path
+    )
+
+    await narrator.synthesize("Betala i ett steg")
+
+    [(_, text, _, style)] = backend.requests
+    assert text == f"Say it like a {DELIVERY}: Betala i ett steg"
+    assert style is None
 
 
 async def test_a_repeated_line_is_served_from_the_cache_without_a_second_call(tmp_path) -> None:
@@ -103,3 +117,50 @@ async def test_a_failed_call_is_not_cached(tmp_path) -> None:
     backend.error = None
     await speech(tmp_path, backend).synthesize("Acme Notes")
     assert len(backend.requests) == 2
+
+
+async def test_a_spent_tts_model_hands_over_to_the_fallback_for_the_rest_of_the_film(
+    tmp_path,
+) -> None:
+    backend = FakeSpeechBackend()
+    backend.errors = [TransientProviderError("429 quota")]
+    narrator = GeminiSpeech(
+        backend,
+        model="tts-model",
+        voice="Kore",
+        cache_dir=tmp_path,
+        fallback_models=("tts-lite",),
+    )
+
+    await narrator.synthesize("Betala i ett steg")
+    await narrator.synthesize("Klar på sekunder")
+
+    assert [model for model, *_ in backend.requests] == ["tts-model", "tts-lite", "tts-lite"]
+    assert narrator.model == "tts-lite"
+
+
+def test_only_a_per_minute_quota_is_worth_waiting_for() -> None:
+    assert rate_wait_s(TransientProviderError("429 ... Please retry in 16.39s.")) == 16.39
+    assert rate_wait_s(TransientProviderError("429 ... Please retry in 7h9m18.4s.")) is None
+    assert rate_wait_s(TransientProviderError("429")) is None
+
+
+async def test_a_per_minute_quota_waits_on_the_same_model_instead_of_falling_back(
+    tmp_path, monkeypatch
+) -> None:
+    waits: list[float] = []
+
+    async def no_sleep(seconds: float) -> None:
+        waits.append(seconds)
+
+    monkeypatch.setattr("preflight.sound.speech.asyncio.sleep", no_sleep)
+    backend = FakeSpeechBackend()
+    backend.errors = [TransientProviderError("429 limit: 3. Please retry in 20.5s.")]
+    narrator = GeminiSpeech(
+        backend, model="tts-model", voice="Kore", cache_dir=tmp_path, fallback_models=("tts-lite",)
+    )
+
+    await narrator.synthesize("Betala i ett steg")
+
+    assert [model for model, *_ in backend.requests] == ["tts-model", "tts-model"]
+    assert waits == [21.5]

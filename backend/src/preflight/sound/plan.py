@@ -1,12 +1,15 @@
 """Decide what the soundtrack contains, as a pure function of the rendered spec.
 
-Narration reads on-screen copy; effects land on scene changes; music drop/outro follow the
-locked 3 s end card. At 120 BPM a beat is half a second.
+Narration reads the scenes' voice lines. When the spec carries beats (taps, glides, words
+landing), every effect sits on the frame the picture marks; older specs get effects on scene
+changes. The ambience lifts into the locked 3 s end card. Scene edges sit on a 0.5 s grid.
 """
 
 from dataclasses import dataclass
 
 from preflight.contracts import (
+    Beat,
+    BeatKind,
     BriefField,
     CompositionSpec,
     CueKind,
@@ -24,14 +27,22 @@ BAR_S = 4 * BEAT_S
 _TEXT_TICK_DELAY_S = 0.12
 # Rough words/second for fitting a line into its scene window.
 _WORDS_PER_S = 2.6
+# A glide is loudest just past its middle, and its air lingers a little after the device lands.
+_MOVE_PEAK = 0.6
+_WHOOSH_TAIL_S = 0.25
+# Counter ticks speed up towards the final number (shares of the count's length).
+_COUNT_TICKS = (0.0, 0.3, 0.52, 0.68, 0.8, 0.9)
+_CTA_RISER_S = 0.9
+# Keep equal to the CTA card's ARROW_DELAY_S: the button springs in here.
+_CTA_BUTTON_S = 0.28
 
 
 @dataclass(frozen=True)
 class SoundPlan:
-    """What to say, which effects to play where, and how the music is structured.
+    """What to say, which effects to play where, and where the ambience shifts.
 
-    ``drop_s`` is where the music's drums and bass enter and ``outro_s`` where they leave
-    (both on beats). ``duration_s`` is the video length.
+    ``drop_s`` is the first scene change and ``outro_s`` where the end card starts and the
+    ambience lifts (both on beats). ``duration_s`` is the video length.
     """
 
     duration_s: float
@@ -60,7 +71,7 @@ class _Copy:
 
 
 def plan_soundtrack(spec: CompositionSpec) -> SoundPlan:
-    """Plan narration, effects and music for a Showcase ``CompositionSpec``."""
+    """Plan narration, effects and ambience for a Showcase ``CompositionSpec``."""
     duration_s = spec.duration_frames / spec.fps
     cta_s = duration_s - END_CARD_S
     body = spec.scenes[:-1] or spec.scenes
@@ -81,7 +92,8 @@ def plan_soundtrack(spec: CompositionSpec) -> SoundPlan:
         spec.cta_source_field,
         spec.end_voice,
     )
-    return _plan(duration_s, beats, copy, cta_s)
+    cues = beat_cues(spec) if spec.beats else None
+    return _plan(duration_s, beats, copy, cta_s, cues)
 
 
 def plan_motion_soundtrack(spec: MotionSpec) -> SoundPlan:
@@ -107,6 +119,7 @@ def _plan(
     beats: tuple[_Beat, ...],
     copy: _Copy,
     cta_s: float,
+    cues: tuple[SoundCue, ...] | None = None,
 ) -> SoundPlan:
     scene_starts = [beat.start_s for beat in beats]
     outro_s = _snap_down(cta_s)
@@ -116,8 +129,65 @@ def _plan(
         drop_s=min(drop_s, outro_s),
         outro_s=outro_s,
         lines=_narration(beats, copy, cta_s, duration_s),
-        cues=_cues(beats, cta_s),
+        cues=cues if cues is not None else _cues(beats, cta_s),
     )
+
+
+def beat_cues(spec: CompositionSpec) -> tuple[SoundCue, ...]:
+    """One effect (or a short figure) per beat of ``spec``, on the frame the picture marks it.
+
+    The headline's first word gets a soft select as it appears; the end card is announced by a
+    riser that stops on its first frame, where the thud and the button's pop follow.
+    """
+    fps = spec.fps
+    cues: list[SoundCue] = []
+    for index, scene in enumerate(spec.scenes):
+        if index > 0 and scene.text_frames:
+            cues.append(SoundCue(kind=CueKind.SELECT, t=scene.text_frames[0] / fps))
+    for beat in spec.beats:
+        cues += _beat_figure(beat, fps)
+    return tuple(sorted(cues, key=lambda cue: (cue.t, cue.kind.value)))
+
+
+def _beat_figure(beat: Beat, fps: int) -> list[SoundCue]:
+    t = beat.frame / fps
+    length = beat.frames / fps
+    figure: list[SoundCue] = []
+    match beat.kind:
+        case BeatKind.HOOK:
+            figure = [SoundCue(kind=CueKind.THUD, t=t), SoundCue(kind=CueKind.SHIMMER, t=t + 0.05)]
+        case BeatKind.MOVE:
+            side = 0.5 if beat.scene % 2 else -0.5
+            figure = [
+                SoundCue(
+                    kind=CueKind.WHOOSH,
+                    t=t + length * _MOVE_PEAK,
+                    duration_s=round(length + _WHOOSH_TAIL_S, 3),
+                    pan=side,
+                )
+            ]
+        case BeatKind.WORD:
+            figure = [SoundCue(kind=CueKind.POP, t=t)]
+        case BeatKind.COUNT:
+            figure = [
+                *(SoundCue(kind=CueKind.TICK, t=t + length * at) for at in _COUNT_TICKS),
+                SoundCue(kind=CueKind.CONFIRM, t=t + length),
+            ]
+        case BeatKind.TAP:
+            pan = round((beat.point[0] - 0.5) * 0.6, 3) if beat.point else None
+            figure = [SoundCue(kind=CueKind.TAP, t=t, pan=pan)]
+        case BeatKind.PUNCH:
+            figure = [
+                SoundCue(kind=CueKind.WHOOSH, t=t + length * _MOVE_PEAK, duration_s=0.3, pan=0.0)
+            ]
+        case BeatKind.CTA:
+            figure = [
+                SoundCue(kind=CueKind.RISER, t=t, duration_s=_CTA_RISER_S),
+                SoundCue(kind=CueKind.THUD, t=t),
+                SoundCue(kind=CueKind.SHIMMER, t=t + 0.15),
+                SoundCue(kind=CueKind.POP, t=t + _CTA_BUTTON_S),
+            ]
+    return figure
 
 
 def _snap(t: float) -> float:

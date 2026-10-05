@@ -29,9 +29,9 @@ async def test_plans_three_distinct_grounded_concepts(tmp_path) -> None:
 
     assert [c.variant_id for c in concepts] == ["A", "B", "C"]
     assert [c.hypothesis for c in concepts] == [
-        "speed and ease",
+        "pain relief",
         "business outcome",
-        "product demo",
+        "speed and ease",
     ]
     assert all(c.duration_s == 15 and 4 <= len(c.scenes) <= 6 for c in concepts)
     assert len(backend.calls) == 1
@@ -68,13 +68,40 @@ async def test_ungrounded_text_gets_one_repair_with_the_exact_violation(tmp_path
     assert "concept C" in feedback and "40" in feedback
 
 
-async def test_still_ungrounded_after_repair_fails(tmp_path) -> None:
+async def test_still_ungrounded_after_repair_plans_afresh_once(tmp_path) -> None:
     bad = _ungrounded_plan()
-    planner, brief, backend = make_planner(tmp_path, bad, bad)
+    planner, brief, backend = make_planner(tmp_path, bad, bad, plan_json())
+
+    concepts = await planner.plan_variants(brief, count=3)
+
+    assert concepts[2].cta == "Acme Notes"
+    assert len(backend.calls) == 3
+
+
+async def test_still_ungrounded_after_every_attempt_fails(tmp_path) -> None:
+    bad = _ungrounded_plan()
+    planner, brief, backend = make_planner(tmp_path, *[bad] * 4)
 
     with pytest.raises(PreflightValidationError, match="after one repair"):
         await planner.plan_variants(brief, count=3)
 
+    assert len(backend.calls) == 4
+
+
+def _silent_echo_plan() -> str:
+    raw = json.loads(plan_json())
+    raw["concepts"][2]["scenes"][0]["text"] = "Checkout"
+    return json.dumps(raw)
+
+
+async def test_a_craft_rule_is_asked_for_but_does_not_fail_the_repair(tmp_path) -> None:
+    sloppy = _silent_echo_plan()
+    planner, brief, backend = make_planner(tmp_path, sloppy, sloppy)
+
+    concepts = await planner.plan_variants(brief, count=3)
+
+    assert concepts[2].scenes[0].text == "Checkout"
+    assert "does not say any word" in backend.texts(1)[-1]
     assert len(backend.calls) == 2
 
 
@@ -136,3 +163,25 @@ async def test_prompt_injection_text_only_reaches_the_model_inside_the_data_bloc
     assert "ZX-INJECT-42" not in system
     assert len(carriers) == 1
     assert carriers[0].startswith("<<<BEGIN BRIEF") and carriers[0].endswith("<<<END BRIEF>>>")
+
+
+async def test_the_winner_is_rewritten_as_one_concept_on_its_own_angle(tmp_path) -> None:
+    planner, brief, backend = make_planner(tmp_path, plan_json(), plan_json(concept_json()))
+    winner = (await planner.plan_variants(brief, count=3))[1]
+
+    concept, _ = await planner.rewrite(brief, winner, ())
+
+    assert (concept.variant_id, concept.hypothesis) == ("B", "business outcome")
+    task = backend.texts(1)
+    assert "won the pretest" in task[1] and "business outcome" in task[0]
+    assert winner.hook in task[1]
+
+
+async def test_a_rewrite_that_stays_invalid_is_not_planned_afresh(tmp_path) -> None:
+    bad = json.dumps({"concepts": [{**concept_json(), "cta": "Save 40% today"}]})
+    planner, brief, backend = make_planner(tmp_path, plan_json(), bad, bad)
+    winner = (await planner.plan_variants(brief, count=3))[0]
+
+    with pytest.raises(PreflightValidationError):
+        await planner.rewrite(brief, winner, ())
+    assert len(backend.calls) == 3

@@ -8,7 +8,8 @@ Copy may be phrased freely, but no fact may be invented. The checks are determin
    integration or customer can be named. Lines where every word is capitalised (Title Case)
    are exempt from the mid-sentence rule only.
 3. No unverifiable superlative ("bäst", "fastest", "#1") and no quotation marks, so no
-   ranking or testimonial can be implied.
+   ranking or testimonial can be implied. No hype word ("blixtsnabb", "seamless") either,
+   even when the brief uses one: it reads as an ad, and it is not a benefit.
 4. Every listed claim cites a brief field whose text contains its ``source_span`` verbatim.
 
 What the checks cannot see (a reworded benefit that overstates the brief) is left to the
@@ -27,6 +28,8 @@ _NUMBER = re.compile(r"\d+(?:[.,]\d+)?")
 _DIGIT_SPACE = re.compile(r"(?<=\d)[\s\u00a0\u202f](?=\d{3}\b)")
 _WORD = re.compile(r"[\w'\u2019-]+")
 _SENTENCE_END = re.compile(r"[.!?:;]$")
+STEM_LENGTH = 5
+MIN_CONTENT_LENGTH = 3
 _QUOTES = frozenset('"“”„«»')
 
 SUPERLATIVES = frozenset(
@@ -39,6 +42,17 @@ SUPERLATIVES = frozenset(
         "best", "fastest", "cheapest", "biggest", "largest", "leading", "world's", "worlds",
         "guaranteed", "guarantee", "unbeatable", "unrivalled", "unrivaled", "#1",
     }
+)  # fmt: skip
+
+# Word beginnings, so inflections ("blixtsnabba", "sömlöst") are caught too.
+HYPE_STEMS = (
+    # Swedish
+    "blixtsnabb", "supersnabb", "busenk", "superenk", "jätteenk", "sömlös", "revolutioner",
+    "banbrytande", "magisk", "otrolig", "fantastisk", "världsklass", "enastående", "makalös",
+    "extremt", "galet",
+    # English
+    "seamless", "lightning", "blazing", "revolutionary", "game-chang", "incredibl", "amazing",
+    "magical", "effortless", "unparalleled", "cutting-edge", "next-level", "supercharg",
 )  # fmt: skip
 
 
@@ -68,6 +82,31 @@ def brief_mentions(brief: Brief, name: str) -> bool:
     """True when every word of ``name`` (for example "Apple Pay") appears in the brief."""
     words = _words(name)
     return bool(words) and words <= _words(brief_corpus(brief))
+
+
+def proof_numbers(brief: Brief) -> set[str]:
+    """Numbers in proof_points: the strongest evidence a video can show."""
+    return _numbers(brief.field_text(BriefField.PROOF_POINTS))
+
+
+def numbers_in(text: str) -> set[str]:
+    """Numbers in ``text``, normalised like the brief's ("1 200" and "1200" match)."""
+    return _numbers(text)
+
+
+def content_stems(text: str) -> set[str]:
+    """Five-letter stems of the meaningful words, so "betalning" matches "betala"."""
+    return {
+        word.casefold()[:STEM_LENGTH]
+        for word in _WORD.findall(text)
+        if len(word) >= MIN_CONTENT_LENGTH and word.casefold() not in FUNCTION_WORDS
+    }
+
+
+def brief_names(brief: Brief) -> set[str]:
+    """Names the brief uses (partners, integrations, the product itself), casefolded."""
+    names = {name.casefold() for field in BriefField for name in _names(brief.field_text(field))}
+    return names | _words(brief.product_name)
 
 
 def copy_problems(lines: Iterable[CopyLine], claims: Sequence[ClaimRef], brief: Brief) -> list[str]:
@@ -102,11 +141,21 @@ def _line_problems(line: CopyLine, numbers: set[str], names: set[str]) -> list[s
             f'{line.location}: "{line.text}" uses {", ".join(hype)}, an unverifiable '
             "superlative; state a concrete benefit instead"
         )
+    hyped = sorted({word for word in _tokens(line.text) if _is_hype(word)})
+    if hyped:
+        problems.append(
+            f'{line.location}: "{line.text}" uses {", ".join(hyped)}, a hype word; say what '
+            "the product actually does instead"
+        )
     if any(char in _QUOTES for char in line.text):
         problems.append(
             f'{line.location}: "{line.text}" contains quotation marks; never quote anyone'
         )
     return problems
+
+
+def _is_hype(word: str) -> bool:
+    return word.casefold().startswith(HYPE_STEMS)
 
 
 def _known_name(name: str, names: set[str]) -> bool:

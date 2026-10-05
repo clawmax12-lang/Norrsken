@@ -2,10 +2,11 @@
 
 from collections.abc import Sequence
 
-from preflight.contracts import Confidence, CreativeConcept, Ranking, SimulationResult
+from preflight.advice import advice
+from preflight.contracts import Confidence, CreativeConcept, Ranking, Scene, SimulationResult
 
 from .moments import Moment, variant_results, weakest_moment
-from .wording import format_range, simulator_label
+from .wording import format_range
 
 MAX_SUGGESTIONS = 3
 
@@ -27,36 +28,42 @@ def next_time_suggestions(
     suggestions = [_shorten_weakest_scene(concept, weakest)]
     suggestions += _rework_opening_or_closing(concept, weakest)
     if ranking.confidence is Confidence.LOW:
-        suggestions.append(
-            "The ranking has low confidence (one simulator, or the simulators disagree): "
-            "treat the winner as a hypothesis and A/B test it before committing."
-        )
+        suggestions.append(advice("low_confidence", concept.language))
     return tuple(suggestions[:MAX_SUGGESTIONS])
 
 
 def _shorten_weakest_scene(concept: CreativeConcept, weakest: Moment) -> str:
     scene = concept.scene_at(weakest.t)
     span = format_range(scene.t_start, scene.t_end)
-    simulator = simulator_label(weakest.simulator)
+    simulator = advice(f"sim_{weakest.simulator.value}", concept.language)
+    text = _on_screen(concept, scene)
     if weakest.reported:
-        finding = (
-            f"Simulated viewers dropped on '{scene.text}' ({span}, {simulator}: {weakest.detail})"
+        return advice(
+            "weakest_reported",
+            concept.language,
+            text=text,
+            span=span,
+            simulator=simulator,
+            detail=weakest.detail,
         )
-    else:
-        finding = f"The {simulator} series was weakest on '{scene.text}' ({span})"
-    return f"{finding}: shorten this scene or tighten its wording."
+    return advice("weakest_series", concept.language, text=text, span=span, simulator=simulator)
+
+
+def _on_screen(concept: CreativeConcept, scene: Scene) -> str:
+    """The copy viewers read in ``scene``: the hook opens the video and the button closes it."""
+    if scene is concept.scenes[0]:
+        return concept.hook
+    if scene is concept.scenes[-1]:
+        return concept.cta
+    return scene.text
 
 
 def _rework_opening_or_closing(concept: CreativeConcept, weakest: Moment) -> list[str]:
     scene = concept.scene_at(weakest.t)
     if scene is concept.scenes[0]:
-        return [
-            f"The weakest moment is in the opening scene: rework the hook "
-            f"'{concept.hook}' (from {concept.hook_source_field.value})."
-        ]
+        field = concept.hook_source_field.value
+        return [advice("rework_hook", concept.language, hook=concept.hook, field=field)]
     if scene is concept.scenes[-1]:
-        return [
-            f"The weakest moment is in the closing scene: rework the call to action "
-            f"'{concept.cta}' (from {concept.cta_source_field.value})."
-        ]
+        field = concept.cta_source_field.value
+        return [advice("rework_cta", concept.language, cta=concept.cta, field=field)]
     return []

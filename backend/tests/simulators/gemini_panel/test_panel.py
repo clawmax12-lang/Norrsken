@@ -21,7 +21,7 @@ async def test_aggregates_three_personas_into_one_simulation_result(tmp_path) ->
         {
             LABELS[0]: rating_json(goal_fit=lambda s: 0.2),
             LABELS[1]: rating_json(goal_fit=lambda s: 0.4),
-            LABELS[2]: rating_json(goal_fit=lambda s: 0.9),
+            LABELS[2]: rating_json(goal_fit=lambda s: 0.9, craft=lambda s: 0.5),
         }
     )
 
@@ -29,14 +29,19 @@ async def test_aggregates_three_personas_into_one_simulation_result(tmp_path) ->
 
     assert_valid(result)
     assert (result.variant_id, result.simulator) == ("B", SimulatorName.GEMINI_PANEL)
-    assert result.primary_series == "goal_fit"
+    assert result.primary_series == "score"
     assert result.timestamps_s == tuple(float(i) for i in range(15))
     assert result.hz == 1.0 and result.duration_s == 15.0
     assert result.series["goal_fit"] == pytest.approx((0.5,) * 15)
     assert result.series["clarity"] == pytest.approx((0.4,) * 15)
+    assert result.series["craft"] == pytest.approx((5 / 6,) * 15)
+    # Persona 3's 0.9 goal fit at craft 0.5 counts as 0.9 * 0.7 = 0.63.
+    assert result.series["score"] == pytest.approx(((0.2 + 0.4 + 0.63) / 3,) * 15)
     assert set(result.series) == {
+        "score",
         "goal_fit",
         "clarity",
+        "craft",
         "persona_1_goal_fit",
         "persona_2_goal_fit",
         "persona_3_goal_fit",

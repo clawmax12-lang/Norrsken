@@ -80,7 +80,8 @@ class RenderStage:
         if not ready:
             ctx.log.skipped(
                 Step.RENDER,
-                "Motion not ready for every variant; using Showcase for all",
+                "You chose Generative motion, but it was not ready for every variant, so all "
+                "three videos were made in Showcase",
             )
             for variant_id in pending:
                 ctx.paths.motion_spec(variant_id).unlink(missing_ok=True)
@@ -148,7 +149,10 @@ class RenderStage:
             except PreflightError as exc:
                 handle.skip(f"Backgrounds unavailable ({exc}); using template-only backgrounds")
                 return ()
-            handle.report(f"Generated {len(assets)} backgrounds for variant {variant_id}")
+            if assets:
+                handle.report(f"Generated {len(assets)} backgrounds for variant {variant_id}")
+            else:
+                handle.report(f"Variant {variant_id} uses the template's own backgrounds")
             return assets
 
     async def _render(self, ctx: RunContext, spec: CompositionSpec) -> VariantRecord:

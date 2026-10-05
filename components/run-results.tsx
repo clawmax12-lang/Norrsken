@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { FinalVideoFinish } from "@/components/final-video-finish";
 
 import { RunReport } from "@/components/run-report";
-import { CLOSE_CALL_POINTS, leadOf, measuredScores, points, usesPanelScoreScale, type RenderRecord, type SimulationResult } from "@/lib/run-report";
+import { CLOSE_CALL_POINTS, leadOf, measuredScores, points, productionFactor, usesPanelScoreScale, type Production, type RenderRecord, type SimulationResult } from "@/lib/run-report";
 
 type VariantId = "A" | "B" | "C";
 export type RunState = "BRIEF_RECEIVED" | "PLANNED" | "RENDERED" | "SIMULATED" | "SCORED" | "EXPLAINED" | "ITERATED" | "DONE" | "FAILED";
@@ -35,6 +35,7 @@ type Results = {
     next_time: string[];
     token_savings: { calls: number; input_tokens_original: number; input_tokens_sent: number; tokens_saved: number; percent: number } | null;
     brain_sim: boolean;
+    production?: Production | null;
   } | null;
   variants: PlannedVariant[];
 };
@@ -63,13 +64,15 @@ function clock(seconds: number) {
   return `0:${String(Math.floor(seconds)).padStart(2, "0")}`;
 }
 
-export function RunResults({ apiBase, projectId, runNonce, onClose, onProgress, visible = true }: {
+export function RunResults({ apiBase, projectId, runNonce, onClose, onProgress, onResume, visible = true }: {
   visible?: boolean;
   apiBase: string | undefined;
   projectId: string;
   runNonce: number;
   onClose: () => void;
   onProgress?: (state: RunState, variants: PlannedVariant[]) => void;
+  /** Resume a failed run from its last completed step. */
+  onResume?: () => void;
 }) {
   const [results, setResults] = useState<Results | null>(null);
   const [failure, setFailure] = useState<ProjectRun["run"] | null>(null);
@@ -151,11 +154,16 @@ export function RunResults({ apiBase, projectId, runNonce, onClose, onProgress, 
   const variant = results?.variants.find((item) => item.variant_id === shown);
   const winnerSourceHash = results?.variants.find((item) => item.variant_id === report?.winner)?.render?.video_sha256;
   const elapsed = Math.max(0, Math.round((now - startedAt) / 1000));
-  const measured = new Map((results?.variants ?? []).map((item) => [item.variant_id, measuredScores(item).score]));
   const isMeasured = Boolean(ranking && results && usesPanelScoreScale(ranking, results.variants));
+  const factor = isMeasured ? productionFactor(report) : 1;
+  const measured = new Map((results?.variants ?? []).map((item) => {
+    const score = measuredScores(item).score;
+    return [item.variant_id, score == null ? null : score * factor];
+  }));
   const scoreOf = (id: VariantId) => points((isMeasured ? measured.get(id) : ranking?.scores[id]) ?? 0);
   const lead = isMeasured && report?.runner_up ? leadOf(measured.get(report.winner), measured.get(report.runner_up)) : null;
-  const closeCall = lead != null && lead < CLOSE_CALL_POINTS;
+  const closeThreshold = Math.round(CLOSE_CALL_POINTS * factor * 10) / 10;
+  const closeCall = lead != null && lead < closeThreshold;
 
   return (
     <aside className="side-drawer results-drawer" aria-live="polite">
@@ -170,11 +178,12 @@ export function RunResults({ apiBase, projectId, runNonce, onClose, onProgress, 
         })}
       </ol>}
       {running && <p className="results-muted">{error ?? `Working · ${elapsed}s elapsed · usually 2–3 minutes`}</p>}
-      {results?.state === "FAILED" && <p className="results-error">{failure?.error ?? "The backend stopped this run."} Press Run again to resume from the last completed step.</p>}
+      {results?.state === "FAILED" && <p className="results-error">{failure?.error ?? "The backend stopped this run."} Resume to continue from the last completed step.{onResume && <>{" "}<button className="chip active" onClick={onResume}>Resume run</button></>}</p>}
 
       {report && ranking && <>
         <p className="results-verdict">Launch <b>{report.winner}</b>. A/B test it against <b>{report.runner_up}</b>.<span className={`confidence ${ranking.confidence}`}>{ranking.confidence} confidence</span>{closeCall && <span className="confidence close-call">close call</span>}</p>
-        {closeCall && <p className="results-muted">{report.winner} leads {report.runner_up} by only {lead} of 100 points. Our display flags gaps below five points for live A/B follow-up; this is not a statistical tie.</p>}
+        {closeCall && <p className="results-muted">{report.winner} leads {report.runner_up} by only {lead} of 100 points. Our display flags gaps below {closeThreshold} points for live A/B follow-up; this is not a statistical tie.</p>}
+        {factor < 1 && <p className="results-error">Not ready to publish. {report.production?.reasons.join(" ")}</p>}
         <div className="results-argument">
           <small>Where they leave</small>
           <p>The moments below are simulated hold/drop signals, not observed viewer retention. Use this recommendation to choose a live A/B test, not as proof of consumer behaviour.</p>
@@ -186,7 +195,7 @@ export function RunResults({ apiBase, projectId, runNonce, onClose, onProgress, 
             return <button key={id} className={id === shown ? "selected" : ""} onClick={() => setPicked(id)}>
               <span className="variant-letter">{id}</span>
               <span><strong>{index === 0 ? "Winner" : index === 1 ? "Runner-up" : "Third"} · {concept?.hypothesis ?? ""}</strong><em>{concept?.hook}</em></span>
-              <span className="results-score" title={isMeasured ? "Mean simulated-viewer score, out of 100" : "Relative to these variants only"}><i style={{ width: `${scoreOf(id)}%` }} />{scoreOf(id)}</span>
+              <span className="results-score" title={isMeasured ? `Mean simulated-viewer score, out of 100${factor < 1 ? `, capped at ${Math.round(factor * 100)} % for production quality` : ""}` : "Relative to these variants only"}><i style={{ width: `${scoreOf(id)}%` }} />{scoreOf(id)}</span>
             </button>;
           })}
         </div>

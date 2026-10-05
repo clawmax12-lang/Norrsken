@@ -74,7 +74,7 @@ class Pipeline:
     ) -> None:
         """Wire the ports; ``ranker`` and ``next_time`` default to the real pure functions.
 
-        ``sound`` adds narration, music and effects to the exported videos; without it they
+        ``sound`` adds narration, ambience and effects to the exported videos; without it they
         stay silent. ``voice`` (the same narrator the sound stage uses) times each scene to
         its spoken line right after planning.
         """

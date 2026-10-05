@@ -45,7 +45,7 @@ def test_system_prompt_declares_screenshots_and_brief_to_be_data() -> None:
 
 
 def test_the_copywriter_may_phrase_freely_but_every_fact_cites_the_brief() -> None:
-    assert PROMPT_VERSION == "plan-v8"
+    assert PROMPT_VERSION == "plan-v12"
     assert "source_span" in SYSTEM_PROMPT
     assert "superlative" in SYSTEM_PROMPT
     assert "buyer_cta" in SYSTEM_PROMPT and "goal_note" in SYSTEM_PROMPT
@@ -76,9 +76,7 @@ def test_screenshots_are_sent_in_index_order_with_a_data_label_and_no_file_names
 def test_task_lists_every_archetype_in_order() -> None:
     task = text_of(build_plan_parts(make_brief(), archetypes_for(3), []))[0]
 
-    assert (
-        task.index("speed and ease") < task.index("business outcome") < task.index("product demo")
-    )
+    assert task.index("pain relief") < task.index("business outcome") < task.index("speed and ease")
     assert "exactly 3 concepts" in task
 
 

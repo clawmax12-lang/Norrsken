@@ -149,4 +149,4 @@ def test_the_launch_brief_tells_the_reader_the_pretest_covered_the_silent_render
     assert "Simulated viewers watched the soundtrack cut" in brief
     assert "The simulated viewers watched the silent renders" not in brief
     assert "Variant A: narrated by the Gemini voice Kore, reading only the on-screen text" in brief
-    assert "Variant B: music and sound effects only. Narration is off." in brief
+    assert "Variant B: ambience and sound effects only. Narration is off." in brief

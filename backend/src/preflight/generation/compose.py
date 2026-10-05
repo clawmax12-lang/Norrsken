@@ -11,6 +11,7 @@ from collections.abc import Sequence
 
 from preflight.contracts import (
     AssetKind,
+    Beat,
     Brief,
     BriefField,
     CompositionSpec,
@@ -25,6 +26,7 @@ from preflight.contracts._base import VIDEO_DURATION_S, VIDEO_FPS
 from preflight.errors import PreflightValidationError
 from preflight.timing import END_CARD_S, MIN_END_CARD_S
 
+from .beats import SceneClock, ordered, scene_beats, scene_clock
 from .end_card import end_card_fields
 from .theme import theme_for
 
@@ -51,22 +53,26 @@ def compose(
     card = end_card_fields(brief, concept)
     boundaries = _frame_boundaries(concept)
     last_index = len(concept.scenes) - 1
-    scenes = tuple(
-        _scene_spec(
-            concept,
-            scene,
-            index,
-            last_index,
-            (boundaries[index], boundaries[index + 1]),
-            assets,
+    scenes: list[SceneSpec] = []
+    timeline: list[Beat] = []
+    for index, scene in enumerate(concept.scenes):
+        frames = (boundaries[index], boundaries[index + 1])
+        shown = scene.model_copy(update={"text": concept.hook}) if index == 0 else scene
+        clock = scene_clock(
+            shown,
+            *frames,
+            VIDEO_FPS,
+            timed=index != last_index,
+            instant=index == 0,
         )
-        for index, scene in enumerate(concept.scenes)
-    )
+        scenes.append(_scene_spec(concept, scene, index, assets, clock, is_end=index == last_index))
+        timeline += scene_beats(index, clock, shown, last=index == last_index)
     return CompositionSpec(
         variant_id=concept.variant_id,
         duration_frames=boundaries[-1],
         theme=theme_for(brief.brand_color),
-        scenes=scenes,
+        scenes=tuple(scenes),
+        beats=ordered(timeline),
         cta=str(card["cta"]),
         cta_source_field=concept.cta_source_field,
         wordmark=str(card["wordmark"]),
@@ -74,6 +80,7 @@ def compose(
         headline_source_field=BriefField(str(card["headline_source_field"])),
         logo=card["logo"],
         end_voice=concept.end_voice,
+        cta_hint=concept.cta_hint,
         chips=concept.chips,
     )
 
@@ -120,13 +127,13 @@ def _scene_spec(
     concept: CreativeConcept,
     scene: Scene,
     index: int,
-    last_index: int,
-    frames: tuple[int, int],
     assets: Sequence[GeneratedAsset],
+    clock: SceneClock,
+    *,
+    is_end: bool,
 ) -> SceneSpec:
-    start, end = frames
+    start, end = clock.start, clock.end
     is_hook = index == 0
-    is_end = index == last_index
     if is_hook:
         # The product is on screen from the first frame; a type-only card lost viewers at 0:02.
         layout = Layout.DEVICE_CENTER
@@ -150,7 +157,9 @@ def _scene_spec(
         voice=None if is_end else scene.voice,
         focus=None if is_end else scene.focus,
         crop=scene.crop,
+        shot=scene.shot,
         emphasis=_emphasis_in(scene.emphasis, text),
+        text_frames=clock.text_frames,
     )
 
 

@@ -124,7 +124,7 @@ class SoundRequest:
 
 
 class SoundFinisher(Protocol):
-    """``add_sound``: a silent render in, the same picture with narration, music and effects out.
+    """``add_sound``: a silent render in, the same picture with narration, ambience and effects out.
 
     The video stream is copied unchanged, so the tested picture is exactly what is exported.
     """

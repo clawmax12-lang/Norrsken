@@ -75,3 +75,22 @@ def test_a_project_without_a_brief_cannot_start(tmp_path) -> None:
 
     with pytest.raises(StorageError, match="missing file"):
         prepare(store)
+
+
+def test_a_failed_run_is_reopened_at_its_last_step_before_it_restarts(tmp_path) -> None:
+    store = ProjectStore(tmp_path)
+    web_app_brief(store)
+    prepare(store)
+    failed = RunRecord(
+        project_id=PROJECT,
+        state=RunState.FAILED,
+        failed_after=RunState.MIXED,
+        error="no simulator produced results for every rendered variant",
+        updated_at=FIXED_NOW,
+    )
+    store.write(store.paths(PROJECT).run, failed)
+
+    record = prepare(store)
+
+    assert (record.state, record.error, record.failed_after) == (RunState.MIXED, None, None)
+    assert store.read(store.paths(PROJECT).run, RunRecord).state is RunState.MIXED

@@ -10,9 +10,11 @@ import httpx
 
 from preflight.config import Settings
 from preflight.contracts import RunRecord
+from preflight.contracts.finalization import FinalizationRecord
 from preflight.explain.gemini import GeminiExplainer
+from preflight.finalization.gemini import GeminiDirector
 from preflight.finalization.job import FinalizationJob
-from preflight.finalization.opus import OpusComposer
+from preflight.finalization.opus import FinalComposer, OpusComposer
 from preflight.finalization.service import FinalizationService
 from preflight.finalization.source import FinalSource
 from preflight.generation.assets import TemplateBackdrops
@@ -96,7 +98,7 @@ class ProductionRunService:
         )
 
     def build_finalization(self, project_id: str, source: FinalSource) -> FinalizationJob:
-        """Use Opus only for motion composition; Gemini/TRIBE retest the final MP4."""
+        """Opus or Gemini directs the motion, as confirmed; Gemini/TRIBE retest the final MP4."""
         settings, http = self._settings, self._http
         client = build_gemini_client(
             settings, ledger=TokenLedger(), http_client=http, project_id=project_id
@@ -105,11 +107,32 @@ class ProductionRunService:
         simulators: list[Simulator] = [GeminiViewerPanel(client)]
         if settings.tribe_endpoint:
             simulators.insert(0, TribeSimulator(http, settings.tribe_endpoint, paths.root))
+        director = self._store.read(paths.finalization, FinalizationRecord).director
+        if director == "gemini":
+            # Voice lines are cached by text, so the sound step reuses the re-timed narration.
+            narrator = _narrator(settings, paths)
+            composer: FinalComposer = GeminiDirector(
+                client,
+                source,
+                paths.root,
+                planner=GeminiPlanner(client, self._store),
+                speech=narrator,
+            )
+            sound = _sound_studio(settings, narrator)
+        else:
+            composer = OpusComposer(settings, http)
+            # Keep the existing audio team's stage intact. No new direct TTS routing
+            # exception: the Opus final has local music/SFX, not extra narration calls.
+            sound = (
+                SoundStudio(Ffmpeg(settings.ffmpeg_binary, settings.ffprobe_binary), None)
+                if settings.sound_enabled
+                else None
+            )
         return FinalizationJob(
             self._store,
             project_id,
             source,
-            OpusComposer(settings, http),
+            composer,
             RemotionRenderer(
                 settings.renderer_dir,
                 paths.root,
@@ -117,11 +140,7 @@ class ProductionRunService:
                 concurrency=settings.render_concurrency,
             ),
             simulators,
-            # Keep the existing audio team's stage intact. No new direct TTS routing
-            # exception: the Opus final has local music/SFX, not extra narration calls.
-            SoundStudio(Ffmpeg(settings.ffmpeg_binary, settings.ffprobe_binary), None)
-            if settings.sound_enabled
-            else None,
+            sound,
             StepPolicy.from_settings(settings),
             self._clock,
         )
@@ -143,11 +162,12 @@ def _narrator(settings: Settings, paths: ProjectPaths) -> GeminiSpeech | None:
         model=settings.tts_model,
         voice=settings.narration_voice,
         cache_dir=paths.sound_work / "cache",
+        fallback_models=settings.tts_fallback_models,
     )
 
 
 def _sound_studio(settings: Settings, speech: GeminiSpeech | None) -> SoundStudio | None:
-    """Narration, music and effects for the exported videos, or ``None`` when sound is off."""
+    """Narration, ambience and effects for the exported videos, or ``None`` when sound is off."""
     if not settings.sound_enabled:
         return None
     ffmpeg = Ffmpeg(settings.ffmpeg_binary, settings.ffprobe_binary)

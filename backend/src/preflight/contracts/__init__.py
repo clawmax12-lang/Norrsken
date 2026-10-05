@@ -3,6 +3,8 @@
 from .brief import Brief, BriefField, Goal, RenderMode
 from .composition import (
     AssetKind,
+    Beat,
+    BeatKind,
     CompositionSpec,
     GeneratedAsset,
     Layout,
@@ -11,9 +13,9 @@ from .composition import (
     Theme,
     Transition,
 )
-from .concept import Claim, CreativeConcept, FocusBox, Scene, VariantId
+from .concept import Claim, CreativeConcept, FocusBox, Scene, Shot, VariantId
 from .ranking import Confidence, Ranking
-from .report import PlanNotes, Reason, Report, TokenSavings
+from .report import Craft, PlanNotes, Production, Reason, Report, TokenSavings
 from .run import (
     ActivityEvent,
     RenderStatus,
@@ -29,12 +31,15 @@ from .sound import CueKind, NarrationLine, SoundCue, SoundRecord
 __all__ = [
     "ActivityEvent",
     "AssetKind",
+    "Beat",
+    "BeatKind",
     "BrainArtifact",
     "Brief",
     "BriefField",
     "Claim",
     "CompositionSpec",
     "Confidence",
+    "Craft",
     "CreativeConcept",
     "CueKind",
     "EventType",
@@ -44,6 +49,7 @@ __all__ = [
     "Layout",
     "NarrationLine",
     "PlanNotes",
+    "Production",
     "Ranking",
     "Reason",
     "RenderMode",
@@ -54,6 +60,7 @@ __all__ = [
     "RunState",
     "Scene",
     "SceneSpec",
+    "Shot",
     "SimEvent",
     "SimulationResult",
     "SimulatorName",

@@ -1,8 +1,9 @@
 import pytest
 from pydantic import ValidationError
 
-from preflight.contracts import Brief, TokenSavings
+from preflight.contracts import Beat, BeatKind, Brief, TokenSavings
 from tests.factories import make_brief, make_concept, make_result
+from tests.sound.helpers import make_spec
 
 
 def test_brief_round_trips_through_json() -> None:
@@ -62,3 +63,47 @@ def test_token_savings_are_derived_not_stored() -> None:
     assert TokenSavings().percent == 0.0
     with pytest.raises(ValidationError):
         TokenSavings(input_tokens_original=1, input_tokens_sent=2)
+
+
+def test_pasted_character_counters_are_stripped_from_the_brief() -> None:
+    brief = make_brief(
+        one_liner="Maximera din försäljning. (99/140 tecken)",
+        buyer_cta="Kom igång (9/40)",
+        audience="Butiker som har öppet 24/7",
+    )
+
+    assert brief.one_liner == "Maximera din försäljning."
+    assert brief.buyer_cta == "Kom igång"
+    assert brief.audience == "Butiker som har öppet 24/7"
+
+
+def test_measured_voice_words_must_match_the_voice_line() -> None:
+    scene = make_concept().scenes[1]
+
+    timed = scene.model_copy(update={"voice": "Sort it"}).model_validate(
+        {**scene.model_dump(), "voice": "Sort it", "voice_s": 0.8, "voice_words": (0.0, 0.4)}
+    )
+    assert timed.voice_words == (0.0, 0.4)
+    for broken in (
+        {"voice": None, "voice_s": None, "voice_words": (0.0,)},
+        {"voice": "Sort it", "voice_s": 0.8, "voice_words": (0.0,)},
+        {"voice": "Sort it", "voice_s": 0.8, "voice_words": (0.4, 0.1)},
+    ):
+        with pytest.raises(ValidationError):
+            type(scene).model_validate({**scene.model_dump(), **broken})
+
+
+def test_beats_and_headline_frames_must_fit_the_video() -> None:
+    spec = make_spec()
+    data = spec.model_dump()
+    with pytest.raises(ValidationError):
+        type(spec).model_validate(
+            {**data, "beats": (Beat(kind=BeatKind.TAP, frame=10_000, frames=8, scene=1),)}
+        )
+    with pytest.raises(ValidationError):
+        type(spec).model_validate(
+            {**data, "beats": (Beat(kind=BeatKind.TAP, frame=10, frames=8, scene=99),)}
+        )
+    scene = data["scenes"][1]
+    with pytest.raises(ValidationError):
+        type(spec.scenes[1]).model_validate({**scene, "text_frames": (1,) * 99})

@@ -1,4 +1,4 @@
-"""Narration, music and sound effects for the exported videos (PRD §9.3)."""
+"""Narration, ambience and sound effects for the exported videos (PRD §9.3)."""
 
 from .ffmpeg import Ffmpeg
 from .plan import SoundPlan, plan_soundtrack

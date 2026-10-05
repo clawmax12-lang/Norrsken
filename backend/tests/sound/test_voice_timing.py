@@ -80,6 +80,12 @@ async def test_time_to_voice_retimes_the_body_and_keeps_the_end_card() -> None:
     assert (timed.scenes[-1].t_start, timed.scenes[-1].t_end) == (12.0, 15.0)
     assert [s.t_start for s in timed.scenes[1:]] == [s.t_end for s in timed.scenes[:-1]]
     assert len(speech.calls) == 4
+    long = timed.scenes[1]
+    assert long.voice_s == pytest.approx(10 * 0.4, abs=0.15)
+    assert len(long.voice_words) == 10
+    assert long.voice_words[0] < 0.1  # only the trim margin before the first sound
+    assert list(long.voice_words) == sorted(long.voice_words)
+    assert timed.scenes[-1].voice_words == ()
 
 
 async def test_a_concept_without_voice_lines_is_left_alone() -> None:

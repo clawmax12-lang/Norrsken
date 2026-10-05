@@ -28,4 +28,17 @@ async def test_a_planner_without_notes_leaves_the_report_unchanged(world: World)
 
     paths = world.store.paths(world.project_id)
     assert not paths.plan_notes.exists()
-    assert world.store.read(paths.report, Report).next_time == ("Try a stronger hook",)
+    report = world.store.read(paths.report, Report)
+    assert report.next_time == ("Try a stronger hook",)
+    assert report.production is None
+
+
+async def test_a_soft_screen_caps_the_reported_score(world: World) -> None:
+    world.planner.last_notes = PlanNotes(smallest_screen_px=284)  # type: ignore[attr-defined]
+
+    await world.pipeline().run(world.project_id)
+
+    report = world.store.read(world.store.paths(world.project_id).report, Report)
+    assert report.production is not None
+    assert report.production.factor == 0.5
+    assert "284 px" in report.production.reasons[0]

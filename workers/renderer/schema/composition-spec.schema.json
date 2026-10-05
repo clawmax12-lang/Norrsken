@@ -9,6 +9,78 @@
       "title": "AssetKind",
       "type": "string"
     },
+    "Beat": {
+      "additionalProperties": false,
+      "description": "One timed event: what happens, from which frame, for how long, in which scene.\n\n``point`` is where a tap lands, as ``(x, y)`` 0-1 of the scene's screen (its crop when set).",
+      "properties": {
+        "frame": {
+          "minimum": 0,
+          "title": "Frame",
+          "type": "integer"
+        },
+        "frames": {
+          "minimum": 1,
+          "title": "Frames",
+          "type": "integer"
+        },
+        "kind": {
+          "$ref": "#/$defs/BeatKind"
+        },
+        "point": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "maximum": 1,
+                  "minimum": 0,
+                  "type": "number"
+                },
+                {
+                  "maximum": 1,
+                  "minimum": 0,
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Point"
+        },
+        "scene": {
+          "minimum": 0,
+          "title": "Scene",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "frame",
+        "frames",
+        "scene"
+      ],
+      "title": "Beat",
+      "type": "object"
+    },
+    "BeatKind": {
+      "description": "A moment the picture marks and the soundtrack hits on the same frame.",
+      "enum": [
+        "hook",
+        "move",
+        "word",
+        "count",
+        "tap",
+        "punch",
+        "cta"
+      ],
+      "title": "BeatKind",
+      "type": "string"
+    },
     "BriefField": {
       "description": "Brief fields that on-screen copy may be sourced from (``source_field``).",
       "enum": [
@@ -196,6 +268,18 @@
           "title": "Screenshot",
           "type": "string"
         },
+        "shot": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Shot"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Camera framing; the renderer falls back when a source is small."
+        },
         "source_field": {
           "$ref": "#/$defs/BriefField"
         },
@@ -208,6 +292,16 @@
           "minLength": 1,
           "title": "Text",
           "type": "string"
+        },
+        "text_frames": {
+          "default": [],
+          "description": "Frame each word of text lands on, following the narrator; empty: own pace.",
+          "items": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "title": "Text Frames",
+          "type": "array"
         },
         "transition_in": {
           "$ref": "#/$defs/Transition"
@@ -236,6 +330,17 @@
       ],
       "title": "SceneSpec",
       "type": "object"
+    },
+    "Shot": {
+      "description": "How the camera frames a scene's screen; the renderer falls back when a source is small.",
+      "enum": [
+        "hero",
+        "close_up",
+        "takeover",
+        "tilt"
+      ],
+      "title": "Shot",
+      "type": "string"
     },
     "Theme": {
       "additionalProperties": false,
@@ -286,6 +391,14 @@
   "additionalProperties": false,
   "description": "Everything Remotion needs to render one 1080x1920, 30 fps, 15 s variant.",
   "properties": {
+    "beats": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/Beat"
+      },
+      "title": "Beats",
+      "type": "array"
+    },
     "chips": {
       "default": [],
       "items": {
@@ -299,6 +412,18 @@
       "minLength": 1,
       "title": "Cta",
       "type": "string"
+    },
+    "cta_hint": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Cta Hint"
     },
     "cta_source_field": {
       "$ref": "#/$defs/BriefField"

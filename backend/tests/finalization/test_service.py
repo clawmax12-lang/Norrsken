@@ -4,9 +4,11 @@ import httpx
 import pytest
 
 from preflight.api import create_app
-from preflight.contracts import RunRecord, RunState, SimulatorName
+from preflight.contracts import RunRecord, RunState, SimulationResult, SimulatorName
 from preflight.contracts.finalization import FinalStatus
 from preflight.errors import PreflightValidationError, ProviderError, RenderError
+from preflight.finalization.source import read_source
+from preflight.hashing import sha256_file
 from preflight.storage import ProjectStore
 from tests.factories import FIXED_NOW
 from tests.finalization.helpers import seed_final_world
@@ -43,6 +45,7 @@ async def test_exact_final_audio_bytes_are_retested_without_replacing_originals(
     assert len(final.world.gemini.calls) == initial_calls + 1
     assert final.opus.calls == 1
     assert record.brain_sim is False
+    assert record.comparison is not None
     assert all(p.read_bytes() == content for p, content in originals.items())
     service.start("proj-1", final.command)
     assert not service._tasks and final.opus.calls == 1
@@ -201,3 +204,54 @@ async def test_api_without_finalizer_is_explicitly_unavailable(tmp_path):
         )
         assert response.status_code == 503
         assert final.opus.calls == 0
+
+
+async def test_gemini_finish_needs_no_opus_keys_and_keeps_its_director_on_resume(tmp_path):
+    final = await seed_final_world(ProjectStore(tmp_path))
+    gemini = final.command.model_copy(update={"director": "gemini"})
+    service = final.service(anthropic_api_key=None, condense_api_key=None)
+
+    service.start("proj-1", gemini)
+    await complete(service)
+
+    record = final.record()
+    assert record.director == "gemini"
+    assert record.status is FinalStatus.DONE
+    with pytest.raises(ProviderError, match="ANTHROPIC"):
+        final.service(anthropic_api_key=None).start("proj-1", final.command)
+
+
+async def test_a_failed_finish_resumes_only_with_the_director_it_started_with(tmp_path):
+    final = await seed_final_world(ProjectStore(tmp_path))
+    final.opus.failures = 1
+    service = final.service()
+    service.start("proj-1", final.command)
+    await complete(service)
+    assert final.record().status is FinalStatus.FAILED
+
+    with pytest.raises(PreflightValidationError, match="started with opus"):
+        final.service().start("proj-1", final.command.model_copy(update={"director": "gemini"}))
+
+
+async def test_the_winner_tested_with_its_soundtrack_can_be_finished(tmp_path):
+    final = await seed_final_world(ProjectStore(tmp_path))
+    store, project = final.world.store, final.world.project_id
+    paths = store.paths(project)
+    paths.final_video("B").write_bytes(b"MOCK video with narration")
+    sounded = sha256_file(paths.final_video("B"))
+    run = store.read(paths.run, RunRecord)
+    variants = tuple(
+        v.model_copy(update={"video_path": "videos/B.final.mp4", "video_sha256": sounded})
+        if v.variant_id == "B"
+        else v
+        for v in run.variants
+    )
+    store.write(paths.run, run.model_copy(update={"variants": variants}))
+    tested_path = paths.simulation("B", "gemini_panel")
+    tested = store.read(tested_path, SimulationResult)
+    store.write(tested_path, tested.model_copy(update={"video_sha256": sounded}))
+    command = final.command.model_copy(update={"source_video_sha256": sounded})
+
+    source = read_source(store, project, command, final.settings)
+
+    assert source.concept.variant_id == "B"

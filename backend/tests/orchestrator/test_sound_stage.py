@@ -1,7 +1,7 @@
-"""Sound is an enhancement: it covers every rendered video, resumes, and never fails the run."""
+"""Sound covers every rendered video and resumes; only a lost voice pauses the run."""
 
 from preflight.contracts import RunRecord, RunState, SoundRecord, Step, StepStatus
-from preflight.errors import SoundError
+from preflight.errors import NarrationError, SoundError
 from tests.orchestrator.fakes import Failures, FakeSoundFinisher, World
 
 
@@ -50,6 +50,23 @@ async def test_a_sound_failure_is_skipped_and_the_run_still_finishes(world: Worl
     skipped = [e for e in sound_events(world) if e.status is StepStatus.SKIPPED]
     assert [e.variant_id for e in skipped] == ["B"]
     assert "silent video" in skipped[0].message
+
+
+async def test_a_lost_voice_pauses_the_run_and_a_rerun_resumes_with_it(world: World) -> None:
+    world.sound = FakeSoundFinisher()
+    world.sound.failures.always("B", NarrationError("Narration failed: spending cap"))
+
+    paused = await world.pipeline().run(world.project_id)
+
+    assert paused.state is RunState.FAILED
+    assert paused.failed_after is RunState.RENDERED
+    assert "run it again to resume with the voice" in (paused.error or "")
+    world.sound = _recovered(world.sound)
+    resumed = await world.pipeline().run(world.project_id)
+
+    assert resumed.state is RunState.DONE
+    assert world.sound.calls.count("A") == 1
+    assert world.sound.calls.count("B") == 2
 
 
 async def test_a_resumed_run_does_not_repeat_finished_sound(world: World) -> None:

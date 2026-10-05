@@ -93,7 +93,7 @@ class ProjectPaths:
         return self.root / "videos" / f"{variant_id}.mp4"
 
     def final_video(self, variant_id: str) -> Path:
-        """Rendered MP4 with narration, music and sound effects mixed before the pretest."""
+        """Rendered MP4 with narration, ambience and sound effects mixed before the pretest."""
         return self.root / "videos" / f"{variant_id}.final.mp4"
 
     @property

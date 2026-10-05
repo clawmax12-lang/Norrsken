@@ -88,8 +88,8 @@ def test_reading_orders_seconds_and_converts_timestamps() -> None:
     rating = PersonaRating.model_validate(
         {
             "seconds": [
-                {"second": 1, "goal_fit": 0.9, "clarity": 0.1},
-                {"second": 0, "goal_fit": 0.3, "clarity": 0.2},
+                {"second": 1, "goal_fit": 0.9, "clarity": 0.1, "craft": 0.5},
+                {"second": 0, "goal_fit": 0.3, "clarity": 0.2, "craft": 0.5},
             ],
             "moments": [{"timestamp": "00:07", "kind": "hold", "label": "demo"}],
         }
@@ -139,7 +139,7 @@ def test_mean_series_stay_within_the_unit_interval(values) -> None:
 def test_reading_from_an_unchecked_rating_fails_loudly() -> None:
     rating = PersonaRating.model_validate(
         {
-            "seconds": [{"second": 0, "goal_fit": 0.3, "clarity": 0.2}],
+            "seconds": [{"second": 0, "goal_fit": 0.3, "clarity": 0.2, "craft": 0.5}],
             "moments": [{"timestamp": "soon", "kind": "hold", "label": "demo"}],
         }
     )

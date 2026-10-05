@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { buildRunReport, parseActivityLog, type Results } from "./run-report";
+import { buildRunReport, parseActivityLog, productionFactor, type Results } from "./run-report";
 
 const concept = (hypothesis: string, hook: string) => ({ hypothesis, hook, scenes: [] });
 
@@ -130,6 +130,48 @@ describe("run report", () => {
     expect(report.closeCall).toBe(true);
     expect(report.variants[0].why).toMatch(/48.4 of 100\. Only just ahead of the runner-up/);
     expect(report.variants[1].why).toMatch(/^Effectively tied with the winner: test both live\. 1.7 points behind B, too close to call\./);
+  });
+
+  it("scores the craft-weighted panel series on the same 0-100 scale", () => {
+    const crafted: Results = {
+      ...results,
+      variants: results.variants.map((variant) => ({
+        ...variant,
+        simulations: variant.simulations?.map((simulation) => ({ ...simulation, primary_series: "score", series: { score: [{ A: 0.41, B: 0.52, C: 0.3 }[variant.variant_id]!], goal_fit: [0.8] } })),
+      })),
+    };
+    const report = buildRunReport(crafted)!;
+    expect(report.scoreScale).toBe("measured");
+    expect(report.variants.map((variant) => variant.score)).toEqual([0.52, 0.41, 0.3]);
+  });
+
+  it("carries each cut's measured pace and sound to its verdict", () => {
+    const craft = { events_per_s: 1.4, longest_still_s: 1.2, voice_coverage: 0.82, integrated_lufs: -14.1, issues: ["Variant A: quiet."] };
+    const withCraft: Results = { ...results, report: { ...results.report!, craft: { A: craft } } };
+
+    const report = buildRunReport(withCraft)!;
+
+    expect(report.variants.find((variant) => variant.id === "A")?.craft).toEqual(craft);
+    expect(report.variants.find((variant) => variant.id === "B")?.craft).toBeNull();
+  });
+
+  it("caps measured scores and the margin by the production factor without reordering", () => {
+    const capped: Results = { ...results, report: { ...results.report!, production: { factor: 0.5, reasons: ["Screens are 284 px wide."] } } };
+    const plain = buildRunReport(results)!;
+    const report = buildRunReport(capped)!;
+    expect(report.variants.map((variant) => variant.id)).toEqual(plain.variants.map((variant) => variant.id));
+    report.variants.forEach((variant, index) => expect(variant.score).toBeCloseTo(plain.variants[index].score! * 0.5));
+    expect(report.numbers.winnerMargin).toBeCloseTo(plain.numbers.winnerMargin! / 2, 0);
+    expect(report.closeCall).toBe(plain.closeCall);
+    expect(report.production).toEqual({ factor: 0.5, reasons: ["Screens are 284 px wide."] });
+    expect(plain.production).toBeNull();
+  });
+
+  it("ignores a production factor outside (0, 1]", () => {
+    expect(productionFactor({ production: { factor: 0, reasons: [] } })).toBe(1);
+    expect(productionFactor({ production: { factor: 1.4, reasons: [] } })).toBe(1);
+    expect(productionFactor({ production: null })).toBe(1);
+    expect(productionFactor({ production: { factor: 0.62, reasons: [] } })).toBe(0.62);
   });
 
   it("falls back to the relative ranking, without a margin, when a run stored no series", () => {

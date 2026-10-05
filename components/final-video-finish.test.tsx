@@ -50,3 +50,11 @@ it("keeps a missing backend credential visible after refreshing empty status", a
   await waitFor(() => expect(fetchMock.mock.calls.length).toBeGreaterThanOrEqual(3));
   expect(screen.getByRole("alert").textContent).toContain("ANTHROPIC_API_KEY");
 });
+
+it("a finished cut that tested lower recommends the original winner", async () => {
+  const lower = { ...completed, comparison: { original: 0.8, final: 0.74, original_hook: 0.69, final_hook: 0.61, keep_original: true } };
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify(lower))));
+  render(<FinalVideoFinish {...props} />);
+  expect((await screen.findByRole("alert")).textContent).toContain("Publish the original B instead");
+  expect(screen.getByText(/original B 80% → finished 74% · first 3 s 69% → 61%/)).toBeDefined();
+});

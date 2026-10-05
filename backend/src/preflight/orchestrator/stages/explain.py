@@ -4,6 +4,8 @@ from collections.abc import Callable, Sequence
 from functools import partial
 
 from preflight.contracts import (
+    CompositionSpec,
+    Craft,
     PlanNotes,
     Ranking,
     Reason,
@@ -11,12 +13,15 @@ from preflight.contracts import (
     RunState,
     SimulationResult,
     SimulatorName,
+    SoundRecord,
     Step,
 )
 from preflight.orchestrator.concurrency import gather_bounded
 from preflight.orchestrator.context import RunContext
 from preflight.orchestrator.retry import StepPolicy
 from preflight.ports import Explainer, UsageMeter
+from preflight.scoring.craft import craft_for
+from preflight.scoring.production import production_for
 
 EXPLAIN_CONCURRENCY = 2
 NextTimeSuggester = Callable[..., tuple[str, ...]]
@@ -78,15 +83,31 @@ class ExplainStage:
     ) -> Report:
         winner, *others = ranking.order
         notes = (
-            ctx.store.read(ctx.paths.plan_notes, PlanNotes).messages
+            ctx.store.read(ctx.paths.plan_notes, PlanNotes)
             if ctx.paths.plan_notes.is_file()
-            else ()
+            else PlanNotes()
         )
+        concept = ctx.read_concept(winner)
         return Report(
             winner=winner,
             runner_up=others[0] if others else None,
             reasons=reasons,
-            next_time=(*notes, *self._next_time(ctx.read_concept(winner), ranking, results)),
+            next_time=(*notes.messages, *self._next_time(concept, ranking, results)),
             token_savings=self._usage.snapshot(),
             brain_sim=any(r.simulator is SimulatorName.TRIBE_V2 for r in results),
+            production=production_for(notes, concept.language),
+            craft=_craft(ctx, ranking.order, concept.language),
         )
+
+
+def _craft(ctx: RunContext, variants: Sequence[str], language: str | None) -> dict[str, Craft]:
+    """Pace and sound of every ranked cut whose spec is on disk."""
+    craft: dict[str, Craft] = {}
+    for variant_id in variants:
+        if not ctx.paths.spec(variant_id).is_file():
+            continue
+        spec = ctx.store.read(ctx.paths.spec(variant_id), CompositionSpec)
+        sound_path = ctx.paths.sound(variant_id)
+        sound = ctx.store.read(sound_path, SoundRecord) if sound_path.is_file() else None
+        craft[variant_id] = craft_for(spec, sound, language)
+    return craft

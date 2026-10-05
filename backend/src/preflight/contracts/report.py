@@ -64,6 +64,41 @@ class PlanNotes(Contract):
 
     excluded_screenshots: tuple[Annotated[int, Field(ge=0)], ...] = ()
     messages: tuple[Annotated[str, Field(min_length=1)], ...] = ()
+    smallest_screen_px: (
+        Annotated[
+            int,
+            Field(
+                ge=1, description="Width in source pixels of the smallest screen the videos use."
+            ),
+        ]
+        | None
+    ) = None
+
+
+class Production(Contract):
+    """A known production limit that caps the absolute score; it never changes the order.
+
+    Every variant uses the same screenshots, so ``factor`` is the same for all of them.
+    """
+
+    factor: Annotated[float, Field(ge=0, le=1)]
+    reasons: tuple[Annotated[str, Field(min_length=1)], ...] = ()
+
+
+class Craft(Contract):
+    """Measured pace and sound of one cut: how often something happens and how it is heard.
+
+    ``events_per_s`` counts the spec's beats (cuts, landing words, taps, punch-ins) over the
+    body before the end card; ``longest_still_s`` is the longest stretch between two of them.
+    ``voice_coverage`` and ``integrated_lufs`` come from the finished soundtrack, when there
+    is one. ``issues`` are advice lines in the brief's language for anything off target.
+    """
+
+    events_per_s: Annotated[float, Field(ge=0)]
+    longest_still_s: Annotated[float, Field(ge=0)]
+    voice_coverage: Annotated[float, Field(ge=0, le=1)] | None = None
+    integrated_lufs: float | None = None
+    issues: tuple[Annotated[str, Field(min_length=1)], ...] = ()
 
 
 class Report(Contract):
@@ -75,3 +110,5 @@ class Report(Contract):
     next_time: tuple[Annotated[str, Field(min_length=1)], ...]
     token_savings: TokenSavings
     brain_sim: Annotated[bool, Field(description="False renders as 'Brain sim off'.")]
+    production: Production | None = None
+    craft: dict[VariantId, Craft] = Field(default_factory=dict)

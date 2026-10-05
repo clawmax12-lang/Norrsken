@@ -48,6 +48,8 @@ async def test_report_names_winner_runner_up_reasons_and_measured_savings(world:
     assert report.next_time == ("Try a stronger hook",)
     assert report.token_savings.tokens_saved == 400
     assert report.brain_sim is False
+    assert set(report.craft) == set(VARIANTS)
+    assert all(craft.voice_coverage is None for craft in report.craft.values())
 
 
 async def test_brain_sim_is_true_only_when_tribe_results_were_scored(world: World) -> None:

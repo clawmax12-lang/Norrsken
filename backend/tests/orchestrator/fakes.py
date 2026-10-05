@@ -31,7 +31,7 @@ from preflight.contracts import (
 )
 from preflight.contracts.composition import Layout, Transition
 from preflight.orchestrator import Pipeline
-from preflight.ports import SimulationRequest, SoundFinisher, SoundRequest
+from preflight.ports import SimulationRequest, SoundFinisher, SoundRequest, SpeechSynthesizer
 from preflight.storage import ProjectStore
 from tests.factories import FIXED_NOW, make_brief, make_concept, make_result
 
@@ -263,6 +263,7 @@ class World:
     extra_simulators: list[FakeSimulator] = field(default_factory=list)
     next_time: Callable[..., tuple[str, ...]] = no_suggestions
     sound: SoundFinisher | None = None
+    voice: SpeechSynthesizer | None = None
 
     def __post_init__(self) -> None:
         paths = self.store.create(self.project_id)
@@ -282,4 +283,5 @@ class World:
             FakeClock(),
             next_time=self.next_time,
             sound=self.sound,
+            voice=self.voice,
         )

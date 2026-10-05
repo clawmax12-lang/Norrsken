@@ -21,7 +21,7 @@ async def start_finalization(
 ) -> FinalizationRecord:
     """Queue one budget-bound winner finish; never accept arbitrary code/specs or credentials."""
     if context.finals is None:
-        raise ApiError(503, "finalization_unavailable", "Opus finalization is not connected")
+        raise ApiError(503, "finalization_unavailable", "Finalization is not connected")
     try:
         return context.finals.start(project.id, command)
     except ProviderError as exc:

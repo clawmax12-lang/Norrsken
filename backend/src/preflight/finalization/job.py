@@ -4,7 +4,12 @@ from collections.abc import Callable, Sequence
 from functools import partial
 
 from preflight.contracts import CreativeConcept, Scene, SimulationResult, SimulatorName, Step
-from preflight.contracts.finalization import FinalComposition, FinalizationRecord, FinalStatus
+from preflight.contracts.finalization import (
+    FinalComparison,
+    FinalComposition,
+    FinalizationRecord,
+    FinalStatus,
+)
 from preflight.errors import PreflightError, PreflightValidationError, RenderError
 from preflight.hashing import sha256_file
 from preflight.orchestrator.activity import ActivityLog
@@ -19,6 +24,7 @@ from preflight.ports import (
 )
 from preflight.storage import ProjectStore
 
+from .compare import compare
 from .opus import FinalComposer
 from .source import FinalSource
 
@@ -49,8 +55,11 @@ class FinalizationJob:
 
     async def run(self, *, verify_source: Callable[[], None]) -> None:
         """Persist checkpoints; errors never replace the original run's DONE or verdict."""
+        director = "Gemini" if self._record.director == "gemini" else "Opus"
         with self._log.step(
-            Step.EXPORT, "Finishing selected video with Opus", variant_id=self._record.variant_id
+            Step.EXPORT,
+            f"Finishing selected video with {director}",
+            variant_id=self._record.variant_id,
         ):
             composition = await self._compose()
             await self._render(composition)
@@ -82,7 +91,9 @@ class FinalizationJob:
             self._save(usage=composition.usage)
             return composition
         if self._record.opus_attempts >= 2:
-            raise PreflightError("Opus attempt limit reached; original winner remains available")
+            raise PreflightError(
+                "Director attempt limit reached; original winner remains available"
+            )
         self._save(status=FinalStatus.COMPOSING, opus_attempts=self._record.opus_attempts + 1)
         # No automatic Opus retry. A failed/uncertain call needs another explicit confirmation.
         once = StepPolicy(self._policy.timeout_s, retries=0)
@@ -132,7 +143,7 @@ class FinalizationJob:
                 sound = await self._policy.run(partial(self._sound.finish, request))
             except PreflightError:
                 self._log.skipped(
-                    Step.EXPORT, "Final sound unavailable; testing the silent Opus render"
+                    Step.EXPORT, "Final sound unavailable; testing the silent final render"
                 )
             if sound and sha256_file(request.output_path) != sound.final_video_sha256:
                 raise PreflightValidationError("Final sound output hash does not match")
@@ -166,7 +177,23 @@ class FinalizationJob:
         self._save(
             simulations=tuple(results),
             brain_sim=any(r.simulator is SimulatorName.TRIBE_V2 for r in results),
+            comparison=self._against_original(results),
         )
+
+    def _against_original(self, results: Sequence[SimulationResult]) -> FinalComparison | None:
+        panel = SimulatorName.GEMINI_PANEL
+        original = self._paths.simulation(self._record.variant_id, panel.value)
+        final = next(r for r in results if r.simulator is panel)
+        if not original.is_file():
+            return None
+        comparison = compare(self._store.read(original, SimulationResult), final)
+        if comparison.keep_original:
+            self._log.skipped(
+                Step.EXPORT,
+                f"Finished cut pretested lower ({comparison.final:.2f} vs "
+                f"{comparison.original:.2f}); keep the original winner",
+            )
+        return comparison
 
     async def _one_simulator(
         self, simulator: Simulator, request: SimulationRequest

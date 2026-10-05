@@ -1,6 +1,6 @@
 import pytest
 
-from preflight.contracts import CueKind, SceneSpec, Transition
+from preflight.contracts import Beat, BeatKind, CueKind, SceneSpec, Transition
 from preflight.generation.compose import compose
 from preflight.motion.compose import compose_motion
 from preflight.motion.scene import ExtractedLayers, LayerKind, MotionLayer
@@ -16,7 +16,7 @@ def test_every_cut_lands_on_a_beat() -> None:
         assert start / BEAT_S == pytest.approx(round(start / BEAT_S))
 
 
-def test_music_structure_follows_the_scenes_and_the_end_card() -> None:
+def test_sound_structure_follows_the_scenes_and_the_end_card() -> None:
     plan = plan_soundtrack(make_spec())
 
     assert plan.duration_s == 15.0
@@ -96,8 +96,63 @@ def test_every_line_keeps_its_source_field() -> None:
     assert plan.lines[-1].source_field == spec.headline_source_field
 
 
-def test_effects_follow_the_transition_style() -> None:
+def test_a_spec_with_beats_gets_one_figure_per_beat_on_its_frame() -> None:
+    spec = make_spec().model_copy(
+        update={
+            "beats": (
+                Beat(kind=BeatKind.HOOK, frame=0, frames=8, scene=0),
+                Beat(kind=BeatKind.MOVE, frame=90, frames=18, scene=1),
+                Beat(kind=BeatKind.TAP, frame=130, frames=8, scene=1, point=(0.9, 0.5)),
+                Beat(kind=BeatKind.PUNCH, frame=134, frames=10, scene=1),
+                Beat(kind=BeatKind.COUNT, frame=150, frames=15, scene=1),
+                Beat(kind=BeatKind.WORD, frame=200, frames=6, scene=2),
+                Beat(kind=BeatKind.CTA, frame=360, frames=8, scene=4),
+            )
+        }
+    )
+
+    cues = plan_soundtrack(spec).cues
+
+    def at(kind: CueKind) -> list[float]:
+        return [round(cue.t, 3) for cue in cues if cue.kind is kind]
+
+    assert at(CueKind.THUD) == [0.0, 12.0]
+    assert at(CueKind.TAP) == [round(130 / 30, 3)]
+    whoosh = next(cue for cue in cues if cue.kind is CueKind.WHOOSH and cue.t < 4)
+    assert whoosh.t == pytest.approx((90 + 18 * 0.6) / 30)
+    assert whoosh.duration_s == pytest.approx(18 / 30 + 0.25)
+    assert whoosh.pan == 0.5
+    assert len(at(CueKind.TICK)) == 6
+    assert at(CueKind.CONFIRM) == [round(165 / 30, 3)]
+    assert round(200 / 30, 3) in at(CueKind.POP)
+    assert at(CueKind.RISER) == [12.0]
+    assert 12.28 in at(CueKind.POP)
+    tap = next(cue for cue in cues if cue.kind is CueKind.TAP)
+    assert tap.pan is not None and tap.pan > 0
+
+
+def test_a_headline_that_follows_the_voice_gets_a_soft_select_as_it_appears() -> None:
     spec = make_spec()
+    scenes = list(spec.scenes)
+    scenes[1] = scenes[1].model_copy(
+        update={"text_frames": tuple(100 + 2 * i for i in range(len(scenes[1].text.split())))}
+    )
+    timed = spec.model_copy(
+        update={
+            "scenes": tuple(scenes),
+            "beats": (Beat(kind=BeatKind.HOOK, frame=0, frames=8, scene=0),),
+        }
+    )
+
+    selects = [cue.t for cue in plan_soundtrack(timed).cues if cue.kind is CueKind.SELECT]
+
+    assert pytest.approx(100 / 30) in selects
+    assert 0.0 not in selects
+    assert len(selects) == sum(1 for scene in timed.scenes[1:] if scene.text_frames)
+
+
+def test_effects_follow_the_transition_style_in_a_spec_without_beats() -> None:
+    spec = make_spec().model_copy(update={"beats": ()})
     plan = plan_soundtrack(spec)
 
     by_time: dict[float, set[CueKind]] = {}

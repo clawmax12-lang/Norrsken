@@ -1,5 +1,6 @@
 """FR-02: a creative concept (PRD §10.3 ``CreativeConcept``)."""
 
+from enum import StrEnum
 from typing import Annotated, Self
 
 from pydantic import Field, model_validator
@@ -20,6 +21,15 @@ FocusBox = tuple[Unit, Unit, Unit, Unit]
 """``(x, y, width, height)`` of a screenshot region, each 0-1 of the image size."""
 
 
+class Shot(StrEnum):
+    """How the camera frames a scene's screen; the renderer falls back when a source is small."""
+
+    HERO = "hero"
+    CLOSE_UP = "close_up"
+    TAKEOVER = "takeover"
+    TILT = "tilt"
+
+
 class Claim(Contract):
     """One factual statement in the copy and the exact brief text that backs it (PRD §15)."""
 
@@ -34,7 +44,9 @@ class Scene(Contract):
     ``voice`` is the narrator's line for this scene (it may differ from the on-screen text);
     ``focus`` is the region of the screenshot the camera punches into; ``emphasis`` is one
     word of ``text`` drawn in the brand colour. ``crop`` is the device display inside a mockup
-    (a phone on a backdrop); when set, ``focus`` is relative to that crop.
+    (a phone on a backdrop); when set, ``focus`` is relative to that crop. ``shot`` is how
+    the camera frames the screen. ``voice_s`` and ``voice_words`` are measured on the spoken
+    line (its length, and when each of its words starts), so picture and sound share one clock.
     """
 
     t_start: Annotated[float, Field(ge=0)]
@@ -46,11 +58,26 @@ class Scene(Contract):
     focus: FocusBox | None = None
     crop: FocusBox | None = None
     emphasis: str | None = None
+    shot: Shot | None = None
+    voice_s: Annotated[float, Field(gt=0)] | None = None
+    voice_words: tuple[Annotated[float, Field(ge=0)], ...] = ()
 
     @model_validator(mode="after")
     def _forward_in_time(self) -> Self:
         if self.t_end <= self.t_start:
             raise ValueError("scene must end after it starts")
+        return self
+
+    @model_validator(mode="after")
+    def _words_match_the_voice(self) -> Self:
+        if not self.voice_words:
+            return self
+        if self.voice is None or self.voice_s is None:
+            raise ValueError("voice_words need the measured voice line")
+        if len(self.voice_words) != len(self.voice.split()):
+            raise ValueError("voice_words needs one start per word of voice")
+        if any(b < a for a, b in zip(self.voice_words, self.voice_words[1:], strict=False)):
+            raise ValueError("voice_words must not go back in time")
         return self
 
     @model_validator(mode="after")
@@ -68,7 +95,8 @@ class CreativeConcept(Contract):
     """A hypothesis about what makes viewers act, expressed as 4-6 contiguous scenes.
 
     ``closing_line`` is the end-card headline and ``end_voice`` the narrator's last line;
-    ``chips`` are up to three short benefits stacked on the end card. ``claims`` lists every
+    ``chips`` are up to three short benefits stacked on the end card and ``cta_hint`` the line
+    under the button that makes acting feel easy. ``claims`` lists every
     factual statement the copy makes with the brief text that backs it.
     """
 
@@ -83,6 +111,7 @@ class CreativeConcept(Contract):
     angle: str | None = None
     closing_line: str | None = None
     end_voice: str | None = None
+    cta_hint: str | None = None
     chips: Annotated[tuple[NonEmpty, ...], Field(max_length=MAX_CHIPS)] = ()
     claims: tuple[Claim, ...] = ()
     language: str | None = None

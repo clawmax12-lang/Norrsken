@@ -6,6 +6,7 @@ validation, optional Condense compression and usage metering live in one place.
 
 import asyncio
 import logging
+import time
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 
@@ -21,6 +22,7 @@ from .parts import Part, TextPart
 logger = logging.getLogger(__name__)
 
 TEMPERATURE = 0.3
+FALLBACK_COOLDOWN_S = 60.0
 
 
 @dataclass(frozen=True)
@@ -42,7 +44,7 @@ class _Attempt[T]:
 class GeminiClient:
     """Async Gemini access with Pydantic-validated JSON output."""
 
-    def __init__(
+    def __init__(  # noqa: PLR0913 - keyword-only tuning knobs, each injectable in tests
         self,
         backend: GeminiBackend,
         model: str,
@@ -50,18 +52,33 @@ class GeminiClient:
         ledger: TokenLedger | None = None,
         compressor: ContextCompressor | None = None,
         retry_delay_s: float = 1.0,
+        fallback_models: Sequence[str] = (),
+        clock: Callable[[], float] = time.monotonic,
     ) -> None:
-        """Inject the SDK backend, model id, optional usage ledger and Condense compressor."""
+        """Inject the SDK backend, model id, optional usage ledger and Condense compressor.
+
+        ``fallback_models`` answer, in order, when ``model`` fails transiently (quota spent,
+        overloaded); a model that failed is skipped for ``FALLBACK_COOLDOWN_S``.
+        """
         self._backend = backend
         self._model = model
         self._ledger = ledger or TokenLedger()
         self._compressor = compressor
         self._retry_delay_s = retry_delay_s
+        self._fallback_models = tuple(m for m in fallback_models if m != model)
+        self._clock = clock
+        self._cooling_until: dict[str, float] = {}
+        self._answered_by = model
 
     @property
     def model(self) -> str:
         """The Gemini model id every call uses."""
         return self._model
+
+    @property
+    def answered_by(self) -> str:
+        """The model that gave the latest answer: ``model`` or one of its fallbacks."""
+        return self._answered_by
 
     async def generate_json[T: BaseModel](
         self,
@@ -140,25 +157,43 @@ class GeminiClient:
     async def _generate_with_retry(
         self, model_type: type[BaseModel], system: str, parts: Sequence[Part]
     ) -> BackendResponse:
-        """Call the backend; a transient failure is retried once after ``retry_delay_s``."""
+        """Try each model in turn; when all fail transiently, wait and retry the first once."""
         schema = model_type.model_json_schema()
+        models = self._models_to_try()
+        for model in models[:-1]:
+            try:
+                return await self._call(model, system, parts, schema)
+            except TransientProviderError as exc:
+                self._cooling_until[model] = self._clock() + FALLBACK_COOLDOWN_S
+                logger.warning("Gemini %s failed transiently, falling back: %s", model, exc)
         try:
-            return await self._call(system, parts, schema)
+            return await self._call(models[-1], system, parts, schema)
         except TransientProviderError as exc:
+            if len(models) > 1:
+                self._cooling_until[models[-1]] = self._clock() + FALLBACK_COOLDOWN_S
             logger.warning("Gemini call failed transiently, retrying once: %s", exc)
             await asyncio.sleep(self._retry_delay_s)
-            return await self._call(system, parts, schema)
+            return await self._call(models[0], system, parts, schema)
+
+    def _models_to_try(self) -> list[str]:
+        """Every configured model not cooling down, or all of them when every one is."""
+        models = [self._model, *self._fallback_models]
+        now = self._clock()
+        ready = [m for m in models if self._cooling_until.get(m, 0.0) <= now]
+        return ready or models
 
     async def _call(
-        self, system: str, parts: Sequence[Part], schema: JsonSchema
+        self, model: str, system: str, parts: Sequence[Part], schema: JsonSchema
     ) -> BackendResponse:
-        return await self._backend.generate(
-            model=self._model,
+        response = await self._backend.generate(
+            model=model,
             system=system,
             parts=parts,
             response_schema=schema,
             temperature=TEMPERATURE,
         )
+        self._answered_by = model
+        return response
 
     async def _compress_context(self, parts: Sequence[Part]) -> list[Part]:
         return list(await asyncio.gather(*(self._compress_part(part) for part in parts)))

@@ -12,7 +12,7 @@ from pydantic import Field, model_validator
 
 from ._base import SHA256_PATTERN, VIDEO_FPS, VIDEO_HEIGHT, VIDEO_WIDTH, Contract
 from .brief import BriefField, NonEmpty
-from .concept import FocusBox, VariantId
+from .concept import FocusBox, Shot, Unit, VariantId
 
 HexColor = Annotated[str, Field(pattern=r"^#[0-9a-fA-F]{6}$")]
 
@@ -52,6 +52,31 @@ class Layout(StrEnum):
     TEXT_ONLY = "text_only"
 
 
+class BeatKind(StrEnum):
+    """A moment the picture marks and the soundtrack hits on the same frame."""
+
+    HOOK = "hook"
+    MOVE = "move"
+    WORD = "word"
+    COUNT = "count"
+    TAP = "tap"
+    PUNCH = "punch"
+    CTA = "cta"
+
+
+class Beat(Contract):
+    """One timed event: what happens, from which frame, for how long, in which scene.
+
+    ``point`` is where a tap lands, as ``(x, y)`` 0-1 of the scene's screen (its crop when set).
+    """
+
+    kind: BeatKind
+    frame: Annotated[int, Field(ge=0)]
+    frames: Annotated[int, Field(ge=1)]
+    scene: Annotated[int, Field(ge=0)]
+    point: tuple[Unit, Unit] | None = None
+
+
 class Theme(Contract):
     """Visual tokens for one video. Typography follows the template's design system."""
 
@@ -78,6 +103,19 @@ class SceneSpec(Contract):
         default=None, description="Device display inside a mockup; focus is relative to it."
     )
     emphasis: str | None = None
+    shot: Shot | None = Field(
+        default=None, description="Camera framing; the renderer falls back when a source is small."
+    )
+    text_frames: tuple[Annotated[int, Field(ge=0)], ...] = Field(
+        default=(),
+        description="Frame each word of text lands on, following the narrator; empty: own pace.",
+    )
+
+    @model_validator(mode="after")
+    def _one_frame_per_word(self) -> Self:
+        if self.text_frames and len(self.text_frames) != len(self.text.split()):
+            raise ValueError("text_frames needs one frame per word of text")
+        return self
 
 
 class CompositionSpec(Contract):
@@ -97,7 +135,16 @@ class CompositionSpec(Contract):
     headline_source_field: BriefField
     logo: str | None = None
     end_voice: str | None = None
+    cta_hint: str | None = None
     chips: tuple[NonEmpty, ...] = ()
+    beats: tuple[Beat, ...] = ()
+
+    @model_validator(mode="after")
+    def _beats_inside_the_video(self) -> Self:
+        for beat in self.beats:
+            if beat.frame >= self.duration_frames or beat.scene >= len(self.scenes):
+                raise ValueError("every beat must fall inside the video and name a real scene")
+        return self
 
     @model_validator(mode="after")
     def _scenes_tile_the_timeline(self) -> Self:

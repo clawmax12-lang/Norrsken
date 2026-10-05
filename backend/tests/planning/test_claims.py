@@ -66,3 +66,15 @@ def test_a_claim_must_quote_its_field_verbatim() -> None:
     assert problems(claims=(good,)) == []
     result = problems(claims=(bad,))
     assert len(result) == 1 and "one_liner" in result[0]
+
+
+def test_hype_words_are_rejected_even_when_the_brief_uses_them() -> None:
+    brief = make_brief(one_liner="En blixtsnabb och sömlös kassa")
+
+    result = copy_problems(
+        [CopyLine("voice", "Blixtsnabba köp i en sömlöst enkel kassa.")], (), brief
+    )
+
+    assert len(result) == 1
+    assert "Blixtsnabba, sömlöst" in result[0] and "hype word" in result[0]
+    assert copy_problems([CopyLine("voice", "Kunden betalar i ett steg.")], (), brief) == []

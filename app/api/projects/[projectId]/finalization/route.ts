@@ -11,6 +11,7 @@ const commandSchema = z.object({
   confirmed: z.literal(true),
   variant_id: z.enum(["A", "B", "C"]),
   source_video_sha256: z.string().regex(/^[0-9a-f]{64}$/),
+  director: z.enum(["opus", "gemini"]).default("opus"),
 }).strict();
 type RouteContext = { params: Promise<{ projectId: string }> };
 
@@ -30,7 +31,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
   }
   const apiBase = process.env.PREFLIGHT_API_URL?.trim().replace(/\/+$/, "");
   if (!apiBase) {
-    return NextResponse.json({ error: "The final-video backend is not connected. No Opus job was started." }, { status: 503 });
+    return NextResponse.json({ error: "The final-video backend is not connected. No finishing job was started." }, { status: 503 });
   }
   try {
     // Only approval/lineage crosses this boundary. Never forward a long-lived API key.

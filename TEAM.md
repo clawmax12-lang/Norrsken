@@ -163,6 +163,40 @@ Update product requirements in PRD.md and append the decision to §16. Update th
 
 ## Current handoff
 
+- **Voice and flow after winner-12 (5 Oct, not committed):** narration voice `Sulafat` with a calm, persuasive delivery (was `Leda`, "energetic young woman"); headlines rise on the cut while the previous one drifts up (no empty top), a spoken number counts up from its reveal to its spoken frame, the next screen scrolls in and pushes the previous one up (no dissolve ghosting), and the end card's content shows from its first frame. Planner `plan-v12`: the voice is one script that says `product_name` once, and `closing_line` may not repeat a scene's text (craft rules).
+
+- **FR-02/FR-03/FR-17 ad arc, end card, script-rewriting finish (branch `untitled-v5`, 5 Oct, not committed):**
+  - Planner `plan-v11`: `validation._story_problems` (second-person hook, no confirmation opener, at least 5 scenes) and `_end_card_problems` (proof number in `closing_line` and a chip) are craft rules: asked on the first answer, logged after the repair. `draft.cap_hook` keeps the hook at 2 s; `cta_hint` flows concept, spec, renderer and `end_voice_for`.
+  - Renderer: `CtaCard` is opaque from frame 0, shows the hint, and the button is pressed by a fingertip on the CTA tap beat (`beats.CTA_TAP_AFTER`); overlay text is larger.
+  - FR-17 Gemini: `GeminiPlanner.rewrite` replans the winner on its own angle with its script and pretest reasons; `GeminiDirector` rewrites, re-times with `time_to_voice`, then directs the camera; a failed rewrite falls back to camera only. `finalization/compare.py` fills `FinalizationRecord.comparison`; `final-video-finish.tsx` shows both scores and recommends the original when the final is lower.
+  - Intake warns about screenshots narrower than 600 px. `GeminiSpeech` waits out a per-minute 429 (`rate_wait_s`, up to 70 s) on the same model.
+  - Real run `c48c6e6f71db4379` (same brief as `launch-draft`) planned on `gemini-3.5-flash-lite` and paused at narration: the free tier's daily quota was spent on every text model except flash-lite and on every TTS model. Press Resume after the daily reset.
+
+- **§9.3/FR-03/FR-06/FR-17 one clock, ambience, Finish with Gemini (branch `untitled-v5`, 5 Oct, not committed):**
+  - Voice timing: `sound/alignment.py` measures word starts on each TTS clip; `Scene.voice_s`/`voice_words`; `generation/beats.py` builds `SceneSpec.text_frames` and `CompositionSpec.beats` (shared by renderer and sound). A TTS failure raises `NarrationError` and pauses the run (plan stage saves concepts first; the sound stage pauses after render).
+  - Sound: music removed (`sound/music.py` deleted); `sound/ambience.py`, `sound/samples/` (Kenney CC0 with licence files), `sound/mix.py` rewritten; `sound/plan.beat_cues` places effects on the beats.
+  - Renderer: `composition/beats.ts` (pure): words on `text_frames`, keyword slam and count-up, fingertip and ripple inside the glass, punch-in and pull-back in `shots.heroPose`; hook slam; CTA button pop on the sound's pop. Tests: `beats.test.ts`.
+  - `scoring/craft.py`: `report.craft` per variant, shown in the run report.
+  - FR-17: `finalization/gemini.py` and `director` on the command and record; frontend lets the founder choose Opus or Gemini. Opus code unchanged.
+  - Real run `791a21281ea54c8b` (DONE, voice on all three cuts, -14 LUFS) and re-render `791a21281ea54c8b-v2` with pull-backs (longest still 1.7 s; its pretest stopped on Gemini 402 "prepayment credits depleted"). The verification ran with `TTS_MODEL=gemini-2.5-pro-preview-tts` because `gemini-3.8-flash-tts` hit its 100 requests/day limit.
+
+- **FR-02/FR-03/FR-05/FR-06/FR-08 top-level video, phases A-F (branch `untitled-v5`, 5 Oct, not committed):**
+  - Renderer: `composition/shots.ts` (pure) drives one hero phone across all portrait scenes with four shots and fallbacks; `HeroDevice` replaces the per-scene phone, so frames are never empty and nothing clips the phone or its shadow. A takeover fills the width below the headline and scrolls through the screen. The focus zoom stays centred across on phone screens and keeps at least 92 % of the width. Headlines rise word by word above the device. Tests: `shots.test.ts`.
+  - Planner `plan-v10`: shots per variant from measured screen width; the end-card voice says the button; proof numbers, text/voice agreement and benefit-only chips are enforced; screenshot issues reach "next time".
+  - `scoring/production.py`: `report.production` factor from the narrowest screen; frontend scales scores, the lead and the close-call threshold by it and shows "Not ready to publish".
+  - `preflight/advice.py`: report advice in Swedish or English; it names the opening and closing scenes by the hook and button viewers see; clearer render-log lines.
+  - Real runs: `bf4ed2d4b9344d61` (old 283 px mockups, factor 0.5) and `026566da87a7447b` (Gemini screens, 543 px after the mockup crop, factor 0.905).
+  - Opus/FR-17, TRIBE, Condense, Mode 2 and the panel's video resolution are untouched.
+
+- **FR-01/FR-02/FR-03/FR-04 sellable video, steps 2-4 (branch `untitled-v5`, 5 Oct, not committed):**
+  - Planner `plan-v9`: every usable screenshot is shown before the end card before any repeats (the end card hides the last scene); each concept has its own hook, and the concepts do not all open on the same screen.
+  - CTA: a `buyer_cta` or `goal_note` aimed at someone other than the audience is replaced by an action for the audience, with a note telling the customer to change it.
+  - The brief drops pasted counters like "(99/140 tecken)"; copy rejects hype words even when the brief uses them.
+  - Renderer: a larger end card and button; the focus zoom keeps 5 % around the focus box.
+  - Panel `panel-v3`: a per-second `craft` rating and a calibrated scale; primary series `score` = goal fit × (0.4 + 0.6 × craft). The frontend shows it on the 0 to 100 scale.
+  - Planning reports every problem in one go (screen order and copy together), because the model gets a single repair.
+  - Opus/FR-17, TRIBE, Condense and Mode 2 are untouched.
+
 - **FR-02/FR-03/§9.3 sharp product shots, Fas 1 (branch `untitled-v5`, 5 Oct):**
   - Planner `plan-v8` reports a `device_box` for mockups; `planning/screens.py` finds the real device edge and cuts out its display, which reaches the renderer as `Scene.crop` / `SceneSpec.crop`.
   - The renderer shows only that display in its own phone frame, caps upscaling at 2× source pixels, keeps the focus region in view and captures frames at JPEG quality 95.

@@ -39,11 +39,14 @@ def read_source(
     run = store.read(paths.run, RunRecord)
     report = store.read(paths.report, Report)
     if run.state is not RunState.DONE or report.winner != command.variant_id:
-        raise PreflightValidationError("Finish with Opus requires the completed run's winner")
+        raise PreflightValidationError("Finishing requires the completed run's winner")
     render = next((v for v in run.variants if v.variant_id == report.winner), None)
     if render is None or render.video_sha256 != command.source_video_sha256:
         raise PreflightValidationError("Finalization approval is stale; reload the tested winner")
-    if sha256_file(paths.video(report.winner)) != command.source_video_sha256:
+    tested_video = (
+        paths.root / render.video_path if render.video_path else paths.video(report.winner)
+    )
+    if sha256_file(tested_video) != command.source_video_sha256:
         raise PreflightValidationError("The tested source video changed; run a new pretest")
     tested = store.read(paths.simulation(report.winner, "gemini_panel"), SimulationResult)
     if tested.video_sha256 != command.source_video_sha256 or tested.variant_id != report.winner:

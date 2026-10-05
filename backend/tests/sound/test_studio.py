@@ -2,7 +2,7 @@
 
 import pytest
 
-from preflight.errors import ProviderError, SoundError
+from preflight.errors import NarrationError, ProviderError, SoundError
 from preflight.hashing import sha256_file
 from preflight.ports import SoundRequest, SpeechClip
 from preflight.sound import Ffmpeg, SoundStudio
@@ -60,7 +60,7 @@ async def test_a_narrated_cut_records_what_was_said_and_how_loud_it_is(tmp_path)
     assert sha256_file(asked.video_path) == asked.video_sha256
 
 
-async def test_narration_off_gives_music_and_effects_and_says_so(tmp_path) -> None:
+async def test_narration_off_gives_ambience_and_effects_and_says_so(tmp_path) -> None:
     record = await studio(None).finish(request(tmp_path))
 
     assert not record.narrated and record.voice is None and record.narration == ()
@@ -68,16 +68,15 @@ async def test_narration_off_gives_music_and_effects_and_says_so(tmp_path) -> No
     assert record.cues
 
 
-async def test_a_voice_outage_degrades_to_music_and_effects_instead_of_failing(tmp_path) -> None:
+async def test_a_voice_outage_stops_the_finish_instead_of_shipping_a_silent_ad(tmp_path) -> None:
     voice = FakeVoice()
     voice.error = ProviderError("quota exhausted")
     asked = request(tmp_path)
 
-    record = await studio(voice).finish(asked)
+    with pytest.raises(NarrationError, match="quota exhausted"):
+        await studio(voice).finish(asked)
 
-    assert not record.narrated
-    assert record.note == "Narration unavailable: quota exhausted"
-    assert asked.output_path.is_file()
+    assert not asked.output_path.exists()
 
 
 async def test_a_line_too_long_for_its_scene_is_sped_up_to_fit(tmp_path) -> None:

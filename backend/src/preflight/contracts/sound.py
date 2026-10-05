@@ -15,19 +15,31 @@ from .concept import VariantId
 
 
 class CueKind(StrEnum):
-    """Synthesized sound effects."""
+    """Sound effects: synthesized (whoosh, riser, impact, shimmer, tick) or CC0 samples."""
 
     IMPACT = "impact"
     WHOOSH = "whoosh"
     SHIMMER = "shimmer"
     TICK = "tick"
+    RISER = "riser"
+    TAP = "tap"
+    POP = "pop"
+    SELECT = "select"
+    CONFIRM = "confirm"
+    THUD = "thud"
 
 
 class SoundCue(Contract):
-    """A sound effect whose loudest moment is at second ``t`` of the video."""
+    """A sound effect whose loudest moment is at second ``t`` of the video.
+
+    ``duration_s`` stretches a whoosh or riser to the motion it follows; ``pan`` places it
+    from -1 (left) to 1 (right), so a sweep travels with the picture.
+    """
 
     kind: CueKind
     t: Annotated[float, Field(ge=0)]
+    duration_s: Annotated[float, Field(gt=0, le=4)] | None = None
+    pan: Annotated[float, Field(ge=-1, le=1)] | None = None
 
 
 class NarrationLine(Contract):
@@ -45,8 +57,8 @@ class SoundRecord(Contract):
     ``tested_video_sha256`` is the silent picture that was mixed;
     ``final_video_sha256`` is the soundtrack cut the simulated viewers watch when mixing
     succeeded. ``narrated`` is false when the
-    voice step was off or failed, in which case ``note`` says why; the cut then has music and
-    sound effects only. Loudness values are measured on the encoded file.
+    voice step was off or failed, in which case ``note`` says why; the cut then has ambience
+    and sound effects only. Loudness values are measured on the encoded file.
     """
 
     variant_id: VariantId

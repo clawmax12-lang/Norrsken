@@ -9,12 +9,22 @@ customer's product or another brand) and whether the brief's own call to action 
 audience. Code, not the model, decides what to do with those observations.
 """
 
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
+from functools import partial
 from typing import Annotated, Self
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from preflight.contracts import Brief, BriefField, Claim, CreativeConcept, PlanNotes, Scene
+from preflight.advice import advice
+from preflight.contracts import (
+    Brief,
+    BriefField,
+    Claim,
+    CreativeConcept,
+    PlanNotes,
+    Scene,
+    Shot,
+)
 from preflight.contracts.concept import (
     MAX_CHIP_WORDS,
     MAX_CHIPS,
@@ -25,7 +35,7 @@ from preflight.contracts.concept import (
 from preflight.timing import BUTTON_MAX_WORDS, END_CARD_S
 
 from .archetypes import Archetype
-from .claims import brief_mentions
+from .claims import brief_mentions, brief_names
 from .screens import ScreenImage, crop_focus
 
 VIDEO_SECONDS = 15
@@ -33,6 +43,11 @@ FIRST_VARIANT_ID = "A"
 # Below this many source pixels across the shown product, the film cannot look sharp.
 MIN_SHARP_PRODUCT_PX = 450
 END_CARD_SECONDS = int(END_CARD_S)
+MAX_END_VOICE_WORDS = 8
+MAX_SCREENSHOT_ISSUES = 2
+# The hook has this long to stop the scroll before the story moves on.
+HOOK_MAX_SECONDS = 2
+MAX_CTA_HINT_WORDS = 5
 
 
 class _Draft(BaseModel):
@@ -73,6 +88,9 @@ class ConceptDraft(_Draft):
     angle: str = ""
     closing_line: str = ""
     end_voice: str = ""
+    cta_hint: Annotated[
+        str, Field(description="2 to 5 words under the button that make acting feel easy")
+    ] = ""
     chips: tuple[str, ...] = ()
     claims: tuple[ClaimDraft, ...] = ()
 
@@ -81,9 +99,10 @@ class ConceptDraft(_Draft):
         """Scale the scene lengths to exactly 15 s, keeping their proportions.
 
         Gemini often returns 12-14 s in total; asking it again costs a whole call for
-        arithmetic that code does exactly.
+        arithmetic that code does exactly. The hook is held to ``HOOK_MAX_SECONDS``.
         """
         durations = fit_durations([scene.duration_s for scene in self.scenes], VIDEO_SECONDS)
+        durations = cap_hook(durations)
         if durations == [scene.duration_s for scene in self.scenes]:
             return self
         scenes = tuple(
@@ -112,6 +131,17 @@ class ScreenshotNote(_Draft):
         ),
     ] = []
     note: str = ""
+    confirmation: Annotated[
+        bool,
+        Field(description="True for a screen confirming a finished action (thank-you, paid)"),
+    ] = False
+    issues: Annotated[
+        list[str],
+        Field(
+            description="At most 2 problems a viewer would notice: numbers or claims not in the "
+            "brief, text in another language, a style unlike the other screenshots"
+        ),
+    ] = []
 
 
 def fit_durations(
@@ -123,6 +153,18 @@ def fit_durations(
     last = min(last_locked, total - (len(durations) - 1))
     body = _fit_body(durations[:-1], total - last)
     return [*body, last]
+
+
+def cap_hook(durations: list[int]) -> list[int]:
+    """``durations`` with the hook at most ``HOOK_MAX_SECONDS``; the middle scenes absorb it."""
+    if len(durations) < 3 or durations[0] <= HOOK_MAX_SECONDS:
+        return durations
+    middle = durations[1:-1]
+    return [
+        HOOK_MAX_SECONDS,
+        *_fit_body(middle, sum(durations[:-1]) - HOOK_MAX_SECONDS),
+        durations[-1],
+    ]
 
 
 def _fit_body(durations: list[int], total: int) -> list[int]:
@@ -153,9 +195,19 @@ class PlanDraft(_Draft):
     screenshots: tuple[ScreenshotNote, ...] = ()
     cta_fits_audience: Annotated[
         bool,
-        Field(description="True when goal_note is empty or addresses the brief's audience"),
+        Field(
+            description="True when the brief's call to action (buyer_cta, else goal_note) is "
+            "empty or addresses the brief's audience"
+        ),
     ] = True
     cta_note: str = ""
+    audience_cta: Annotated[
+        str,
+        Field(
+            description="A 2 to 4 word action for the audience, with no claim in it; used when "
+            "the brief's call to action does not fit the audience"
+        ),
+    ] = ""
 
 
 def variant_id(index: int) -> str:
@@ -193,44 +245,53 @@ def plan_notes(
 ) -> PlanNotes:
     """Customer-facing notes: screenshots left out or too small, and a mismatched CTA."""
     excluded = excluded_screenshots(draft, brief)
+    say = partial(advice, language=draft.language)
     messages: list[str] = []
     for index, screen in sorted((screens or {}).items()):
         if index not in excluded and screen.product_width_px < MIN_SHARP_PRODUCT_PX:
-            where = "its screen is" if screen.crop else "it is"
+            where = say("soft_where_crop" if screen.crop else "soft_where_plain")
             messages.append(
-                f"Screenshot {index + 1}: {where} only {screen.product_width_px} px wide, so it "
-                "looks soft in a 1080 px video. Upload the original screenshot from the device "
-                "(for example 1170 x 2532 from an iPhone) for a sharp result."
+                say("soft_screen", n=index + 1, where=where, px=screen.product_width_px)
             )
     by_index = {note.index: note for note in draft.screenshots}
+    for note in sorted(draft.screenshots, key=lambda n: n.index):
+        if note.index not in excluded and note.index < len(brief.screenshots):
+            messages.extend(
+                say("screenshot_issue", n=note.index + 1, issue=issue.strip().rstrip("."))
+                for issue in note.issues[:MAX_SCREENSHOT_ISSUES]
+                if issue.strip()
+            )
     for index in excluded:
         note = by_index[index]
-        shows = f"shows {note.other_brand}" if note.other_brand else "does not show the product"
-        messages.append(
-            f"Screenshot {index + 1} {shows}, not {brief.product_name}; it was left out of every "
-            "video. Upload a screen of your own product to use it."
+        shows = (
+            say("excluded_shows_brand", brand=note.other_brand)
+            if note.other_brand
+            else say("excluded_shows_none")
         )
+        messages.append(say("excluded", n=index + 1, shows=shows, product=brief.product_name))
     if not excluded and any(_off_brand(note, brief) for note in draft.screenshots):
-        messages.append(
-            "Some screenshots may not show your product, but too few would remain without them; "
-            "replace them before launching."
-        )
-    goal_note = (brief.goal_note or "").strip()
-    if goal_note and not brief.buyer_cta and not draft.cta_fits_audience:
+        messages.append(say("off_brand_kept"))
+    buyer_cta = (brief.buyer_cta or "").strip()
+    given = buyer_cta or (brief.goal_note or "").strip()
+    if given and not draft.cta_fits_audience:
         reason = f" ({draft.cta_note})" if draft.cta_note else ""
+        fix = say("cta_fix_buyer" if buyer_cta else "cta_fix_none")
         messages.append(
-            f'Your call to action "{goal_note}" speaks to someone other than your audience '
-            f'"{brief.audience}"{reason}. The videos use a call to action for your audience '
-            "instead; set buyer_cta in the brief to choose it yourself."
+            say("cta_mismatch", given=given, audience=brief.audience, reason=reason, fix=fix)
         )
-    return PlanNotes(excluded_screenshots=excluded, messages=tuple(messages))
+    widths = [s.product_width_px for i, s in (screens or {}).items() if i not in excluded]
+    return PlanNotes(
+        excluded_screenshots=excluded,
+        messages=tuple(messages),
+        smallest_screen_px=min(widths) if widths else None,
+    )
 
 
 def assemble_concepts(
     draft: PlanDraft,
     brief: Brief,
     archetypes: tuple[Archetype, ...],
-    crops: Mapping[int, tuple[float, float, float, float]] | None = None,
+    screens: Mapping[int, ScreenImage] | None = None,
 ) -> tuple[CreativeConcept, ...]:
     """Turn ``draft`` into contract concepts, assigning ids and hypotheses by position.
 
@@ -240,7 +301,7 @@ def assemble_concepts(
         pydantic.ValidationError: a concept breaks the ``CreativeConcept`` contract.
     """
     return tuple(
-        _assemble(concept, draft, brief, variant_id(index), archetype, crops or {})
+        _assemble(concept, draft, brief, index, archetype, screens or {})
         for index, (concept, archetype) in enumerate(zip(draft.concepts, archetypes, strict=True))
     )
 
@@ -249,14 +310,16 @@ def _assemble(
     concept: ConceptDraft,
     draft: PlanDraft,
     brief: Brief,
-    identifier: str,
+    position: int,
     archetype: Archetype,
-    crops: Mapping[int, tuple[float, float, float, float]],
+    screens: Mapping[int, ScreenImage],
 ) -> CreativeConcept:
     scenes: list[Scene] = []
     elapsed = 0
-    for scene in concept.scenes:
-        crop = crops.get(scene.screenshot_index)
+    shots = shots_for(position, [screens.get(s.screenshot_index) for s in concept.scenes])
+    for scene, shot in zip(concept.scenes, shots, strict=True):
+        screen = screens.get(scene.screenshot_index)
+        crop = screen.crop if screen else None
         scenes.append(
             Scene(
                 t_start=elapsed,
@@ -268,12 +331,13 @@ def _assemble(
                 focus=crop_focus(_focus(scene.focus), crop),
                 crop=crop,
                 emphasis=_emphasis(scene.emphasis, scene.text),
+                shot=shot,
             )
         )
         elapsed += scene.duration_s
     cta, cta_source_field = cta_for(concept, draft, brief)
     return CreativeConcept(
-        variant_id=identifier,
+        variant_id=variant_id(position),
         hypothesis=archetype.name,
         hook=concept.hook,
         hook_source_field=concept.hook_source_field,
@@ -282,10 +346,9 @@ def _assemble(
         cta_source_field=cta_source_field,
         angle=concept.angle or None,
         closing_line=concept.closing_line or None,
-        end_voice=concept.end_voice or None,
-        chips=tuple(chip for chip in concept.chips if chip and len(chip.split()) <= MAX_CHIP_WORDS)[
-            :MAX_CHIPS
-        ],
+        end_voice=end_voice_for(brief.product_name, cta, _hint(concept.cta_hint)),
+        cta_hint=_hint(concept.cta_hint),
+        chips=_chips(concept.chips, brief),
         claims=tuple(
             Claim(text=c.text, source_field=c.source_field, source_span=c.source_span)
             for c in concept.claims
@@ -294,10 +357,83 @@ def _assemble(
     )
 
 
+# Each variant frames its scenes in its own order, so the three films look different.
+SHOT_PATTERNS = (
+    (Shot.HERO, Shot.CLOSE_UP, Shot.TAKEOVER, Shot.TILT),
+    (Shot.TAKEOVER, Shot.HERO, Shot.TILT, Shot.CLOSE_UP),
+    (Shot.TILT, Shot.CLOSE_UP, Shot.HERO, Shot.TAKEOVER),
+)
+# Below these widths the shot would enlarge source pixels past the renderer's 2x cap.
+TAKEOVER_MIN_PX = 540
+CLOSE_UP_MIN_PX = 600
+PHONE_MAX_ASPECT = 0.62
+
+
+def shots_for(position: int, screens: Sequence[ScreenImage | None]) -> list[Shot]:
+    """The variant's shot pattern, with shots a screen is too small or too wide for replaced."""
+    pattern = SHOT_PATTERNS[position % len(SHOT_PATTERNS)]
+    shots: list[Shot] = []
+    for index, screen in enumerate(screens):
+        wanted = pattern[index % len(pattern)]
+        if not _fits(wanted, screen):
+            previous = shots[-1] if shots else None
+            wanted = next(s for s in (Shot.TILT, Shot.HERO) if s is not previous)
+        shots.append(wanted)
+    return shots
+
+
+def _fits(shot: Shot, screen: ScreenImage | None) -> bool:
+    if shot in {Shot.HERO, Shot.TILT}:
+        return True
+    if screen is None or screen.aspect > PHONE_MAX_ASPECT:
+        return False
+    needed = TAKEOVER_MIN_PX if shot is Shot.TAKEOVER else CLOSE_UP_MIN_PX
+    return screen.product_width_px >= needed
+
+
+def end_voice_for(product_name: str, cta: str, hint: str | None = None) -> str:
+    """The narrator says the button, so the last thing heard is the action shown.
+
+    With a hint the line is a call to act now ("Skapa konto. Igång på 5 minuter."), else the
+    product name and the button.
+    """
+    action = cta.strip().rstrip(".!")
+    if hint:
+        urged = f"{action}. {hint.strip().rstrip('.!')}."
+        if len(urged.split()) <= MAX_END_VOICE_WORDS:
+            return urged
+    named = f"{product_name.strip().rstrip('.')}. {action}."
+    return named if len(named.split()) <= MAX_END_VOICE_WORDS else f"{action}."
+
+
+def _hint(text: str) -> str | None:
+    """The button's hint, or ``None`` when empty or too long to read under a button."""
+    hint = text.strip().rstrip(".")
+    return hint if hint and len(hint.split()) <= MAX_CTA_HINT_WORDS else None
+
+
+def _chips(chips: Sequence[str], brief: Brief) -> tuple[str, ...]:
+    """Short benefits only; a chip that is just a name ("Stripe", "Apple Pay") says nothing."""
+    names = brief_names(brief)
+    kept = (
+        chip
+        for chip in chips
+        if chip
+        and len(chip.split()) <= MAX_CHIP_WORDS
+        and not all(word.strip(".,!?:;").casefold() in names for word in chip.split())
+    )
+    return tuple(kept)[:MAX_CHIPS]
+
+
 def cta_for(concept: ConceptDraft, draft: PlanDraft, brief: Brief) -> tuple[str, BriefField]:
     """The button: the buyer CTA, else a fitting goal note, else the model's buyer action."""
+    given = (brief.buyer_cta or "").strip() or (brief.goal_note or "").strip()
+    if given and not draft.cta_fits_audience and draft.audience_cta.strip():
+        return draft.audience_cta.strip(), BriefField.PRODUCT_NAME
     if brief.buyer_cta and brief.buyer_cta.strip():
-        return brief.buyer_cta.strip(), BriefField.BUYER_CTA
+        if draft.cta_fits_audience:
+            return brief.buyer_cta.strip(), BriefField.BUYER_CTA
+        return concept.cta, concept.cta_source_field
     note = (brief.goal_note or "").strip()
     if note and draft.cta_fits_audience and len(note.split()) <= BUTTON_MAX_WORDS:
         return note, BriefField.GOAL_NOTE

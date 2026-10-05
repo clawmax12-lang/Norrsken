@@ -22,27 +22,31 @@ class Archetype:
 
 ARCHETYPES = (
     Archetype(
-        "speed and ease",
-        "Lead with how quick or effortless the product makes the audience's job, as far as "
-        "the brief supports it. Hook: a short promise about speed or ease. Open on the screen "
-        "where that happens and zoom into the control that does it.",
+        "pain relief",
+        "Lead with the problem the audience has today, in words the brief supports. Hook: ask "
+        'them about it (for example "Tappar du kunder i kassan?"). Then show the product '
+        "removing it on its real screen, prove it with the brief's number, and end on how easy "
+        "it is to start.",
     ),
     Archetype(
         "business outcome",
         "Lead with what the audience gains (for example more completed purchases or less "
-        "manual work), stated only as strongly as the brief allows. Hook: the gain in the "
-        "audience's words. Show the result screen early, then how the product gets there.",
+        "manual work), stated only as strongly as the brief allows. Hook: the gain, said to "
+        "them (du/you). Show how the product gets there, prove it with the brief's number, "
+        "and end on how easy it is to start.",
+    ),
+    Archetype(
+        "speed and ease",
+        "Lead with how quick or effortless the product makes the audience's job, as far as "
+        "the brief supports it. Hook: a short promise to them about speed or ease. Show the "
+        "screen where that happens, zoomed into the control that does it, and let the "
+        "brief's number count up as the proof.",
     ),
     Archetype(
         "product demo",
         "Lead straight into the product doing its main job. Hook: name the job in a few "
         "words. Each scene shows one step on a different screen or zoomed region, and the "
         "voice explains the step while the text labels it.",
-    ),
-    Archetype(
-        "pain relief",
-        "Open on the friction the audience has today, in words the brief supports, then show "
-        "the product removing it.",
     ),
     Archetype(
         "audience first",

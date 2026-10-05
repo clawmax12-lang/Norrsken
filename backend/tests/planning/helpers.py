@@ -11,7 +11,8 @@ OUTCOME = {"text": "Notes that organise themselves", "source_field": "one_liner"
 PRODUCT = {"text": "Acme Notes", "source_field": "product_name"}
 
 
-VOICE = "Notes that organise themselves"
+VOICE = "Acme Notes organise themselves"
+HOOKS = ("Notes that organise themselves", "Your notes, organised", "Notes organise themselves")
 
 
 def scene(
@@ -44,7 +45,14 @@ def plan_json(*concepts: dict[str, object]) -> str:
     if concepts:
         return json.dumps({"concepts": list(concepts)})
     base = concept_json()
-    return json.dumps({"concepts": [_shift_screenshots(base, shift) for shift in range(3)]})
+    return json.dumps(
+        {
+            "concepts": [
+                {**_shift_screenshots(base, shift), "hook": hook}
+                for shift, hook in enumerate(HOOKS)
+            ]
+        }
+    )
 
 
 def _shift_screenshots(concept: dict[str, object], shift: int, count: int = 3) -> dict[str, object]:

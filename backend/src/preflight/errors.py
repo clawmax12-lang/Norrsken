@@ -34,7 +34,15 @@ class StorageError(PreflightError):
 
 
 class SoundError(PreflightError):
-    """Narration, music or the final mix could not be produced.
+    """Narration, ambience or the final mix could not be produced.
 
     Sound is an enhancement: the run reports it as skipped and exports the silent render.
+    """
+
+
+class NarrationError(SoundError):
+    """The narrator could not speak every line.
+
+    The voice is part of the ad, so the run pauses instead of finishing silent; running it
+    again resumes at the same step, and lines already spoken come from the cache.
     """
